@@ -1,10 +1,10 @@
 #ifndef APPLICATIONREQUEST_H
 #define APPLICATIONREQUEST_H
 
-#include "ApplicationRequestData.h"
-#include "JobId.h"
-#include "Location.h"
-#include "Priority.h"
+#include "dstage/applicationrequestdata.h"
+#include "dstage/jobid.h"
+#include "dstage/location.h"
+#include "dstage/priority.h"
 
 namespace duplicate_aware_scheduling {
 
