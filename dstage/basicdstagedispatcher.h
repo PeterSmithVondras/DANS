@@ -1,5 +1,5 @@
-#ifndef DISPATCHER_H
-#define DISPATCHER_H
+#ifndef DANS02_DSTAGE_BASICDSTAGEDISPATCHER_H
+#define DANS02_DSTAGE_BASICDSTAGEDISPATCHER_H
 
 #include <memory>
 #include <vector>
@@ -10,10 +10,10 @@
 #include "dstage/jobmap"
 #include "dstage/priority.h"
 #include "dstage/pcqueue"
-#include "til/status.h"
+#include "util/status.h"
 
 namespace duplicate_aware_scheduling {
-class BasicDStageDispatcher : public DStageDispatcher {
+class BasicDStageDispatcher : public Dispatcher {
 public:
   // Introduces an ApplicationRequest to a DStage. base_prio is the incoming
   // Priority of the ApplicationRequest. The Dispatcher will make
@@ -39,4 +39,4 @@ protected:
 };
 } // namespace duplicate_aware_scheduling
 
-#endif // DISPATCHER_H
+#endif // DANS02_DSTAGE_BASICDSTAGEDISPATCHER_H

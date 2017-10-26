@@ -1,11 +1,12 @@
-#ifndef DUPLICATESTAGE_H
-#define DUPLICATESTAGE_H
+#ifndef DANS02_DSTAGE_DUPLICATESTAGE_H
+#define DANS02_DSTAGE_DUPLICATESTAGE_H
 
 #include <memory>
 #include <vector>
 
 #include "dstage/applicationrequest.h"
 #include "dstage/dispatcher.h"
+#include "dstage/dstage.h"
 #include "dstage/jobid"
 #include "dstage/jobmap"
 #include "dstage/priority.h"
@@ -37,4 +38,4 @@ private:
 };
 } // namespace duplicate_aware_scheduling
 
-#endif // DUPLICATESTAGE_H
+#endif // DANS02_DSTAGE_DUPLICATESTAGE_H

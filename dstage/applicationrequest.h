@@ -1,5 +1,5 @@
-#ifndef APPLICATIONREQUEST_H
-#define APPLICATIONREQUEST_H
+#ifndef DANS02_DSTAGE_APPLICATIONREQUEST_H
+#define DANS02_DSTAGE_APPLICATIONREQUEST_H
 
 #include "dstage/applicationrequestdata.h"
 #include "dstage/jobid.h"
@@ -29,4 +29,4 @@ private:
 };
 } // namespace duplicate_aware_scheduling
 
-#endif // APPLICATIONREQUEST_H
+#endif // DANS02_DSTAGE_APPLICATIONREQUEST_H

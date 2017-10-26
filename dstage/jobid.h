@@ -1,5 +1,7 @@
-#ifndef JOBID_H
-#define JOBID_H
+#ifndef DANS02_DSTAGE_JOBID_H
+#define DANS02_DSTAGE_JOBID_H
+
+// TODO(pvondras): Add includes
 
 namespace duplicate_aware_scheduling {
 typedef struct JobId {
@@ -10,6 +12,16 @@ typedef struct JobId {
   const uint _job_number;
 } JobId;
 
+class JobIdFactory {
+  public:
+    JobIdFactory(int source, int seed);
+    JobIdFactory CreateJobId();
+
+  private:
+    const int _source;
+    int _next_job;
+};
+
 } // namespace duplicate_aware_scheduling
 
-#endif // JOBID_H
+#endif // DANS02_DSTAGE_JOBID_H

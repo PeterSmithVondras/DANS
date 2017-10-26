@@ -1,5 +1,5 @@
-#ifndef DSTAGE_H
-#define DSTAGE_H
+#ifndef DANS02_DSTAGE_DSTAGE_H
+#define DANS02_DSTAGE_DSTAGE_H
 
 #include <memory>
 
@@ -26,4 +26,4 @@ public:
 };
 } // namespace duplicate_aware_scheduling
 
-#endif // DSTAGE_H
+#endif // DANS02_DSTAGE_DSTAGE_H

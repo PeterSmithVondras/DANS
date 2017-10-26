@@ -1,5 +1,5 @@
-#ifndef JOBMAP_H
-#define JOBMAP_H
+#ifndef DANS02_DSTAGE_JOBMAP_H
+#define DANS02_DSTAGE_JOBMAP_H
 
 namespace duplicate_aware_scheduling {
 typedef struct JobMap {
@@ -12,4 +12,4 @@ typedef struct JobMap {
 
 } // namespace duplicate_aware_scheduling
 
-#endif // JOBMAP_H
+#endif // DANS02_DSTAGE_JOBMAP_H
