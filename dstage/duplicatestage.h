@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "dstage/applicationrequest.h"
+#include "dstage/destination.h"
 #include "dstage/dispatcher.h"
 #include "dstage/dstage.h"
 #include "dstage/jobid"
@@ -24,7 +25,7 @@ public:
   // Priority of the ApplicationRequest. The Dispatcher will make
   // duplication_level duplicates of the request for the Scheduler's use.
   Status Dispatch(unique_ptr<ApplicationRequest> app_req,
-                  Priority incoming_priority,
+                  DestinationMap destination_map,
                   uint duplication_level) override;
 
   // Purge will attempt to remove all instances of the Job linked to job_id in

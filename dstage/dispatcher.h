@@ -11,6 +11,14 @@ public:
   // GetNextJob() will block indefinitely while no Job exists.
   virtual unique_ptr<ApplicationRequest> GetNextJob();
 
+  // Returns the next Primary priority job. This is a thread safe function and
+  // will block indefinitely while no Job exists.
+  virtual unique_ptr<ApplicationRequest> GetNextPrimaryJob();
+
+  // Returns the highest priority job. This is a thread safe function.
+  // GetNextJob() will block indefinitely while no Job exists.
+  virtual unique_ptr<ApplicationRequest> GetNextSecondaryJob();
+
 };
 } // namespace duplicate_aware_scheduling
 

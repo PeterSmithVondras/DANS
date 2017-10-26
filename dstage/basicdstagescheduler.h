@@ -15,7 +15,7 @@ public:
   // Forwards the Dispatch() to the linked Dispatcher. It is an error to
   // call this without a linked Dispatcher.
   Status Dispatch(unique_ptr<ApplicationRequest> app_req,
-                  Priority incoming_priority,
+                  DestinationMap destination_map,
                   uint duplication_level) override;
 
   // Purge will remove all instances of the Job linked to job_id if possible.

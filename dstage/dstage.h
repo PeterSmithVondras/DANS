@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "dstage/applicationRequest.h"
+#include "dstage/destination.h"
 #include "dstage/jobid"
 #include "dstage/priority.h"
 #include "util/status.h"
@@ -12,12 +13,12 @@
 namespace duplicate_aware_scheduling {
 
 class DStage {
-public:
+public: 
   // Introduces an ApplicationRequest to a DStage. base_prio is the incoming
   // Priority of the ApplicationRequest. The Dispatcher will make
   // duplication_level duplicates of the request for the Scheduler's use.
   virtual Status Dispatch(unique_ptr<ApplicationRequest> app_req,
-                          Priority base_prio,
+                          DestinationMap destination_map,
                           uint duplication_level);
 
   // Purge will attempt to remove all instances of the Job linked to job_id in
