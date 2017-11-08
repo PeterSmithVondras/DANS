@@ -15,18 +15,8 @@
 namespace duplicate_aware_scheduling {
 class BasicDStageDispatcher : public Dispatcher {
 public:
-  struct JobMap;
-  struct Job {
-    bool purged,
-    unique_ptr<ApplicationRequest> app_req,
-    JobMap* parent_job_map
-  };
-
-  struct JobMap {
-    JobMap(unique_ptr<Vector<JobMap**>> instances_of_this_job);
-    unique_ptr<Vector<Job*>> _instances_of_this_job;
-  };
-
+  
+  
   // Introduces an ApplicationRequest to a DStage. base_prio is the incoming
   // Priority of the ApplicationRequest. The Dispatcher will make
   // duplication_level duplicates of the request and set job_id for referencing
@@ -52,6 +42,18 @@ public:
   unique_ptr<ApplicationRequest> GetNextSecondaryJob() override;
 
 protected:
+  struct JobMap;
+  struct Job {
+    bool purged,
+    unique_ptr<ApplicationRequest> app_req,
+    JobMap* parent_job_map
+  };
+
+  struct JobMap {
+    JobMap(unique_ptr<Vector<JobMap**>> instances_of_this_job);
+    unique_ptr<Vector<Job*>> _instances_of_this_job;
+  };
+
   vector<pcQueue<struct Job>> _priority_qs;
   Hash<JobId, struct JobMap> _job_mapper;
   const uint _max_duplication_level;

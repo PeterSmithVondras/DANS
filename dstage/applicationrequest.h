@@ -5,6 +5,7 @@
 #include "dstage/jobid.h"
 #include "dstage/destination.h"
 #include "dstage/priority.h"
+#include "dstage/state.h"
 
 namespace duplicate_aware_scheduling {
 
@@ -12,8 +13,10 @@ class ApplicationRequest {
 public:
   ApplicationRequest(unique_ptr<ApplicationRequestData> app_data,
                      const JobId job_id,
-                     const DestinationMap destination_map,
+                     const Destination destination,
                      Priority priority);
+
+  // Tests that two ApplicationRequests have the same JobId.
   bool operator==(Symbol& rhs) const;
 
   const JobId GetJobId();
@@ -22,12 +25,18 @@ public:
 
   unique_ptr<ApplicationRequestData> GetApplicationData();
 
+  Priority GetPriority();
+
+  State getState();
+
+  Status SetState();
+
 private:
-  unique_ptr<ApplicationRequestData> _app_data;
+  unique_ptr<ApplicationRequestData> _app_data; 
   const JobId job_id;
-  const DestinationMap _destination_map;
   Destination _destination;
   Priority _priority;
+  State _state;
 
 };
 } // namespace duplicate_aware_scheduling

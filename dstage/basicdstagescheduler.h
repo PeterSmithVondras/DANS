@@ -12,16 +12,16 @@
 namespace duplicate_aware_scheduling {
 class BasicDStageScheduler : public Scheduler {
 public:
-  // Forwards the Dispatch() to the linked Dispatcher. It is an error to
-  // call this without a linked Dispatcher.
-  Status Dispatch(unique_ptr<ApplicationRequest> app_req,
-                  DestinationMap destination_map,
-                  uint duplication_level) override;
+  BasicDStageScheduler(vector<unique_ptr<Callback>> job_callbacks,
+                       );
 
   // Purge will remove all instances of the Job linked to job_id if possible.
   Status Purge(JobId job_id) override;
 
 protected:
+  vector<unique_ptr<Callback>> _job_callbacks;
+  ThreadPoop _primary_threadpool;
+  ThreadPoop _secondary_threadpool;
 
 };
 } // namespace duplicate_aware_scheduling
