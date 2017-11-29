@@ -3,36 +3,38 @@
 #ifndef COMMON_APPLICATION_CONFIGREADER_H
 #define COMMON_APPLICATION_CONFIGREADER_H
 
-struct Config
+#include <iostream>
+#include <vector>
+
+namespace common_application {
+
+struct Server
 {
-  int dn_count;
-  int cli_count;
-  int btlnk_bw;
-  int file_size;
-  int pLoad;
-  int scheme;
-  int *load;
-  int *schemes;     //0->Base, 1->Duplicate, 2->Priority
+  int server_id;
+  std::string ip_addr;
+  int pri_port_no;
+  int sec_port_no;
+};
+
+struct ClientConfig
+{
+  int btlnk_bw; // Bottleneck bandwidth Mbps
+  int file_size; // Filesize in megabytes
+  std::vector<int> p_loads; // Percent load
+  std::vector<int> schemes; //0->Base, 1->Duplicate, 2->Priority
   int flow_arrival; //0->ClosedLoop, 1->POISSON, 2->UNIFORM, 3->Pri-CL, Sec-POISSON, 4->Pri-POISSON, Sec-CL
-        
-  int schemes_count;
-  int load_count;
-
-  int sim_time;
-  int min_fetch_count;
-
+  int sim_time; // simulation time in seconds
   int run_count;
   int file_data_set;
 
-  int pri_fetch_count;
-  int sec_fetch_count;
-
-  int purging;
+  std::vector<Server> servers;
 };
 
 // Given a struct Config and a filename, puts values of config file into
 // appropriate location in struct. Writes zeros to unset values. Returns true
 // on success and false on failure to open file or bad key.
-bool ReadConfig(Config *config, char *config_filename);
+bool ReadClientConfig(ClientConfig *config, char *config_filename);
+
+} // namespace common_application
 
 #endif // COMMON_APPLICATION_CONFIGREADER_H

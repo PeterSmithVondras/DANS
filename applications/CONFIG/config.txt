@@ -1,12 +1,9 @@
-dn_count 1
-cli_count 1
 btlnk_bw 45
 file_size 10
-pLoad 80
+p_load 80
 scheme 0
 sim_time 300
-min_fetch_count 6
 run_count 1
 flow_arrival 1
 file_data_set 5000
-purging 1
+server 0 10.1.1.3 5010 5011

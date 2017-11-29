@@ -1,4 +1,4 @@
-// Storage Client V0.01
+// Tests configreader.h V0.01
 // Client side application in storage problem.
 
 #include <cstdlib>     // EXIT_SUCCESS and EXIT_FAILURE

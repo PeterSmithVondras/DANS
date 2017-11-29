@@ -8,10 +8,13 @@ CXXFLAGS= -std=c++11 -g -Wall -Wextra $(IFLAGS)
 STORAGE= applications/storage/
 COM_AP= common/application/
 
-all: $(STORAGE)storage_client $(COM_AP)configreader.o
+all: $(STORAGE)storage_client $(COM_AP)configreader.o $(COM_AP)test_configreader
 
 $(COM_AP)configreader.o: $(COM_AP)configreader.cpp $(COM_AP)configreader.h
 	$(CC) -c -o $@ $< $(CXXFLAGS)
+
+$(COM_AP)test_configreader: $(COM_AP)test_configreader.cpp $(COM_AP)configreader.o
+	$(XX) -o $@ $< $(CXXFLAGS) $(COM_AP)configreader.o
 
 $(STORAGE)storage_client: $(STORAGE)storage_client.cpp $(COM_AP)configreader.o
 	$(XX) -o $@ $< $(CXXFLAGS) $(COM_AP)configreader.o -lm -lpthread

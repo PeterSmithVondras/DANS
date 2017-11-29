@@ -17,13 +17,13 @@ public:
   // Introduces an ApplicationRequest to a DStage. base_prio is the incoming
   // Priority of the ApplicationRequest. The Dispatcher will make
   // duplication_level duplicates of the request for the Scheduler's use.
-  virtual Status Dispatch(unique_ptr<ApplicationRequest> app_req,
+  virtual bool Dispatch(unique_ptr<ApplicationRequest> app_req,
                           DestinationMap destination_map,
                           uint duplication_level);
 
   // Purge will attempt to remove all instances of the Job linked to job_id in
   // the Dispatcher, Scheduler and forward the request on to any linked DStages.
-  virtual Status Purge(JobId job_id);
+  virtual bool Purge(JobId job_id);
 };
 } // namespace duplicate_aware_scheduling
 
