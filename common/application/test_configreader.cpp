@@ -4,8 +4,6 @@
 #include <cstdlib>     // EXIT_SUCCESS and EXIT_FAILURE
 #include <iostream>
 
-#include <syslog.h>    // openlog and options
-
 #include "common/application/configreader.h"
 
 namespace {
@@ -24,8 +22,6 @@ int main(int argc, char** argv) {
     USAGE(argv[0])
     return EXIT_FAILURE;
   }
-
-  openlog("clog", LOG_PID|LOG_CONS, LOG_LOCAL0);
 
   std::cout << "Info:: Successfully read configuration files\n";
 
