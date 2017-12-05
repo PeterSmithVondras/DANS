@@ -1,36 +1,35 @@
-#ifndef DANS02_DSTAGE_REQUEST_H
-#define DANS02_DSTAGE_REQUEST_H
+#ifndef DANS02_DSTAGE_JOB_H
+#define DANS02_DSTAGE_JOB_H
 
-#include "dstage/requestdata.h"
 #include "dstage/priority.h"
 
 namespace duplicate_aware_scheduling {
 
-typedef const int RequestId;
+typedef const int JobId;
 
-class RequestIdFactory {
+class JobIdFactory {
  public:
-  RequestIdFactory(int seed);
-  RequestId CreateRequestId();
+  JobIdFactory(int seed);
+  JobId CreateJobId();
  private:
   int _next_id;
 };
 
-struct Request {
-  Request(RequestData req_data,
-          JobId job_id,
-          std::vector<Destination> destinations,
-          Priority priority);
+template <class T>
+struct Job {
+  Job(T job_data,
+      JobId job_id,
+      Priority priority);
 
-  // Tests that two Requests have the same JobId.
+  // Tests that two Jobs have the same JobId.
   bool operator==(Symbol& rhs) const;
 
-  RequestData req_data;
-  RequestId request_id;
-  Priority priority;
+  T job_data;
+  JobId job_id;
+  const Priority priority;
   uint duplication_level
 
 };
 } // namespace duplicate_aware_scheduling
 
-#endif // DANS02_DSTAGE_REQUEST_H
+#endif // DANS02_DSTAGE_JOB_H
