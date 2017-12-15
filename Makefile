@@ -44,14 +44,6 @@ $(COM_DS)dispatcher.o: $(COM_DS)dispatcher.cpp \
 		$(COM_DS)dispatcher.h $(COM_DS)dstage.h $(COM_DS)duplicatestage.o
 	$(XX) -c -o $@ $< $(CXXFLAGS)
 
-# $(COM_DS)requesthandlerdata.o: $(COM_DS)requesthandlerdata.cpp \
-# 		$(COM_DS)requesthandlerdata.h $(COM_DS)requestdata.h
-# 	$(XX) -c -o $@ $< $(CXXFLAGS)
-
-# $(COM_DS)test_requesthandlerdata: $(COM_DS)test_requesthandlerdata.cpp \
-# 		$(COM_DS)requesthandlerdata.o
-# 	$(XX) -o $@ $< $(CXXFLAGS) $(COM_DS)requesthandlerdata.o
-
 clean:
 	rm $(STORAGE)storage_client \
   $(COM_AP)configreader.o $(COM_AP)test_configreader \
