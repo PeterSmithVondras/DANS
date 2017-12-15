@@ -2,7 +2,7 @@
 #define DANS02_DSTAGE_PRIORITY_H
 
 namespace duplicate_aware_scheduling {
-typedef Priority uint;
+typedef unsigned Priority;
 
 } // namespace duplicate_aware_scheduling
 

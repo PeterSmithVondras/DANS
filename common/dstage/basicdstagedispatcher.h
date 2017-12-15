@@ -13,6 +13,7 @@
 #include "dstage/priority.h"
 
 namespace duplicate_aware_scheduling {
+template <typename T>
 class BasicDStageDispatcher : public Dispatcher {
 public:
   BasicDStageDispatcher(int max_duplication_level);
@@ -27,19 +28,7 @@ public:
 
   // Purge will attempt to remove all instances of the Job linked to job_id in
   // the Dispatcher, Scheduler and forward the request on to any linked DStages.
-  bool Purge(JobId job_id) override;
-
-  // Returns the highest priority job. This is a thread safe function.
-  // GetNextJob() will block indefinitely while no Job exists.
-  unique_ptr<Request> GetNextJob() override;
-
-  // Returns the next Primary priority job. This is a thread safe function and
-  // will block indefinitely while no Job exists.
-  unique_ptr<Request> GetNextPrimaryJob() override;
-
-  // Returns the highest priority job. This is a thread safe function.
-  // GetNextJob() will block indefinitely while no Job exists.
-  unique_ptr<Request> GetNextSecondaryJob() override;
+  bool PurgeQueues(JobId job_id) override;
 
 protected:
   struct JobMap;

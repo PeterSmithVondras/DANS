@@ -1,34 +1,30 @@
 #ifndef DANS02_DSTAGE_DUPLICATESTAGE_H
 #define DANS02_DSTAGE_DUPLICATESTAGE_H
 
+#include <list>
+#include <unordered_map>
 #include <memory>
 #include <vector>
 
-#include "dstage/dispatcher.h"
-#include "dstage/dstage.h"
-#include "dstage/request.h"
-#include "dstage/scheduler.h"
+#include "common/dstage/dstage.h"
+#include "common/dstage/dispatcher.h"
+#include "common/dstage/job.h"
 
 namespace duplicate_aware_scheduling {
-template <class T>
-class DuplicateStage : public DStage {
+template <typename T>
+class DuplicateStage : public DStage<T> {
 public:
-  DuplicateStage(unique_ptr<Dispatcher> _dispatcher,
-                 unique_ptr<Scheduler> _scheduler);
+  DuplicateStage(unsigned max_duplication_level,
+                 std::unique_ptr<Dispatcher<T>> dispatcher);
+  ~DuplicateStage() {}
 
-  // Introduces an ApplicationRequest to a DStage. base_prio is the incoming
-  // Priority of the ApplicationRequest. The Dispatcher will make
-  // duplication_level duplicates of the request for the Scheduler's use.
-  bool Dispatch(Job<T> app_req) override;
+protected:
+  std::vector<std::list<JobMap<T>*>> _priority_qs;
+  std::unordered_map<JobId, struct JobMap<T>> _job_mapper;
+  const unsigned _max_duplication_level;
 
-  // Purge will attempt to remove all instances of the Job linked to job_id in
-  // the Dispatcher, Scheduler and forward the request on to any linked DStages.
-  bool Purge(JobId request_id) override;
-
-private:
   std::unique_ptr<Dispatcher<T>> _dispatcher;
-  std::unique_ptr<Scheduler<T>>  _scheduler;
-
+  // std::unique_ptr<scheduler<T>> _scheduler;
 };
 } // namespace duplicate_aware_scheduling
 

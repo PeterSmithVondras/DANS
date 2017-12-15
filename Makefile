@@ -10,7 +10,10 @@ COM_AP=  common/application/
 COM_DS=  common/dstage/
 
 all: $(STORAGE)storage_client \
-  $(COM_AP)configreader.o $(COM_AP)test_configreader 
+  $(COM_AP)configreader.o $(COM_AP)test_configreader \
+  $(COM_DS)job.o \
+  $(COM_DS)duplicatestage.o \
+  $(COM_DS)dispatcher.o
   #$(COM_DS)requesthandlerdata.o $(COM_DS)test_requesthandlerdata
 
 # *********************** TARGETS ********************
@@ -29,6 +32,18 @@ $(COM_AP)test_configreader: $(COM_AP)test_configreader.cpp \
 
 
 # common\dstage
+$(COM_DS)job.o: $(COM_DS)job.cpp \
+		$(COM_DS)job.h $(COM_DS)priority.h
+	$(XX) -c -o $@ $< $(CXXFLAGS)
+
+$(COM_DS)duplicatestage.o: $(COM_DS)duplicatestage.cpp \
+		$(COM_DS)duplicatestage.h $(COM_DS)dstage.h $(COM_DS)job.o
+	$(XX) -c -o $@ $< $(CXXFLAGS)
+
+$(COM_DS)dispatcher.o: $(COM_DS)dispatcher.cpp \
+		$(COM_DS)dispatcher.h $(COM_DS)dstage.h $(COM_DS)duplicatestage.o
+	$(XX) -c -o $@ $< $(CXXFLAGS)
+
 # $(COM_DS)requesthandlerdata.o: $(COM_DS)requesthandlerdata.cpp \
 # 		$(COM_DS)requesthandlerdata.h $(COM_DS)requestdata.h
 # 	$(XX) -c -o $@ $< $(CXXFLAGS)
@@ -40,7 +55,8 @@ $(COM_AP)test_configreader: $(COM_AP)test_configreader.cpp \
 clean:
 	rm $(STORAGE)storage_client \
   $(COM_AP)configreader.o $(COM_AP)test_configreader \
-  $(COM_DS)requesthandlerdata.o $(COM_DS)test_requesthandlerdata
+  $(COM_DS)requesthandlerdata.o $(COM_DS)test_requesthandlerdata \
+  $(COM_DS)job.o $(COM_DS)duplicatestage.o $(COM_DS)dispatcher.o
 
 
  
