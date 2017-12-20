@@ -16,12 +16,19 @@ class MultiQueue {
   MultiQueue(unsigned number_of_qs);
   ~MultiQueue() {}
 
-  // Adds a job_id to all priority queues referenced in prio_list
+  // Adds a job_id to all priority queues referenced in prio_list.
+  // This function is thread safe.
   void Enqueue(JobId job_id, std::vector<Priority> prio_list);
+
+  // Thread safe and blocking dequeue function will dequeue from the queue
+  // associated to "prio."
+  void Dequeue(Priority prio);
 
   // bool Purge(JobId job_id);
 
  protected:
+  const unsigned _max_prio;
+
   // purge needs exclusive access to basically everything but all other calls
   // can share.
   std::shared_timed_mutex _purge_shared_mutex;
@@ -36,8 +43,7 @@ class MultiQueue {
 
   // locks the job map meta data
   std::mutex _job_map_mutex;
-  std::unordered_map<JobId, std::list<std::list<JobId>::iterator>>
-      _job_mapper;
+  std::unordered_map<JobId, std::list<std::pair<JobId, std::list<JobId>::iterator>>> _job_mapper;
 };
 
 }  // namespace duplicate_aware_scheduling

@@ -20,7 +20,7 @@ int main() {
 
   MultiQueue prio_qs(kNumberOfQueues);
 
-  prio_qs.Enqueue(100, std::vector<Priority> { 0, 1, 2 });
+  prio_qs.Enqueue(100, std::vector<Priority>{0, 1, 2});
 
   // Test adding a Job
   // assert(mq.GetJobMap(job.job_id) == nullptr);
