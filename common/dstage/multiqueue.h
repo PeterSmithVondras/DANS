@@ -2,6 +2,7 @@
 #define DANS02_DSTAGE_MULTIQUEUE_H
 
 #include <list>
+#include <mutex>
 #include <shared_mutex>
 #include <unordered_map>
 #include <vector>
@@ -15,19 +16,27 @@ class MultiQueue {
   MultiQueue(unsigned number_of_qs);
   ~MultiQueue() {}
 
+  // Adds a job_id to all priority queues referenced in prio_list
   void Enqueue(JobId job_id, std::vector<Priority> prio_list);
 
   // bool Purge(JobId job_id);
 
  protected:
+  // purge needs exclusive access to basically everything but all other calls
+  // can share.
   std::shared_timed_mutex _purge_shared_mutex;
 
+  // guards the state of each queue ensuring that there is at least a single
+  // element in the q
   std::vector<std::mutex> _not_empty_mutexes;
+
+  // lock a specific mutex
   std::vector<std::mutex> _pq_mutexes;
   std::vector<std::list<JobId>> _priority_qs;
 
+  // locks the job map meta data
   std::mutex _job_map_mutex;
-  std::unordered_map<JobId, std::vector<std::list<JobId>::iterator>>
+  std::unordered_map<JobId, std::list<std::list<JobId>::iterator>>
       _job_mapper;
 };
 
