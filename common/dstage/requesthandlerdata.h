@@ -7,12 +7,11 @@
 namespace duplicate_aware_scheduling {
 
 struct FileRequestData {
-  FileRequestData(std::vector<std::string> ip_addresses,
-                     int file_number);
+  FileRequestData(std::vector<std::string> ip_addresses, int file_number);
   std::vector<std::string> ip_addresses;
   const int file_number;
 };
 
-} // namespace duplicate_aware_scheduling 
+}  // namespace duplicate_aware_scheduling
 
-#endif // DANS02_DSTAGE_REQUESTHANDLERDATA_H
+#endif  // DANS02_DSTAGE_REQUESTHANDLERDATA_H

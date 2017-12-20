@@ -1,6 +1,7 @@
 CC=gcc
-XX=clang++
-IFLAGS= -I .
+XX=/usr/sup/llvm-5.0.0/bin/clang++.sh
+# XX=clang++
+IFLAGS= -I . 
 CFLAGS= -g -Wall -Wextra $(IFLAGS)
 CXXFLAGS= -std=c++14 -g -Wall -Wextra $(IFLAGS)
 
@@ -13,8 +14,8 @@ all: $(STORAGE)storage_client \
   $(COM_AP)configreader.o $(COM_AP)test_configreader \
   $(COM_DS)job.o \
   $(COM_DS)duplicatestage.o \
-  $(COM_DS)dispatcher.o
-  #$(COM_DS)requesthandlerdata.o $(COM_DS)test_requesthandlerdata
+  $(COM_DS)dispatcher.o $(COM_DS)test_dispatcher \
+  $(COM_DS)multiqueue.o $(COM_DS)test_multiqueue
 
 # *********************** TARGETS ********************
 # common\applications
@@ -31,24 +32,39 @@ $(COM_AP)test_configreader: $(COM_AP)test_configreader.cpp \
 	$(XX) -o $@ $< $(CXXFLAGS) $(COM_AP)configreader.o
 
 
-# common\dstage
-$(COM_DS)job.o: $(COM_DS)job.cpp \
-		$(COM_DS)job.h $(COM_DS)priority.h
+# common\dstagegit 
+$(COM_DS)job.o: $(COM_DS)job.cpp $(COM_DS)job.h $(COM_DS)priority.h
 	$(XX) -c -o $@ $< $(CXXFLAGS)
 
 $(COM_DS)duplicatestage.o: $(COM_DS)duplicatestage.cpp \
-		$(COM_DS)duplicatestage.h $(COM_DS)dstage.h $(COM_DS)job.o
+		$(COM_DS)duplicatestage.h $(COM_DS)dstage.h $(COM_DS)job.o \
+		$(COM_DS)multiqueue.o
 	$(XX) -c -o $@ $< $(CXXFLAGS)
 
+$(COM_DS)multiqueue.o: $(COM_DS)multiqueue.cpp \
+		$(COM_DS)multiqueue.h $(COM_DS)job.o
+	$(XX) -c -o $@ $< $(CXXFLAGS) -lpthread
+
+$(COM_DS)test_multiqueue: $(COM_DS)test_multiqueue.cpp
+	$(XX) -o $@ $< $(CXXFLAGS) $(COM_DS)job.o $(COM_DS)multiqueue.o
+
 $(COM_DS)dispatcher.o: $(COM_DS)dispatcher.cpp \
-		$(COM_DS)dispatcher.h $(COM_DS)dstage.h $(COM_DS)duplicatestage.o
+		$(COM_DS)dispatcher.h $(COM_DS)dstage.h $(COM_DS)duplicatestage.o \
+		$(COM_DS)multiqueue.o
 	$(XX) -c -o $@ $< $(CXXFLAGS)
+
+$(COM_DS)test_dispatcher: $(COM_DS)test_dispatcher.cpp
+	$(XX) -o $@ $< $(CXXFLAGS) $(COM_DS)dispatcher.o $(COM_DS)job.o $(COM_DS)multiqueue.o
+
+format:
+	clang-format -i  `find . -type f | command grep  '\.h\|\.cpp'`
 
 clean:
 	rm $(STORAGE)storage_client \
   $(COM_AP)configreader.o $(COM_AP)test_configreader \
-  $(COM_DS)requesthandlerdata.o $(COM_DS)test_requesthandlerdata \
-  $(COM_DS)job.o $(COM_DS)duplicatestage.o $(COM_DS)dispatcher.o
+  $(COM_DS)job.o $(COM_DS)duplicatestage.o \
+  $(COM_DS)dispatcher.o $(COM_DS)test_dispatcher \
+  $(COM_DS)multiqueue.o $(COM_DS)test_multiqueue
 
 
  

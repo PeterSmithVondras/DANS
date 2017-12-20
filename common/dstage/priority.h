@@ -4,6 +4,6 @@
 namespace duplicate_aware_scheduling {
 typedef unsigned Priority;
 
-} // namespace duplicate_aware_scheduling
+}  // namespace duplicate_aware_scheduling
 
-#endif // DANS02_DSTAGE_PRIORITY_H
+#endif  // DANS02_DSTAGE_PRIORITY_H

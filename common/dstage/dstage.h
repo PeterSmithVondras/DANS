@@ -7,7 +7,7 @@ namespace duplicate_aware_scheduling {
 
 template <typename T>
 class DStage {
-public:
+ public:
   virtual ~DStage() {}
 
   // Introduces an ApplicationJob to a DStage. base_prio is the incoming
@@ -17,8 +17,8 @@ public:
 
   // Purge will attempt to remove all instances of the Job linked to job_id in
   // the Dispatcher, Scheduler and forward the request on to any linked DStages.
-  virtual bool Purge(JobId request_id);
+  virtual bool Purge(JobId job_id);
 };
-} // namespace duplicate_aware_scheduling
+}  // namespace duplicate_aware_scheduling
 
-#endif // DANS02_DSTAGE_DSTAGE_H
+#endif  // DANS02_DSTAGE_DSTAGE_H

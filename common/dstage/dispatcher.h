@@ -1,9 +1,13 @@
 #ifndef DANS02_DSTAGE_DISPATCHER_H
 #define DANS02_DSTAGE_DISPATCHER_H
 
+#include <mutex>
+
 #include "common/dstage/job.h"
+#include "common/dstage/multiqueue.h"
 
 namespace duplicate_aware_scheduling {
+
 template <typename T>
 class Dispatcher {
  public:
@@ -14,13 +18,13 @@ class Dispatcher {
   // duplication_level duplicates of the request for the Scheduler's use.
   bool Dispatch(Job<T> job);
 
-  void LinkMultiQ();
+  void LinkMultiQ(MultiQueue* multi_q_p, std::mutex* q_mutex_p);
 
  private:
   const unsigned _max_duplication_level;
-  // MultiQueue* _multi_q
-
+  std::mutex* _q_mutex_p;
+  MultiQueue* _multi_q_p;
 };
-} // namespace duplicate_aware_scheduling
+}  // namespace duplicate_aware_scheduling
 
-#endif // DANS02_DSTAGE_DISPATCHER_H
+#endif  // DANS02_DSTAGE_DISPATCHER_H

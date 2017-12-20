@@ -1,16 +1,16 @@
 // Storage Client V0.01
 // Client side application in storage problem.
 
-#include <cstdlib>     // EXIT_SUCCESS and EXIT_FAILURE
+#include <cstdlib>  // EXIT_SUCCESS and EXIT_FAILURE
 #include <iostream>
 
-#include <syslog.h>    // openlog and options
+#include <syslog.h>  // openlog and options
 
 #include "common/application/configreader.h"
 
 namespace {
-  #define USAGE(x) std::cerr << "usage: $ " << x << " path/to/config/file\n";
-}
+#define USAGE(x) std::cerr << "usage: $ " << x << " path/to/config/file\n";
+}  // namespace
 
 int main(int argc, char** argv) {
   if (argc < 2) {
@@ -20,12 +20,12 @@ int main(int argc, char** argv) {
   }
 
   common_application::ClientConfig config;
-  if (common_application::ReadClientConfig(&config, argv[1]) == false){
+  if (common_application::ReadClientConfig(&config, argv[1]) == false) {
     USAGE(argv[0])
     return EXIT_FAILURE;
   }
 
-  openlog("clog", LOG_PID|LOG_CONS, LOG_LOCAL0);
+  openlog("clog", LOG_PID | LOG_CONS, LOG_LOCAL0);
 
   std::cout << "Info:: Successfully read configuration files\n";
 
