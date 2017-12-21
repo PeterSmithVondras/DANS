@@ -129,18 +129,28 @@ std::list<Priority> MultiQueue::Purge(JobId job_id) {
   std::list<Priority> purged;
   auto search = _job_mapper.find(job_id);
 
+  // If job is already purged we can just return an empty list.
   if (search == _job_mapper.end()) return purged;
 
-  auto duplicate_list_iter = search->second.begin();
-  while (duplicate_list_iter != search->second.end()) {
-    Priority prio = ((*duplicate_list_iter).first);
-    _priority_qs[prio].erase((*duplicate_list_iter).second);
+  for (std::pair<Priority, std::list<JobId>::iterator> const& pair :
+       search->second) {
+    Priority prio = pair.first;
+    _priority_qs[prio].erase(pair.second);
     purged.push_back(prio);
-    duplicate_list_iter++;
   }
 
   _job_mapper.erase(search);
   return purged;
+}
+
+unsigned MultiQueue::Size(Priority prio) {
+  assert(prio <= _max_prio);
+  return _priority_qs[prio].size();
+}
+
+bool MultiQueue::Empty(Priority prio) {
+  assert(prio <= _max_prio);
+  return _priority_qs[prio].empty();
 }
 
 }  // namespace duplicate_aware_scheduling

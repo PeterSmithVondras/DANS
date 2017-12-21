@@ -26,6 +26,12 @@ class MultiQueue {
 
   std::list<Priority> Purge(JobId job_id);
 
+  // Returns the size of the queue related to Priority prio. There is no
+  // guarantee that this value is valid even at the time of the return.
+  unsigned Size(Priority prio);
+
+  bool Empty(Priority prio);
+
  protected:
   const unsigned _max_prio;
 
