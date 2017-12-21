@@ -100,8 +100,7 @@ JobId MultiQueue::Dequeue(Priority prio) {
     if (!_priority_qs[prio].empty()) _not_empty_mutexes[prio].unlock();
   }
 
-  // Locking this job map as our iterator could be invalidated if there is an
-  // insert.
+  // Locking job map as our iterator could be invalidated if there is an insert.
   std::lock_guard<std::mutex> lock_pq(_job_map_mutex);
   auto search = _job_mapper.find(job_id);
   assert(search != _job_mapper.end());
@@ -115,6 +114,10 @@ JobId MultiQueue::Dequeue(Priority prio) {
 
     duplicate_list_iter++;
   }
+
+  // Removing entry from _job_mapper if it is now empty.
+  if (search->second.empty())
+    _job_mapper.erase(search);
 
   // We should always find what we are looking for.
   assert(duplicate_list_iter != search->second.end());
