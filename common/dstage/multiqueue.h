@@ -22,7 +22,7 @@ class MultiQueue {
 
   // Thread safe and blocking dequeue function will dequeue from the queue
   // associated to "prio."
-  void Dequeue(Priority prio);
+  JobId Dequeue(Priority prio);
 
   // bool Purge(JobId job_id);
 
@@ -43,7 +43,9 @@ class MultiQueue {
 
   // locks the job map meta data
   std::mutex _job_map_mutex;
-  std::unordered_map<JobId, std::list<std::pair<JobId, std::list<JobId>::iterator>>> _job_mapper;
+  std::unordered_map<JobId,
+                     std::list<std::pair<JobId, std::list<JobId>::iterator>>>
+      _job_mapper;
 };
 
 }  // namespace duplicate_aware_scheduling

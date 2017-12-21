@@ -21,11 +21,14 @@ int main() {
   MultiQueue prio_qs(kNumberOfQueues);
 
   prio_qs.Enqueue(100, std::vector<Priority>{0, 1, 2});
+  prio_qs.Enqueue(0, std::vector<Priority>{0});
+  prio_qs.Enqueue(1, std::vector<Priority>{1});
+  prio_qs.Enqueue(2, std::vector<Priority>{2});
 
-  // Test adding a Job
-  // assert(mq.GetJobMap(job.job_id) == nullptr);
-  // mq.AddJobMap(job);
-  // assert(mq.GetJobMap(job.job_id) != nullptr);
+  for (unsigned i = 0; i < kNumberOfQueues; i++) {
+    assert(prio_qs.Dequeue(i) == 100);
+    assert(prio_qs.Dequeue(i) == i);
+  }
 
   if (success) {
     printf(" Passed\n");

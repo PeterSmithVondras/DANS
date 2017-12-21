@@ -2,7 +2,7 @@
 
 namespace duplicate_aware_scheduling {
 
-JobIdFactory::JobIdFactory(int seed) : _last_id(seed) {}
+JobIdFactory::JobIdFactory(unsigned seed) : _last_id(seed) {}
 
 JobId JobIdFactory::CreateJobId() {
   _last_id++;

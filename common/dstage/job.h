@@ -6,15 +6,15 @@
 
 namespace duplicate_aware_scheduling {
 
-typedef int JobId;
+typedef unsigned JobId;
 
 class JobIdFactory {
  public:
-  JobIdFactory(int seed);
+  JobIdFactory(unsigned seed);
   JobId CreateJobId();
 
  private:
-  int _last_id;
+  unsigned _last_id;
 };
 
 template <typename T>
