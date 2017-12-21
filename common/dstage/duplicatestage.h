@@ -22,7 +22,6 @@ class DuplicateStage : public DStage<T> {
  protected:
   const unsigned _max_duplication_level;
 
-  std::mutex _q_mutex;
   MultiQueue _multi_q;
 
   std::unordered_map<JobId, struct Job<T>> _active_jobs;

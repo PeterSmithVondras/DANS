@@ -11,17 +11,11 @@ JobId JobIdFactory::CreateJobId() {
 
 template <typename T>
 Job<T>::Job(T job_data, JobId job_id, Priority priority,
-            unsigned duplication_level)
+            unsigned requested_duplication)
     : job_data(job_data),
       job_id(job_id),
       priority(priority),
-      duplication_level(duplication_level) {}
-
-// Tests that two Jobs have the same JobId.
-template <typename T>
-bool Job<T>::operator==(const Job<T>& rhs) const {
-  return rhs.job_id == job_id;
-}
+      requested_duplication(requested_duplication) {}
 
 template struct Job<unsigned>;
 

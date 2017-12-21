@@ -19,15 +19,13 @@ class JobIdFactory {
 
 template <typename T>
 struct Job {
-  Job(T job_data, JobId job_id, Priority priority, unsigned duplication_level);
-
-  // Tests that two Jobs have the same JobId.
-  bool operator==(const Job<T>& rhs) const;
+  Job(T job_data, JobId job_id, Priority priority,
+      unsigned requested_duplication);
 
   T job_data;
-  const JobId job_id;
-  const Priority priority;
-  unsigned duplication_level;
+  JobId job_id;
+  Priority priority;
+  unsigned requested_duplication;
 };
 
 template <typename T>

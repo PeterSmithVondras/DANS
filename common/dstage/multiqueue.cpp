@@ -9,11 +9,11 @@
 
 namespace duplicate_aware_scheduling {
 
-MultiQueue::MultiQueue(unsigned number_of_qs)
-    : _max_prio(number_of_qs),
-      _not_empty_mutexes(_max_prio),
-      _pq_mutexes(_max_prio),
-      _priority_qs(_max_prio) {
+MultiQueue::MultiQueue(unsigned max_priority)
+    : _max_prio(max_priority),
+      _not_empty_mutexes(_max_prio + 1),
+      _pq_mutexes(_max_prio + 1),
+      _priority_qs(_max_prio + 1) {
   for (unsigned i = 0; i < _max_prio; i++) {
     // Queues start empty and therefore "not empty" is locked.
     _not_empty_mutexes[i].lock();

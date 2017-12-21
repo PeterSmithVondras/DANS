@@ -10,7 +10,6 @@ using duplicate_aware_scheduling::MultiQueue;
 using duplicate_aware_scheduling::Priority;
 
 unsigned kNumberOfQueues = 3;
-unsigned kEmpty = 0;
 unsigned kDecoyA = 500;
 unsigned kDecoyB = kDecoyA + 1;
 unsigned kRealValue = kDecoyB + 1;
@@ -24,7 +23,7 @@ int main() {
   MultiQueue prio_qs(kNumberOfQueues);
 
   // Purge a missing JobId returns empty list.
-  assert(prio_qs.Purge(kDecoyA).size() == kEmpty);
+  assert(prio_qs.Purge(kDecoyA).empty());
 
   // Purge a job with several instances.
   prio_qs.Enqueue(kDecoyA, std::vector<Priority>{0, 1, 2});

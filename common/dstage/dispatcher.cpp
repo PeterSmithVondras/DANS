@@ -1,7 +1,8 @@
 
 #include "common/dstage/dispatcher.h"
 
-#include <mutex>
+#include <cassert>
+#include <vector>
 
 #include "common/dstage/job.h"
 #include "common/dstage/multiqueue.h"
@@ -11,28 +12,31 @@ namespace {}  // namespace
 namespace duplicate_aware_scheduling {
 
 template <typename T>
-Dispatcher<T>::Dispatcher(unsigned max_duplication_level)
-    : _max_duplication_level(max_duplication_level),
-      _q_mutex_p(nullptr),
-      _multi_q_p(nullptr) {}
+Dispatcher<T>::Dispatcher(unsigned max_priority)
+    : _running(false), _max_priority(max_priority), _multi_q_p(nullptr) {}
 
 // Duplicates job and inserts into MultiQueue
 template <typename T>
-bool Dispatcher<T>::Dispatch(Job<T> job) {
-  if (_q_mutex_p == nullptr || _multi_q_p == nullptr) return false;
+void Dispatcher<T>::Dispatch(Job<T> job) {
+  assert(_running);
+  assert(job.priority <= _max_priority);
 
-  std::lock_guard<std::mutex> guard(*_q_mutex_p);
-  // unique_ptr<struct JobMap<T>>
+  std::vector<Priority> dupes;
 
-  (void)job;
-  // unsigned initial_priority = job;
-  return true;
+  Priority max_prio = job.priority + job.requested_duplication > _max_priority
+                          ? _max_priority
+                          : job.priority + job.requested_duplication;
+
+  for (Priority dup = job.priority; dup <= max_prio; dup++)
+    dupes.push_back(dup);
+  _multi_q_p->Enqueue(job.job_id, dupes);
 }
 
 template <typename T>
-void Dispatcher<T>::LinkMultiQ(MultiQueue* multi_q_p, std::mutex* q_mutex_p) {
+void Dispatcher<T>::LinkMultiQ(MultiQueue* multi_q_p) {
+  assert(multi_q_p != nullptr);
   _multi_q_p = multi_q_p;
-  _q_mutex_p = q_mutex_p;
+  _running = true;
 }
 
 template class Dispatcher<unsigned>;

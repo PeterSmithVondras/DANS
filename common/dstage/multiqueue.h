@@ -13,7 +13,7 @@ namespace duplicate_aware_scheduling {
 
 class MultiQueue {
  public:
-  MultiQueue(unsigned number_of_qs);
+  MultiQueue(unsigned max_priority);
   ~MultiQueue() {}
 
   // Adds a job_id to all priority queues referenced in prio_list.

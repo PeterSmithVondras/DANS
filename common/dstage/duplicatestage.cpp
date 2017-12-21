@@ -13,7 +13,7 @@ DuplicateStage<T>::DuplicateStage(unsigned max_duplication_level,
     : _max_duplication_level(max_duplication_level),
       _dispatcher(dispatcher),
       _multi_q(_max_duplication_level) {
-  _dispatcher.LinkMultiQ(&_multi_q, &_q_mutex);
+  _dispatcher.LinkMultiQ(&_multi_q);
 }
 
 }  // namespace duplicate_aware_scheduling
