@@ -24,7 +24,7 @@ class MultiQueue {
   // associated to "prio."
   JobId Dequeue(Priority prio);
 
-  // bool Purge(JobId job_id);
+  std::list<Priority> Purge(JobId job_id);
 
  protected:
   const unsigned _max_prio;
@@ -44,7 +44,7 @@ class MultiQueue {
   // locks the job map meta data
   std::mutex _job_map_mutex;
   std::unordered_map<JobId,
-                     std::list<std::pair<JobId, std::list<JobId>::iterator>>>
+                     std::list<std::pair<Priority, std::list<JobId>::iterator>>>
       _job_mapper;
 };
 

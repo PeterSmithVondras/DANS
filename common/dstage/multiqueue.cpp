@@ -35,7 +35,7 @@ void MultiQueue::Enqueue(JobId job_id, std::vector<Priority> prio_list) {
     // Inserting job_id at prio level priority queue and saving iterator
     const auto iter =
         _priority_qs[prio].insert(_priority_qs[prio].end(), job_id);
-    duplicate_list_iter.push_back({job_id, iter});
+    duplicate_list_iter.push_back({prio, iter});
   }
 
   {
@@ -108,7 +108,7 @@ JobId MultiQueue::Dequeue(Priority prio) {
 
   auto duplicate_list_iter = search->second.begin();
   while (duplicate_list_iter != search->second.end()) {
-    if ((*duplicate_list_iter).first == job_id) {
+    if ((*(*duplicate_list_iter).second) == job_id) {
       search->second.erase(duplicate_list_iter);
       break;
     }
@@ -122,27 +122,25 @@ JobId MultiQueue::Dequeue(Priority prio) {
   return job_id;
 }
 
-// template <typename T>
-// struct JobMap<T>* MultiQueue<T>::GetJobMap(JobId job_id) {
-//   auto search = _job_mapper.find(job_id);
-//   if (search == _job_mapper.end())
-//     return nullptr;
-//   else
-//     return &search->second;
-// }
+std::list<Priority> MultiQueue::Purge(JobId job_id) {
+  // Ensure complete control of the multiqueue
+  std::unique_lock<std::shared_timed_mutex> no_pruging(_purge_shared_mutex);
 
-// template <typename T>
-// bool MultiQueue<T>::Purge(JobId job_id) {
-//   JobMap<T>* job_map = GetJobMap(job_id);
+  std::list<Priority> purged;
+  auto search = _job_mapper.find(job_id);
 
-//   if (job_map == nullptr)
-//     return false;
+  if (search == _job_mapper.end()) return purged;
 
-//   // for (auto const& instance: job_map.instances) {
+  auto duplicate_list_iter = search->second.begin();
+  while (duplicate_list_iter != search->second.end()) {
+    Priority prio = ((*duplicate_list_iter).first);
+    _priority_qs[prio].erase((*duplicate_list_iter).second);
+    purged.push_back(prio);
+    duplicate_list_iter++;
+  }
 
-//   // }
-
-//   return true;
-// }
+  _job_mapper.erase(search);
+  return purged;
+}
 
 }  // namespace duplicate_aware_scheduling
