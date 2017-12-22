@@ -9,6 +9,7 @@
 namespace {
 
 using namespace duplicate_aware_scheduling;
+const JData kGenericData{5};
 
 }  // namespace
 
@@ -18,14 +19,17 @@ int main() {
 
   JobIdFactory j_fact(0);
 
-  Job<JData> job(/*job_data=*/0, /*job_id=*/j_fact.CreateJobId(),
-                 /*priority=*/0, /*requested_duplication=*/2);
+  Job<JData> original(kGenericData, /*job_id=*/j_fact.CreateJobId(),
+                      /*priority=*/1, /*requested_duplication=*/1);
 
-  job = Job<JData>(/*job_data=*/0, /*job_id=*/j_fact.CreateJobId(),
-                   /*priority=*/1, /*requested_duplication=*/0);
+  Job<JData> same_as_original(kGenericData, /*job_id=*/original.job_id,
+                              /*priority=*/2, /*requested_duplication=*/2);
 
-  job = Job<JData>(/*job_data=*/0, /*job_id=*/j_fact.CreateJobId(),
-                   /*priority=*/2, /*requested_duplication=*/5);
+  Job<JData> different(kGenericData, /*job_id=*/j_fact.CreateJobId(),
+                       /*priority=*/3, /*requested_duplication=*/3);
+
+  assert(original == same_as_original);
+  assert(original != different);
 
   if (success) {
     std::cerr << " Passed\n";

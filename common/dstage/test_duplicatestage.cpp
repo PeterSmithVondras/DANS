@@ -13,6 +13,7 @@ namespace {
 using namespace duplicate_aware_scheduling;
 
 unsigned kMaxPrio = 2;
+const JData kGenericData{5};
 
 }  // namespace
 
@@ -27,19 +28,19 @@ int main() {
   JobIdFactory j_fact(0);
   std::list<Priority> purged;
 
-  Job<JData> job(/*job_data=*/0, /*job_id=*/j_fact.CreateJobId(),
+  Job<JData> job(kGenericData, /*job_id=*/j_fact.CreateJobId(),
                  /*priority=*/0, /*requested_duplication=*/2);
   disp.Dispatch(job);
   assert(prio_qs.Purge(job.job_id).size() == kMaxPrio + 1);
 
-  job = Job<JData>(/*job_data=*/0, /*job_id=*/j_fact.CreateJobId(),
+  job = Job<JData>(kGenericData, /*job_id=*/j_fact.CreateJobId(),
                    /*priority=*/1, /*requested_duplication=*/0);
   disp.Dispatch(job);
   purged = prio_qs.Purge(job.job_id);
   assert(purged.size() == 1);
   assert(purged.front() == job.priority);
 
-  job = Job<JData>(/*job_data=*/0, /*job_id=*/j_fact.CreateJobId(),
+  job = Job<JData>(kGenericData, /*job_id=*/j_fact.CreateJobId(),
                    /*priority=*/2, /*requested_duplication=*/5);
   disp.Dispatch(job);
   purged = prio_qs.Purge(job.job_id);
