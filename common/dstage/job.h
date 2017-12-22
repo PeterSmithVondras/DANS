@@ -15,17 +15,24 @@ typedef unsigned JobId;
 
 class JobIdFactory {
  public:
-  JobIdFactory(unsigned seed);
-  JobId CreateJobId();
+  JobIdFactory(unsigned seed) : _last_id(seed) {}
+  JobId CreateJobId() {
+    _last_id++;
+    return _last_id;
+  }
 
  private:
-  unsigned _last_id;
+  JobId _last_id;
 };
 
 template <typename T>
 struct Job {
   Job(T job_data, JobId job_id, Priority priority,
-      unsigned requested_duplication);
+      unsigned requested_duplication)
+      : job_data(job_data),
+        job_id(job_id),
+        priority(priority),
+        requested_duplication(requested_duplication) {}
 
   T job_data;
   JobId job_id;
