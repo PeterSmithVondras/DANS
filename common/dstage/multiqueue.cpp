@@ -22,16 +22,16 @@ MultiQueue<T>::MultiQueue(unsigned max_priority)
 }
 
 template <typename T>
-void MultiQueue<T>::Enqueue(std::shared_ptr<Job<T>> job,
-                            std::vector<Priority> prio_list) {
+void MultiQueue<T>::Enqueue(std::shared_ptr<const Job<T>> job, Priority prio) {
   // Ensuring that purging is not in effect.
   std::shared_lock<std::shared_timed_mutex> no_pruging(_purge_shared_mutex);
 
   // Adding job to to all of the queues and saving the iterators.
-  std::list<std::pair<Priority,
-                      typename std::list<std::shared_ptr<Job<T>>>::iterator>>
+  std::list<std::pair<
+      Priority, typename std::list<std::shared_ptr<const Job<T>>>::iterator>>
       duplicate_list;
-  for (auto const& prio : prio_list) {
+
+  {
     assert(prio <= _max_prio);
 
     // Locking this priority queue
@@ -57,15 +57,12 @@ void MultiQueue<T>::Enqueue(std::shared_ptr<Job<T>> job,
   }
 
   // If one of the queues was empty but is not now, unlock the state mutex.
-  for (auto const& prio : prio_list) {
-    // Locking this priority queue
-    std::lock_guard<std::mutex> lock_pq(_pq_mutexes[prio]);
-    if (_priority_qs[prio].size() == 1) _not_empty_mutexes[prio].unlock();
-  }
+  std::lock_guard<std::mutex> lock_pq(_pq_mutexes[prio]);
+  if (_priority_qs[prio].size() == 1) _not_empty_mutexes[prio].unlock();
 }
 
 template <typename T>
-std::shared_ptr<Job<T>> MultiQueue<T>::Dequeue(Priority prio) {
+std::shared_ptr<const Job<T>> MultiQueue<T>::Dequeue(Priority prio) {
   assert(prio <= _max_prio);
 
   // This lock is not being acquired right now as we do not want to block
@@ -94,7 +91,7 @@ std::shared_ptr<Job<T>> MultiQueue<T>::Dequeue(Priority prio) {
   }
 
   // Getting the job from the queue.
-  std::shared_ptr<Job<T>> job;
+  std::shared_ptr<const Job<T>> job;
 
   {
     // Locking this priority queue
@@ -133,39 +130,39 @@ std::shared_ptr<Job<T>> MultiQueue<T>::Dequeue(Priority prio) {
   return job;
 }
 
-// template <typename T>
-// std::list<Priority> MultiQueue<T>::Purge(JobId job_id) {
-//   // Ensure complete control of the multiqueue
-//   std::unique_lock<std::shared_timed_mutex> no_pruging(_purge_shared_mutex);
+template <typename T>
+std::list<Priority> MultiQueue<T>::Purge(JobId job_id) {
+  // Ensure complete control of the multiqueue
+  std::unique_lock<std::shared_timed_mutex> no_pruging(_purge_shared_mutex);
 
-//   std::list<Priority> purged;
-//   auto search = _job_mapper.find(job_id);
+  std::list<Priority> purged;
+  auto search = _job_mapper.find(job_id);
 
-//   // If job is already purged we can just return an empty list.
-//   if (search == _job_mapper.end()) return purged;
+  // If job is already purged we can just return an empty list.
+  if (search == _job_mapper.end()) return purged;
 
-//   for (std::pair<Priority, std::list<JobId>::iterator> const& pair :
-//        search->second) {
-//     Priority prio = pair.first;
-//     _priority_qs[prio].erase(pair.second);
-//     purged.push_back(prio);
-//   }
+  for (std::pair<Priority, typename std::list<std::shared_ptr<const Job<T>>>::
+                               iterator> const& pair : search->second) {
+    Priority prio = pair.first;
+    _priority_qs[prio].erase(pair.second);
+    purged.push_back(prio);
+  }
 
-//   _job_mapper.erase(search);
-//   return purged;
-// }
+  _job_mapper.erase(search);
+  return purged;
+}
 
-// template <typename T>
-// unsigned MultiQueue<T>::Size(Priority prio) {
-//   assert(prio <= _max_prio);
-//   return _priority_qs[prio].size();
-// }
+template <typename T>
+unsigned MultiQueue<T>::Size(Priority prio) {
+  assert(prio <= _max_prio);
+  return _priority_qs[prio].size();
+}
 
-// template <typename T>
-// bool MultiQueue<T>::Empty(Priority prio) {
-//   assert(prio <= _max_prio);
-//   return _priority_qs[prio].empty();
-// }
+template <typename T>
+bool MultiQueue<T>::Empty(Priority prio) {
+  assert(prio <= _max_prio);
+  return _priority_qs[prio].empty();
+}
 
 // As long as template implementation is in .cpp file, must explicitly tell
 // compiler which types to compile...

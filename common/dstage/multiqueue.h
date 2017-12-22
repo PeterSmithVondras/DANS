@@ -19,19 +19,19 @@ class MultiQueue {
 
   // Adds a job_id to all priority queues referenced in prio_list.
   // This function is thread safe.
-  void Enqueue(std::shared_ptr<Job<T>> job, std::vector<Priority> prio_list);
+  void Enqueue(std::shared_ptr<const Job<T>> job, Priority prio);
 
   // Thread safe and blocking dequeue function will dequeue from the queue
   // associated to "prio."
-  std::shared_ptr<Job<T>> Dequeue(Priority prio);
+  std::shared_ptr<const Job<T>> Dequeue(Priority prio);
 
-  // std::list<Priority> Purge(JobId job_id);
+  std::list<Priority> Purge(JobId job_id);
 
-  // // Returns the size of the queue related to Priority prio. There is no
-  // // guarantee that this value is valid even at the time of the return.
-  // unsigned Size(Priority prio);
+  // Returns the size of the queue related to Priority prio. There is no
+  // guarantee that this value is valid even at the time of the return.
+  unsigned Size(Priority prio);
 
-  // bool Empty(Priority prio);
+  bool Empty(Priority prio);
 
  protected:
   const unsigned _max_prio;
@@ -46,14 +46,13 @@ class MultiQueue {
 
   // lock a specific mutex
   std::vector<std::mutex> _pq_mutexes;
-  std::vector<std::list<std::shared_ptr<Job<T>>>> _priority_qs;
+  std::vector<std::list<std::shared_ptr<const Job<T>>>> _priority_qs;
 
   // locks the job map meta data
   std::mutex _job_map_mutex;
   std::unordered_map<
-      JobId,
-      std::list<std::pair<
-          Priority, typename std::list<std::shared_ptr<Job<T>>>::iterator>>>
+      JobId, std::list<std::pair<Priority, typename std::list<std::shared_ptr<
+                                               const Job<T>>>::iterator>>>
       _job_mapper;
 };
 
