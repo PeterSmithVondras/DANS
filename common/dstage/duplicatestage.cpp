@@ -16,4 +16,8 @@ DuplicateStage<T>::DuplicateStage(unsigned max_duplication_level,
   _dispatcher.LinkMultiQ(&_multi_q);
 }
 
+// As long as template implementation is in .cpp file, must explicitly tell
+// compiler which types to compile...
+template class Dispatcher<JData>;
+
 }  // namespace duplicate_aware_scheduling

@@ -6,6 +6,11 @@
 
 namespace duplicate_aware_scheduling {
 
+// This is an example of a specific data type for a specific dstage. In the
+// future we will either define these in a more separate place or put the
+// template classes implementations all in a header file.
+typedef double JData;
+
 typedef unsigned JobId;
 
 class JobIdFactory {

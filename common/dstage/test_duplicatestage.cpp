@@ -1,8 +1,7 @@
-#include <memory>
 #include <mutex>
-#include <utility>
 
 #include "common/dstage/dispatcher.h"
+#include "common/dstage/duplicatestage.h"
 #include "common/dstage/job.h"
 #include "common/dstage/multiqueue.h"
 
@@ -19,11 +18,7 @@ unsigned kMaxPrio = 2;
 
 int main() {
   bool success = true;
-  fprintf(stderr, "test_duplicatestage...");
-
-  // auto adisp =
-  // std::make_unique<std::unique_ptr<Dispatcher<unsigned>>>(kMaxPrio);
-  // DuplicateStage<unsigned> dstage(std::move(adisp));
+  fprintf(stderr, "test_dispatcher...");
 
   Dispatcher<JData> disp(kMaxPrio);
   MultiQueue<JData> prio_qs(kMaxPrio);

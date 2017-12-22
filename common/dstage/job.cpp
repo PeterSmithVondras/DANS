@@ -17,6 +17,8 @@ Job<T>::Job(T job_data, JobId job_id, Priority priority,
       priority(priority),
       requested_duplication(requested_duplication) {}
 
-template struct Job<unsigned>;
+// As long as template implementation is in .cpp file, must explicitly tell
+// compiler which types to compile...
+template struct Job<JData>;
 
 }  // namespace duplicate_aware_scheduling

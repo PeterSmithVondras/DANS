@@ -11,6 +11,7 @@
 
 namespace duplicate_aware_scheduling {
 
+template <typename T>
 class MultiQueue {
  public:
   MultiQueue(unsigned max_priority);

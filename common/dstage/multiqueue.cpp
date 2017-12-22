@@ -9,7 +9,8 @@
 
 namespace duplicate_aware_scheduling {
 
-MultiQueue::MultiQueue(unsigned max_priority)
+template <typename T>
+MultiQueue<T>::MultiQueue(unsigned max_priority)
     : _max_prio(max_priority),
       _not_empty_mutexes(_max_prio + 1),
       _pq_mutexes(_max_prio + 1),
@@ -20,7 +21,8 @@ MultiQueue::MultiQueue(unsigned max_priority)
   }
 }
 
-void MultiQueue::Enqueue(JobId job_id, std::vector<Priority> prio_list) {
+template <typename T>
+void MultiQueue<T>::Enqueue(JobId job_id, std::vector<Priority> prio_list) {
   // Ensuring that purging is not in effect.
   std::shared_lock<std::shared_timed_mutex> no_pruging(_purge_shared_mutex);
 
@@ -60,7 +62,8 @@ void MultiQueue::Enqueue(JobId job_id, std::vector<Priority> prio_list) {
   }
 }
 
-JobId MultiQueue::Dequeue(Priority prio) {
+template <typename T>
+JobId MultiQueue<T>::Dequeue(Priority prio) {
   assert(prio <= _max_prio);
 
   // This lock is not being acquired right now as we do not want to block
@@ -116,8 +119,7 @@ JobId MultiQueue::Dequeue(Priority prio) {
   }
 
   // Removing entry from _job_mapper if it is now empty.
-  if (search->second.empty())
-    _job_mapper.erase(search);
+  if (search->second.empty()) _job_mapper.erase(search);
 
   // We should always find what we are looking for.
   assert(duplicate_list_iter != search->second.end());
@@ -125,7 +127,8 @@ JobId MultiQueue::Dequeue(Priority prio) {
   return job_id;
 }
 
-std::list<Priority> MultiQueue::Purge(JobId job_id) {
+template <typename T>
+std::list<Priority> MultiQueue<T>::Purge(JobId job_id) {
   // Ensure complete control of the multiqueue
   std::unique_lock<std::shared_timed_mutex> no_pruging(_purge_shared_mutex);
 
@@ -146,14 +149,20 @@ std::list<Priority> MultiQueue::Purge(JobId job_id) {
   return purged;
 }
 
-unsigned MultiQueue::Size(Priority prio) {
+template <typename T>
+unsigned MultiQueue<T>::Size(Priority prio) {
   assert(prio <= _max_prio);
   return _priority_qs[prio].size();
 }
 
-bool MultiQueue::Empty(Priority prio) {
+template <typename T>
+bool MultiQueue<T>::Empty(Priority prio) {
   assert(prio <= _max_prio);
   return _priority_qs[prio].empty();
 }
+
+// As long as template implementation is in .cpp file, must explicitly tell
+// compiler which types to compile...
+template class MultiQueue<JData>;
 
 }  // namespace duplicate_aware_scheduling

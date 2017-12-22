@@ -6,6 +6,7 @@
 
 namespace {
 
+using duplicate_aware_scheduling::JData;
 using duplicate_aware_scheduling::MultiQueue;
 using duplicate_aware_scheduling::Priority;
 
@@ -20,7 +21,7 @@ int main() {
   bool success = true;
   fprintf(stderr, "test_multiqueue... ");
 
-  MultiQueue prio_qs(kNumberOfQueues);
+  MultiQueue<JData> prio_qs(kNumberOfQueues);
 
   // Purge a missing JobId returns empty list.
   assert(prio_qs.Purge(kDecoyA).empty());

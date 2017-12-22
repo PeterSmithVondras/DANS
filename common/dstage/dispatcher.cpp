@@ -33,12 +33,14 @@ void Dispatcher<T>::Dispatch(Job<T> job) {
 }
 
 template <typename T>
-void Dispatcher<T>::LinkMultiQ(MultiQueue* multi_q_p) {
+void Dispatcher<T>::LinkMultiQ(MultiQueue<T>* multi_q_p) {
   assert(multi_q_p != nullptr);
   _multi_q_p = multi_q_p;
   _running = true;
 }
 
-template class Dispatcher<unsigned>;
+// As long as template implementation is in .cpp file, must explicitly tell
+// compiler which types to compile...
+template class Dispatcher<JData>;
 
 }  // namespace duplicate_aware_scheduling
