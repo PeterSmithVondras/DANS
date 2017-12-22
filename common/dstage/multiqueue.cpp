@@ -9,8 +9,8 @@
 
 namespace duplicate_aware_scheduling {
 
-template <typename T>
-MultiQueue<T>::MultiQueue(unsigned max_priority)
+template <typename Key, typename Value>
+MultiQueue<Key, Value>::MultiQueue(unsigned max_priority)
     : _max_prio(max_priority),
       _not_empty_mutexes(_max_prio + 1),
       _pq_mutexes(_max_prio + 1),
@@ -21,14 +21,15 @@ MultiQueue<T>::MultiQueue(unsigned max_priority)
   }
 }
 
-template <typename T>
-void MultiQueue<T>::Enqueue(std::shared_ptr<const Job<T>> job, Priority prio) {
+template <typename Key, typename Value>
+void MultiQueue<Key, Value>::Enqueue(std::pair<Key, Value> key_value,
+                                     Priority prio) {
   // Ensuring that purging is not in effect.
   std::shared_lock<std::shared_timed_mutex> no_pruging(_purge_shared_mutex);
 
-  // Adding job to to all of the queues and saving the iterators.
-  std::list<std::pair<
-      Priority, typename std::list<std::shared_ptr<const Job<T>>>::iterator>>
+  // Adding value to to all of the queues and saving the iterators.
+  std::list<
+      std::pair<Priority, typename std::list<std::pair<Key, Value>>::iterator>>
       duplicate_list;
 
   {
@@ -37,16 +38,17 @@ void MultiQueue<T>::Enqueue(std::shared_ptr<const Job<T>> job, Priority prio) {
     // Locking this priority queue
     std::lock_guard<std::mutex> lock_pq(_pq_mutexes[prio]);
 
-    // Inserting job at prio level priority queue and saving iterator
-    const auto iter = _priority_qs[prio].insert(_priority_qs[prio].end(), job);
+    // Inserting value at prio level priority queue and saving iterator
+    const auto iter =
+        _priority_qs[prio].insert(_priority_qs[prio].end(), key_value);
     duplicate_list.push_back({prio, iter});
   }
 
   {
-    // Locking this job map as insert can cause iterator invalidation.
-    std::lock_guard<std::mutex> lock_pq(_job_map_mutex);
-    auto map_result = _job_mapper.insert({job->job_id, duplicate_list});
-    // Checking if this job was already in the map.
+    // Locking this value map as insert can cause iterator invalidation.
+    std::lock_guard<std::mutex> lock_pq(_value_map_mutex);
+    auto map_result = _value_mapper.insert({key_value.first, duplicate_list});
+    // Checking if this value was already in the map.
     if (map_result.second == false) {
       // Appending "duplicate_list" to the end of the the maps iterator
       // vector.
@@ -61,8 +63,8 @@ void MultiQueue<T>::Enqueue(std::shared_ptr<const Job<T>> job, Priority prio) {
   if (_priority_qs[prio].size() == 1) _not_empty_mutexes[prio].unlock();
 }
 
-template <typename T>
-std::shared_ptr<const Job<T>> MultiQueue<T>::Dequeue(Priority prio) {
+template <typename Key, typename Value>
+Value MultiQueue<Key, Value>::Dequeue(Priority prio) {
   assert(prio <= _max_prio);
 
   // This lock is not being acquired right now as we do not want to block
@@ -90,13 +92,13 @@ std::shared_ptr<const Job<T>> MultiQueue<T>::Dequeue(Priority prio) {
       break;
   }
 
-  // Getting the job from the queue.
-  std::shared_ptr<const Job<T>> job;
+  // Getting the value from the queue.
+  std::pair<Key, Value> key_value;
 
   {
     // Locking this priority queue
     std::lock_guard<std::mutex> lock_pq(_pq_mutexes[prio]);
-    job = _priority_qs[prio].front();
+    key_value = _priority_qs[prio].front();
     _priority_qs[prio].pop_front();
 
     // If the Q is not empty we know that it is safe to unblock at least one
@@ -104,16 +106,17 @@ std::shared_ptr<const Job<T>> MultiQueue<T>::Dequeue(Priority prio) {
     if (!_priority_qs[prio].empty()) _not_empty_mutexes[prio].unlock();
   }
 
-  // Locking job map as our iterator could be invalidated if there is an insert.
-  std::lock_guard<std::mutex> lock_pq(_job_map_mutex);
-  auto job_map_itr_at_target = _job_mapper.find(job->job_id);
-  assert(job_map_itr_at_target != _job_mapper.end());
-  auto duplicate_list_iter = job_map_itr_at_target->second.begin();
+  // Locking value map as our iterator could be invalidated if there is an
+  // insert.
+  std::lock_guard<std::mutex> lock_pq(_value_map_mutex);
+  auto value_map_itr_at_target = _value_mapper.find(key_value.first);
+  assert(value_map_itr_at_target != _value_mapper.end());
+  auto duplicate_list_iter = value_map_itr_at_target->second.begin();
 
   bool found = false;
-  while (duplicate_list_iter != job_map_itr_at_target->second.end()) {
+  while (duplicate_list_iter != value_map_itr_at_target->second.end()) {
     if (duplicate_list_iter->first == prio) {
-      job_map_itr_at_target->second.erase(duplicate_list_iter);
+      value_map_itr_at_target->second.erase(duplicate_list_iter);
       found = true;
       break;
     }
@@ -123,49 +126,50 @@ std::shared_ptr<const Job<T>> MultiQueue<T>::Dequeue(Priority prio) {
   // We should always find what we removed from the queue.
   assert(found);
 
-  // Removing entry from _job_mapper if it is now empty.
-  if (job_map_itr_at_target->second.empty())
-    _job_mapper.erase(job_map_itr_at_target);
+  // Removing entry from _value_mapper if it is now empty.
+  if (value_map_itr_at_target->second.empty())
+    _value_mapper.erase(value_map_itr_at_target);
 
-  return job;
+  return key_value.second;
 }
 
-template <typename T>
-std::list<Priority> MultiQueue<T>::Purge(JobId job_id) {
+template <typename Key, typename Value>
+std::list<Priority> MultiQueue<Key, Value>::Purge(Key key) {
   // Ensure complete control of the multiqueue
   std::unique_lock<std::shared_timed_mutex> no_pruging(_purge_shared_mutex);
 
   std::list<Priority> purged;
-  auto search = _job_mapper.find(job_id);
+  auto search = _value_mapper.find(key);
 
-  // If job is already purged we can just return an empty list.
-  if (search == _job_mapper.end()) return purged;
+  // If value is already purged we can just return an empty list.
+  if (search == _value_mapper.end()) return purged;
 
-  for (std::pair<Priority, typename std::list<std::shared_ptr<const Job<T>>>::
-                               iterator> const& pair : search->second) {
+  for (std::pair<Priority,
+                 typename std::list<std::pair<Key, Value>>::iterator> const&
+           pair : search->second) {
     Priority prio = pair.first;
     _priority_qs[prio].erase(pair.second);
     purged.push_back(prio);
   }
 
-  _job_mapper.erase(search);
+  _value_mapper.erase(search);
   return purged;
 }
 
-template <typename T>
-unsigned MultiQueue<T>::Size(Priority prio) {
+template <typename Key, typename Value>
+unsigned MultiQueue<Key, Value>::Size(Priority prio) {
   assert(prio <= _max_prio);
   return _priority_qs[prio].size();
 }
 
-template <typename T>
-bool MultiQueue<T>::Empty(Priority prio) {
+template <typename Key, typename Value>
+bool MultiQueue<Key, Value>::Empty(Priority prio) {
   assert(prio <= _max_prio);
   return _priority_qs[prio].empty();
 }
 
 // As long as template implementation is in .cpp file, must explicitly tell
 // compiler which types to compile...
-template class MultiQueue<JData>;
+template class MultiQueue<JobId, std::shared_ptr<const Job<JData>>>;
 
 }  // namespace duplicate_aware_scheduling
