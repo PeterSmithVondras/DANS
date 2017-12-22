@@ -52,9 +52,6 @@ struct JobMap {
   std::vector<JobMap<T>**> instances;
 };
 
-template <typename T>
-using SharedJobPtr = std::shared_ptr<const Job<T>>;
-
 }  // namespace duplicate_aware_scheduling
 
 #endif  // DANS02_DSTAGE_JOB_H

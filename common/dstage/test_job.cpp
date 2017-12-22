@@ -3,6 +3,10 @@
 
 #include <iostream>
 
+#include <list>
+#include <unordered_map>
+#include <vector>
+
 #include "common/dstage/job.h"
 #include "common/dstage/priority.h"
 
