@@ -2,6 +2,8 @@
 #include "common/dstage/dispatcher.h"
 
 #include <cassert>
+
+#include <memory>
 #include <vector>
 
 #include "common/dstage/job.h"
@@ -17,23 +19,26 @@ Dispatcher<T>::Dispatcher(unsigned max_priority)
 
 // Duplicates job and inserts into MultiQueue
 template <typename T>
-void Dispatcher<T>::Dispatch(Job<T> job) {
+void Dispatcher<T>::Dispatch(std::unique_ptr<const Job<T>> job) {
   assert(_running);
-  assert(job.priority <= _max_priority);
+  assert(job->priority <= _max_priority);
 
-  std::vector<Priority> dupes;
+  std::shared_ptr<const Job<T>> duplicate_job(std::move(job));
 
-  Priority max_prio = job.priority + job.requested_duplication > _max_priority
-                          ? _max_priority
-                          : job.priority + job.requested_duplication;
+  Priority max_prio =
+      duplicate_job->priority + duplicate_job->requested_duplication >
+              _max_priority
+          ? _max_priority
+          : duplicate_job->priority + duplicate_job->requested_duplication;
 
-  for (Priority dup = job.priority; dup <= max_prio; dup++)
-    dupes.push_back(dup);
-  _multi_q_p->Enqueue(job.job_id, dupes);
+  for (Priority prio = duplicate_job->priority; prio <= max_prio; prio++) {
+    _multi_q_p->Enqueue({duplicate_job->job_id, duplicate_job}, prio);
+  }
 }
 
 template <typename T>
-void Dispatcher<T>::LinkMultiQ(MultiQueue<T>* multi_q_p) {
+void Dispatcher<T>::LinkMultiQ(
+    MultiQueue<JobId, std::shared_ptr<const Job<T>>>* multi_q_p) {
   assert(multi_q_p != nullptr);
   _multi_q_p = multi_q_p;
   _running = true;
