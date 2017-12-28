@@ -3,9 +3,7 @@
 
 #include <iostream>
 
-#include <list>
-#include <unordered_map>
-#include <vector>
+#include <memory>
 
 #include "common/dstage/job.h"
 #include "common/dstage/priority.h"
@@ -13,7 +11,7 @@
 namespace {
 
 using namespace duplicate_aware_scheduling;
-const JData kGenericData{5};
+auto kGenericData = std::make_shared<const JData>(5);
 
 }  // namespace
 

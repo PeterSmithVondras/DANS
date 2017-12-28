@@ -10,7 +10,7 @@ namespace {
 
 using namespace duplicate_aware_scheduling;
 
-const JData kGenericData{5};
+auto kGenericData = std::make_shared<const JData>(5);
 unsigned kNumberOfQueues = 3;
 
 }  // namespace

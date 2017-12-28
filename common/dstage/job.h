@@ -11,6 +11,7 @@ namespace duplicate_aware_scheduling {
 // future we will either define these in a more separate place or put the
 // template classes implementations all in a header file.
 struct JData {
+  JData(unsigned foo) : foo(foo) {}
   unsigned foo;
 };
 
@@ -30,11 +31,11 @@ class JobIdFactory {
 
 template <typename T>
 struct Job {
-  Job(T job_data, JobId job_id, Priority priority,
-      unsigned requested_duplication)
+  Job(std::shared_ptr<const T> job_data, JobId job_id, Priority priority,
+      unsigned duplication)
       : job_id(job_id),
         priority(priority),
-        requested_duplication(requested_duplication),
+        duplication(duplication),
         job_data(job_data) {}
 
   bool operator==(const Job& rhs) const { return job_id == rhs.job_id; }
@@ -42,8 +43,8 @@ struct Job {
 
   JobId job_id;
   Priority priority;
-  unsigned requested_duplication;
-  T job_data;
+  unsigned duplication;
+  std::shared_ptr<const T> job_data;
 };
 
 template <typename T>
