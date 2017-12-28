@@ -47,14 +47,15 @@ void MultiQueue<T>::Enqueue(UniqJobPtr<T> job_p) {
   {
     // Locking this value map as insert can cause iterator invalidation.
     std::lock_guard<std::mutex> lock_pq(_value_map_mutex);
-    auto map_result = _value_mapper.insert({job_id, duplicate_list});
-    // Checking if this value was already in the map.
-    if (map_result.second == false) {
+    auto search = _value_mapper.find(job_id);
+    if (search == _value_mapper.end()) {
+      _value_mapper.insert(std::make_pair(job_id, std::move(duplicate_list)));
+    } else {
       // Appending "duplicate_list" to the end of the the maps iterator
       // vector.
-      map_result.first->second.insert(map_result.first->second.end(),
-                                      duplicate_list.begin(),
-                                      duplicate_list.end());
+      search->second.insert(search->second.end(),
+                            std::make_move_iterator(duplicate_list.begin()),
+                            std::make_move_iterator(duplicate_list.end()));
     }
   }
 
@@ -73,8 +74,7 @@ UniqJobPtr<T> MultiQueue<T>::Dequeue(Priority prio) {
                                                        std::defer_lock);
 
   // It should impossible to leave this loop without having acquired the
-  // no_purging lock and having ensured that there is at least a single item
-
+  // no_purging lock and having ensured that there is at least a single item in
   // the queue.
   while (true) {
     // Ensuring that there is at least a single item in this queue.
@@ -109,16 +109,16 @@ UniqJobPtr<T> MultiQueue<T>::Dequeue(Priority prio) {
   // Locking value map as our iterator could be invalidated if there is an
   // insert.
   std::lock_guard<std::mutex> lock_pq(_value_map_mutex);
-  auto value_map_itr_at_target = _value_mapper.find(job_id);
-  assert(value_map_itr_at_target != _value_mapper.end());
-  auto duplicate_list_iter = value_map_itr_at_target->second.begin();
+  auto search = _value_mapper.find(job_id);
+  assert(search != _value_mapper.end());
+  auto duplicate_list_iter = search->second.begin();
 
   UniqJobPtr<T> job_p;
   bool found = false;
-  while (duplicate_list_iter != value_map_itr_at_target->second.end()) {
+  while (duplicate_list_iter != search->second.end()) {
     if (duplicate_list_iter->first->priority == prio) {
       job_p = std::move(duplicate_list_iter->first);
-      value_map_itr_at_target->second.erase(duplicate_list_iter);
+      search->second.erase(duplicate_list_iter);
       found = true;
       break;
     }
@@ -129,8 +129,7 @@ UniqJobPtr<T> MultiQueue<T>::Dequeue(Priority prio) {
   assert(found);
 
   // Removing entry from _value_mapper if it is now empty.
-  if (value_map_itr_at_target->second.empty())
-    _value_mapper.erase(value_map_itr_at_target);
+  if (search->second.empty()) _value_mapper.erase(search);
 
   return job_p;
 }
@@ -146,11 +145,13 @@ std::list<UniqJobPtr<T>> MultiQueue<T>::Purge(JobId job_id) {
   // If value is already purged we can just return an empty list.
   if (search == _value_mapper.end()) return purged;
 
-  for (std::pair<UniqJobPtr<T>, typename std::list<JobId>::iterator> const&
-           pair : search->second) {
-    UniqJobPtr<T> job_p = std::move(pair.first);
-    _priority_qs[job_p->priority].erase(pair.second);
+  auto duplicate_list_iter = search->second.begin();
+  while (duplicate_list_iter != search->second.end()) {
+    UniqJobPtr<T> job_p = std::move(duplicate_list_iter->first);
+    _priority_qs[job_p->priority].erase(duplicate_list_iter->second);
     purged.push_back(std::move(job_p));
+
+    duplicate_list_iter++;
   }
 
   _value_mapper.erase(search);
