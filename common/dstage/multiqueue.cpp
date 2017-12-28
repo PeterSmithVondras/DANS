@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <list>
+#include <memory>
 #include <mutex>
 #include <shared_mutex>
 #include <unordered_map>
@@ -9,8 +10,8 @@
 
 namespace duplicate_aware_scheduling {
 
-template <typename Key, typename Value>
-MultiQueue<Key, Value>::MultiQueue(unsigned max_priority)
+template <typename T>
+MultiQueue<T>::MultiQueue(unsigned max_priority)
     : _max_prio(max_priority),
       _not_empty_mutexes(_max_prio + 1),
       _pq_mutexes(_max_prio + 1),
@@ -21,17 +22,16 @@ MultiQueue<Key, Value>::MultiQueue(unsigned max_priority)
   }
 }
 
-template <typename Key, typename Value>
-void MultiQueue<Key, Value>::Enqueue(std::pair<Key, Value> key_value,
-                                     Priority prio) {
+template <typename T>
+void MultiQueue<T>::Enqueue(UniqJobPtr<T> job_p) {
   // Ensuring that purging is not in effect.
   std::shared_lock<std::shared_timed_mutex> no_pruging(_purge_shared_mutex);
 
-  // Adding value to to all of the queues and saving the iterators.
-  std::list<
-      std::pair<Priority, typename std::list<std::pair<Key, Value>>::iterator>>
+  Priority prio = job_p->priority;
+  JobId job_id = job_p->job_id;
+  // Adding value to the queue and saving the iterator.
+  std::list<std::pair<UniqJobPtr<T>, typename std::list<JobId>::iterator>>
       duplicate_list;
-
   {
     assert(prio <= _max_prio);
 
@@ -40,14 +40,14 @@ void MultiQueue<Key, Value>::Enqueue(std::pair<Key, Value> key_value,
 
     // Inserting value at prio level priority queue and saving iterator
     const auto iter =
-        _priority_qs[prio].insert(_priority_qs[prio].end(), key_value);
-    duplicate_list.push_back({prio, iter});
+        _priority_qs[prio].insert(_priority_qs[prio].end(), job_id);
+    duplicate_list.push_back({std::move(job_p), iter});
   }
 
   {
     // Locking this value map as insert can cause iterator invalidation.
     std::lock_guard<std::mutex> lock_pq(_value_map_mutex);
-    auto map_result = _value_mapper.insert({key_value.first, duplicate_list});
+    auto map_result = _value_mapper.insert({job_id, duplicate_list});
     // Checking if this value was already in the map.
     if (map_result.second == false) {
       // Appending "duplicate_list" to the end of the the maps iterator
@@ -63,8 +63,8 @@ void MultiQueue<Key, Value>::Enqueue(std::pair<Key, Value> key_value,
   if (_priority_qs[prio].size() == 1) _not_empty_mutexes[prio].unlock();
 }
 
-template <typename Key, typename Value>
-Value MultiQueue<Key, Value>::Dequeue(Priority prio) {
+template <typename T>
+UniqJobPtr<T> MultiQueue<T>::Dequeue(Priority prio) {
   assert(prio <= _max_prio);
 
   // This lock is not being acquired right now as we do not want to block
@@ -93,12 +93,12 @@ Value MultiQueue<Key, Value>::Dequeue(Priority prio) {
   }
 
   // Getting the value from the queue.
-  std::pair<Key, Value> key_value;
+  JobId job_id;
 
   {
     // Locking this priority queue
     std::lock_guard<std::mutex> lock_pq(_pq_mutexes[prio]);
-    key_value = _priority_qs[prio].front();
+    job_id = *_priority_qs[prio].begin();
     _priority_qs[prio].pop_front();
 
     // If the Q is not empty we know that it is safe to unblock at least one
@@ -109,13 +109,15 @@ Value MultiQueue<Key, Value>::Dequeue(Priority prio) {
   // Locking value map as our iterator could be invalidated if there is an
   // insert.
   std::lock_guard<std::mutex> lock_pq(_value_map_mutex);
-  auto value_map_itr_at_target = _value_mapper.find(key_value.first);
+  auto value_map_itr_at_target = _value_mapper.find(job_id);
   assert(value_map_itr_at_target != _value_mapper.end());
   auto duplicate_list_iter = value_map_itr_at_target->second.begin();
 
+  UniqJobPtr<T> job_p;
   bool found = false;
   while (duplicate_list_iter != value_map_itr_at_target->second.end()) {
-    if (duplicate_list_iter->first == prio) {
+    if (duplicate_list_iter->first->priority == prio) {
+      job_p = std::move(duplicate_list_iter->first);
       value_map_itr_at_target->second.erase(duplicate_list_iter);
       found = true;
       break;
@@ -130,46 +132,45 @@ Value MultiQueue<Key, Value>::Dequeue(Priority prio) {
   if (value_map_itr_at_target->second.empty())
     _value_mapper.erase(value_map_itr_at_target);
 
-  return key_value.second;
+  return job_p;
 }
 
-template <typename Key, typename Value>
-std::list<Priority> MultiQueue<Key, Value>::Purge(Key key) {
+template <typename T>
+std::list<UniqJobPtr<T>> MultiQueue<T>::Purge(JobId job_id) {
   // Ensure complete control of the multiqueue
   std::unique_lock<std::shared_timed_mutex> no_pruging(_purge_shared_mutex);
 
-  std::list<Priority> purged;
-  auto search = _value_mapper.find(key);
+  std::list<UniqJobPtr<T>> purged;
+  auto search = _value_mapper.find(job_id);
 
   // If value is already purged we can just return an empty list.
   if (search == _value_mapper.end()) return purged;
 
-  for (std::pair<Priority,
-                 typename std::list<std::pair<Key, Value>>::iterator> const&
+  for (std::pair<UniqJobPtr<T>, typename std::list<JobId>::iterator> const&
            pair : search->second) {
-    Priority prio = pair.first;
-    _priority_qs[prio].erase(pair.second);
-    purged.push_back(prio);
+    UniqJobPtr<T> job_p = std::move(pair.first);
+    _priority_qs[job_p->priority].erase(pair.second);
+    purged.push_back(std::move(job_p));
   }
 
   _value_mapper.erase(search);
   return purged;
 }
 
-template <typename Key, typename Value>
-unsigned MultiQueue<Key, Value>::Size(Priority prio) {
+template <typename T>
+unsigned MultiQueue<T>::Size(Priority prio) {
   assert(prio <= _max_prio);
   return _priority_qs[prio].size();
 }
 
-template <typename Key, typename Value>
-bool MultiQueue<Key, Value>::Empty(Priority prio) {
+template <typename T>
+bool MultiQueue<T>::Empty(Priority prio) {
   assert(prio <= _max_prio);
   return _priority_qs[prio].empty();
 }
 
 // As long as template implementation is in .cpp file, must explicitly tell
 // compiler which types to compile...
-template class MultiQueue<JobId, std::shared_ptr<const Job<JData>>>;
+template class MultiQueue<JData>;
 
 }  // namespace duplicate_aware_scheduling

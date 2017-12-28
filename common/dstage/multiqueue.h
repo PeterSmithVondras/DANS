@@ -2,6 +2,7 @@
 #define DANS02_DSTAGE_MULTIQUEUE_H
 
 #include <list>
+#include <memory>
 #include <mutex>
 #include <shared_mutex>
 #include <unordered_map>
@@ -11,7 +12,7 @@
 
 namespace duplicate_aware_scheduling {
 
-template <typename Key, typename Value>
+template <typename T>
 class MultiQueue {
  public:
   MultiQueue(unsigned max_priority);
@@ -19,13 +20,13 @@ class MultiQueue {
 
   // Adds a job_id to all priority queues referenced in prio_list.
   // This function is thread safe.
-  void Enqueue(std::pair<Key, Value> key_value, Priority prio);
+  void Enqueue(UniqJobPtr<T> job_p);
 
   // Thread safe and blocking dequeue function will dequeue from the queue
   // associated to "prio."
-  Value Dequeue(Priority prio);
+  UniqJobPtr<T> Dequeue(Priority prio);
 
-  std::list<Priority> Purge(Key key);
+  std::list<UniqJobPtr<T>> Purge(JobId job_id);
 
   // Returns the size of the queue related to Priority prio. There is no
   // guarantee that this value is valid even at the time of the return.
@@ -46,13 +47,13 @@ class MultiQueue {
 
   // lock a specific mutex
   std::vector<std::mutex> _pq_mutexes;
-  std::vector<std::list<std::pair<Key, Value>>> _priority_qs;
+  std::vector<std::list<JobId>> _priority_qs;
 
   // locks the job map meta data
   std::mutex _value_map_mutex;
   std::unordered_map<
-      Key, std::list<std::pair<
-               Priority, typename std::list<std::pair<Key, Value>>::iterator>>>
+      JobId,
+      std::list<std::pair<UniqJobPtr<T>, typename std::list<JobId>::iterator>>>
       _value_mapper;
 };
 

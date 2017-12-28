@@ -48,10 +48,7 @@ struct Job {
 };
 
 template <typename T>
-struct JobMap {
-  Job<T> job;
-  std::vector<JobMap<T>**> instances;
-};
+using UniqJobPtr = std::shared_ptr<const Job<T>>;
 
 }  // namespace duplicate_aware_scheduling
 

@@ -33,6 +33,10 @@ int main() {
   assert(original == same_as_original);
   assert(original != different);
 
+  UniqJobPtr<JData> decoy_a = std::make_shared<const Job<JData>>(
+      kGenericData, /*job_id=*/j_fact.CreateJobId(),
+      /*priority=*/1, /*requested_duplication=*/1);
+
   if (success) {
     std::cerr << " Passed\n";
     return 0;

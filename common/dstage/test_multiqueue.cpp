@@ -20,64 +20,99 @@ int main() {
   std::cerr << "test_multiqueue... ";
 
   JobIdFactory j_fact(0);
+  MultiQueue<JData> prio_qs(kNumberOfQueues);
 
+  JobId decoy_a_id = j_fact.CreateJobId();
   auto decoy_a = std::make_shared<const Job<JData>>(
-      kGenericData, /*job_id=*/j_fact.CreateJobId(),
-      /*priority=*/1, /*requested_duplication=*/1);
-  auto decoy_b = std::make_shared<const Job<JData>>(
-      kGenericData, /*job_id=*/j_fact.CreateJobId(),
-      /*priority=*/1, /*requested_duplication=*/1);
-  auto target_a = std::make_shared<const Job<JData>>(
-      kGenericData, /*job_id=*/j_fact.CreateJobId(),
-      /*priority=*/1, /*requested_duplication=*/1);
-  auto target_b = std::make_shared<const Job<JData>>(
-      kGenericData, /*job_id=*/j_fact.CreateJobId(),
-      /*priority=*/1, /*requested_duplication=*/1);
-
-  MultiQueue<JobId, std::shared_ptr<const Job<JData>>> prio_qs(kNumberOfQueues);
-
-  // // Purge a missing JobId returns empty list.
-  // assert(prio_qs.Purge(kDecoyA).empty());
+      kGenericData, decoy_a_id,
+      /*priority=*/0, /*requested_duplication=*/1);
+  // Purge a missing JobId returns empty list.
+  assert(prio_qs.Purge(decoy_a->job_id).empty());
 
   // Purge a job with several instances.
-  // prio_qs.Enqueue(std::make_pair(decoy_a->job_id, decoy_a), 0);
-  prio_qs.Enqueue({decoy_a->job_id, decoy_a}, 0);
-  prio_qs.Enqueue({decoy_a->job_id, decoy_a}, 1);
-  prio_qs.Enqueue({decoy_a->job_id, decoy_a}, 2);
-  assert(prio_qs.Purge(decoy_a->job_id).size() == kNumberOfQueues);
+  prio_qs.Enqueue(std::move(decoy_a));
+  decoy_a = std::make_shared<const Job<JData>>(kGenericData, decoy_a_id,
+                                               /*priority=*/1,
+                                               /*requested_duplication=*/1);
+  prio_qs.Enqueue(std::move(decoy_a));
+  decoy_a = std::make_shared<const Job<JData>>(kGenericData, decoy_a_id,
+                                               /*priority=*/2,
+                                               /*requested_duplication=*/1);
+  prio_qs.Enqueue(std::move(decoy_a));
+  assert(prio_qs.Purge(decoy_a_id).size() == kNumberOfQueues);
 
-  // // Add some JobIds with some garbage in between.
-  prio_qs.Enqueue({decoy_a->job_id, decoy_a}, 0);
-  prio_qs.Enqueue({decoy_a->job_id, decoy_a}, 1);
-  prio_qs.Enqueue({decoy_a->job_id, decoy_a}, 2);
+  // Add some JobIds with some garbage in between.
+  decoy_a = std::make_shared<const Job<JData>>(kGenericData, decoy_a_id,
+                                               /*priority=*/0,
+                                               /*requested_duplication=*/1);
+  prio_qs.Enqueue(std::move(decoy_a));
+  decoy_a = std::make_shared<const Job<JData>>(kGenericData, decoy_a_id,
+                                               /*priority=*/1,
+                                               /*requested_duplication=*/1);
+  prio_qs.Enqueue(std::move(decoy_a));
+  decoy_a = std::make_shared<const Job<JData>>(kGenericData, decoy_a_id,
+                                               /*priority=*/2,
+                                               /*requested_duplication=*/1);
+  prio_qs.Enqueue(std::move(decoy_a));
 
-  prio_qs.Enqueue({target_a->job_id, target_a}, 0);
-  prio_qs.Enqueue({target_a->job_id, target_a}, 1);
-  prio_qs.Enqueue({target_a->job_id, target_a}, 2);
+  JobId target_a_id = j_fact.CreateJobId();
+  auto target_a = std::make_shared<const Job<JData>>(
+      kGenericData, target_a_id,
+      /*priority=*/0, /*requested_duplication=*/1);
+  prio_qs.Enqueue(std::move(target_a));
+  target_a = std::make_shared<const Job<JData>>(kGenericData, target_a_id,
+                                                /*priority=*/1,
+                                                /*requested_duplication=*/1);
+  prio_qs.Enqueue(std::move(target_a));
+  target_a = std::make_shared<const Job<JData>>(kGenericData, target_a_id,
+                                                /*priority=*/2,
+                                                /*requested_duplication=*/1);
+  prio_qs.Enqueue(std::move(target_a));
 
-  prio_qs.Enqueue({decoy_b->job_id, decoy_b}, 0);
-  prio_qs.Enqueue({decoy_b->job_id, decoy_b}, 1);
-  prio_qs.Enqueue({decoy_b->job_id, decoy_b}, 2);
+  JobId decoy_b_id = j_fact.CreateJobId();
+  auto decoy_b = std::make_shared<const Job<JData>>(
+      kGenericData, decoy_b_id,
+      /*priority=*/0, /*requested_duplication=*/1);
+  prio_qs.Enqueue(std::move(decoy_b));
+  decoy_b = std::make_shared<const Job<JData>>(kGenericData, decoy_b_id,
+                                               /*priority=*/1,
+                                               /*requested_duplication=*/1);
+  prio_qs.Enqueue(std::move(decoy_b));
+  decoy_b = std::make_shared<const Job<JData>>(kGenericData, decoy_b_id,
+                                               /*priority=*/2,
+                                               /*requested_duplication=*/1);
+  prio_qs.Enqueue(std::move(decoy_b));
 
-  prio_qs.Enqueue({target_b->job_id, target_b}, 0);
-  prio_qs.Enqueue({target_b->job_id, target_b}, 1);
-  prio_qs.Enqueue({target_b->job_id, target_b}, 2);
+  JobId target_b_id = j_fact.CreateJobId();
+  auto target_b = std::make_shared<const Job<JData>>(
+      kGenericData, target_b_id,
+      /*priority=*/0, /*requested_duplication=*/1);
+  prio_qs.Enqueue(std::move(target_b));
+  target_b = std::make_shared<const Job<JData>>(kGenericData, target_b_id,
+                                                /*priority=*/1,
+                                                /*requested_duplication=*/1);
+  prio_qs.Enqueue(std::move(target_b));
+  target_b = std::make_shared<const Job<JData>>(kGenericData, target_b_id,
+                                                /*priority=*/2,
+                                                /*requested_duplication=*/1);
+  prio_qs.Enqueue(std::move(target_b));
 
-  // // Purge the garbage.
-  assert(prio_qs.Purge(decoy_a->job_id).size() == kNumberOfQueues);
-  assert(prio_qs.Purge(decoy_b->job_id).size() == kNumberOfQueues);
+  // Purge the garbage.
+  assert(prio_qs.Purge(decoy_a_id).size() == kNumberOfQueues);
+  assert(prio_qs.Purge(decoy_b_id).size() == kNumberOfQueues);
 
   // Test that everything else is in order.
   for (unsigned i = 0; i < kNumberOfQueues; i++) {
-    assert(*prio_qs.Dequeue(i) == *target_a);
-    assert(*prio_qs.Dequeue(i) == *target_b);
+    assert(prio_qs.Dequeue(i)->job_id == target_a_id);
+    assert(prio_qs.Dequeue(i)->job_id == target_b_id);
     assert(prio_qs.Empty(i));
   }
 
   if (success) {
     std::cerr << " Passed\n";
     return 0;
-  } else
-    std::cerr << " Failed\n";
+  }
+
+  std::cerr << " Failed\n";
   return 1;
 }
