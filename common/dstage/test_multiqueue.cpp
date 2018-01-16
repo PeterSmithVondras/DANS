@@ -9,7 +9,7 @@
 namespace {
 
 using namespace duplicate_aware_scheduling;
-
+using ConstJobJData = const Job<JData>;
 auto kGenericData = std::make_shared<const JData>(5);
 unsigned kNumberOfQueues = 3;
 
@@ -23,78 +23,78 @@ int main() {
   MultiQueue<JData> prio_qs(kNumberOfQueues);
 
   JobId decoy_a_id = j_fact.CreateJobId();
-  auto decoy_a = std::make_unique<const Job<JData>>(
-      kGenericData, decoy_a_id,
-      /*priority=*/0, /*requested_duplication=*/1);
+  auto decoy_a = std::make_unique<ConstJobJData>(kGenericData, decoy_a_id,
+                                                 /*priority=*/0,
+                                                 /*requested_duplication=*/1);
   // Purge a missing JobId returns empty list.
   assert(prio_qs.Purge(decoy_a->job_id).empty());
 
   // Purge a job with several instances.
   prio_qs.Enqueue(std::move(decoy_a));
-  decoy_a = std::make_unique<const Job<JData>>(kGenericData, decoy_a_id,
-                                               /*priority=*/1,
-                                               /*requested_duplication=*/1);
+  decoy_a = std::make_unique<ConstJobJData>(kGenericData, decoy_a_id,
+                                            /*priority=*/1,
+                                            /*requested_duplication=*/1);
   prio_qs.Enqueue(std::move(decoy_a));
-  decoy_a = std::make_unique<const Job<JData>>(kGenericData, decoy_a_id,
-                                               /*priority=*/2,
-                                               /*requested_duplication=*/1);
+  decoy_a = std::make_unique<ConstJobJData>(kGenericData, decoy_a_id,
+                                            /*priority=*/2,
+                                            /*requested_duplication=*/1);
   prio_qs.Enqueue(std::move(decoy_a));
   assert(prio_qs.Purge(decoy_a_id).size() == kNumberOfQueues);
 
   // Add some JobIds with some garbage in between.
-  decoy_a = std::make_unique<const Job<JData>>(kGenericData, decoy_a_id,
-                                               /*priority=*/0,
-                                               /*requested_duplication=*/1);
+  decoy_a = std::make_unique<ConstJobJData>(kGenericData, decoy_a_id,
+                                            /*priority=*/0,
+                                            /*requested_duplication=*/1);
   prio_qs.Enqueue(std::move(decoy_a));
-  decoy_a = std::make_unique<const Job<JData>>(kGenericData, decoy_a_id,
-                                               /*priority=*/1,
-                                               /*requested_duplication=*/1);
+  decoy_a = std::make_unique<ConstJobJData>(kGenericData, decoy_a_id,
+                                            /*priority=*/1,
+                                            /*requested_duplication=*/1);
   prio_qs.Enqueue(std::move(decoy_a));
-  decoy_a = std::make_unique<const Job<JData>>(kGenericData, decoy_a_id,
-                                               /*priority=*/2,
-                                               /*requested_duplication=*/1);
+  decoy_a = std::make_unique<ConstJobJData>(kGenericData, decoy_a_id,
+                                            /*priority=*/2,
+                                            /*requested_duplication=*/1);
   prio_qs.Enqueue(std::move(decoy_a));
 
   JobId target_a_id = j_fact.CreateJobId();
-  auto target_a = std::make_unique<const Job<JData>>(
-      kGenericData, target_a_id,
-      /*priority=*/0, /*requested_duplication=*/1);
+  auto target_a = std::make_unique<ConstJobJData>(kGenericData, target_a_id,
+                                                  /*priority=*/0,
+                                                  /*requested_duplication=*/1);
   prio_qs.Enqueue(std::move(target_a));
-  target_a = std::make_unique<const Job<JData>>(kGenericData, target_a_id,
-                                                /*priority=*/1,
-                                                /*requested_duplication=*/1);
+  target_a = std::make_unique<ConstJobJData>(kGenericData, target_a_id,
+                                             /*priority=*/1,
+                                             /*requested_duplication=*/1);
   prio_qs.Enqueue(std::move(target_a));
-  target_a = std::make_unique<const Job<JData>>(kGenericData, target_a_id,
-                                                /*priority=*/2,
-                                                /*requested_duplication=*/1);
+  target_a = std::make_unique<ConstJobJData>(kGenericData, target_a_id,
+                                             /*priority=*/2,
+                                             /*requested_duplication=*/1);
   prio_qs.Enqueue(std::move(target_a));
 
   JobId decoy_b_id = j_fact.CreateJobId();
-  auto decoy_b = std::make_unique<const Job<JData>>(
-      kGenericData, decoy_b_id,
-      /*priority=*/0, /*requested_duplication=*/1);
+  auto decoy_b = std::make_unique<ConstJobJData>(kGenericData, decoy_b_id,
+                                                 /*priority=*/0,
+                                                 /*requested_duplication=*/1);
   prio_qs.Enqueue(std::move(decoy_b));
-  decoy_b = std::make_unique<const Job<JData>>(kGenericData, decoy_b_id,
-                                               /*priority=*/1,
-                                               /*requested_duplication=*/1);
+  decoy_b = std::make_unique<ConstJobJData>(kGenericData, decoy_b_id,
+                                            /*priority=*/1,
+                                            /*requested_duplication=*/1);
   prio_qs.Enqueue(std::move(decoy_b));
-  decoy_b = std::make_unique<const Job<JData>>(kGenericData, decoy_b_id,
-                                               /*priority=*/2,
-                                               /*requested_duplication=*/1);
+  decoy_b = std::make_unique<ConstJobJData>(kGenericData, decoy_b_id,
+                                            /*priority=*/2,
+                                            /*requested_duplication=*/1);
   prio_qs.Enqueue(std::move(decoy_b));
 
   JobId target_b_id = j_fact.CreateJobId();
-  auto target_b = std::make_unique<const Job<JData>>(
-      kGenericData, target_b_id,
-      /*priority=*/0, /*requested_duplication=*/1);
+  auto target_b = std::make_unique<ConstJobJData>(kGenericData, target_b_id,
+                                                  /*priority=*/0,
+                                                  /*requested_duplication=*/1);
   prio_qs.Enqueue(std::move(target_b));
-  target_b = std::make_unique<const Job<JData>>(kGenericData, target_b_id,
-                                                /*priority=*/1,
-                                                /*requested_duplication=*/1);
+  target_b = std::make_unique<ConstJobJData>(kGenericData, target_b_id,
+                                             /*priority=*/1,
+                                             /*requested_duplication=*/1);
   prio_qs.Enqueue(std::move(target_b));
-  target_b = std::make_unique<const Job<JData>>(kGenericData, target_b_id,
-                                                /*priority=*/2,
-                                                /*requested_duplication=*/1);
+  target_b = std::make_unique<ConstJobJData>(kGenericData, target_b_id,
+                                             /*priority=*/2,
+                                             /*requested_duplication=*/1);
   prio_qs.Enqueue(std::move(target_b));
 
   // Purge the garbage.

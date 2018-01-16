@@ -11,6 +11,8 @@
 namespace {
 
 using namespace duplicate_aware_scheduling;
+using ConstJobJData = const Job<JData>;
+
 auto kGenericData = std::make_shared<const JData>(5);
 
 }  // namespace
@@ -21,21 +23,28 @@ int main() {
 
   JobIdFactory j_fact(0);
 
-  Job<JData> original(kGenericData, /*job_id=*/j_fact.CreateJobId(),
-                      /*priority=*/1, /*requested_duplication=*/1);
+  auto original =
+      std::make_unique<ConstJobJData>(kGenericData, j_fact.CreateJobId(),
+                                      /*priority=*/1,
+                                      /*requested_duplication=*/1);
 
-  Job<JData> same_as_original(kGenericData, /*job_id=*/original.job_id,
-                              /*priority=*/2, /*requested_duplication=*/2);
+  auto same_as_original =
+      std::make_unique<ConstJobJData>(kGenericData, original->job_id,
+                                      /*priority=*/2,
+                                      /*requested_duplication=*/2);
 
-  Job<JData> different(kGenericData, /*job_id=*/j_fact.CreateJobId(),
-                       /*priority=*/3, /*requested_duplication=*/3);
+  auto different =
+      std::make_unique<ConstJobJData>(kGenericData, j_fact.CreateJobId(),
+                                      /*priority=*/3,
+                                      /*requested_duplication=*/3);
 
-  assert(original == same_as_original);
-  assert(original != different);
+  assert(*original == *same_as_original);
+  assert(*original != *different);
 
-  UniqJobPtr<JData> decoy_a = std::make_shared<const Job<JData>>(
-      kGenericData, /*job_id=*/j_fact.CreateJobId(),
-      /*priority=*/1, /*requested_duplication=*/1);
+  UniqJobPtr<JData> decoy_a =
+      std::make_unique<ConstJobJData>(kGenericData, j_fact.CreateJobId(),
+                                      /*priority=*/1,
+                                      /*requested_duplication=*/1);
 
   if (success) {
     std::cerr << " Passed\n";
