@@ -51,9 +51,9 @@ class MultiQueue {
 
   // locks the job map meta data
   std::mutex _value_map_mutex;
-  std::unordered_map<
-      JobId,
-      std::list<std::pair<UniqConstJobPtr<T>, typename std::list<JobId>::iterator>>>
+  std::unordered_map<JobId,
+                     std::list<std::pair<UniqConstJobPtr<T>,
+                                         typename std::list<JobId>::iterator>>>
       _value_mapper;
 };
 
