@@ -10,11 +10,11 @@
 #include <cstdlib>  // EXIT_SUCCESS and EXIT_FAILURE
 
 namespace {
-
 using namespace duplicate_aware_scheduling;
-
-unsigned kMaxPrio = 2;
-const JData kGenericData{5};
+using ConstJobJData = const Job<JData>;
+const Priority kMaxPrio = 2;
+auto kGenericData = std::make_shared<JData>(5);
+const unsigned kGenericDuplication = 0;
 
 }  // namespace
 
@@ -22,42 +22,37 @@ int main() {
   bool success = true;
   fprintf(stderr, "test_duplicatestage...");
 
-  Dispatcher<JData> disp(kMaxPrio);
-  MultiQueue<JobId, std::shared_ptr<const Job<JData>>> prio_qs(kMaxPrio);
-  disp.LinkMultiQ(&prio_qs);
+  Dispatcher<JData> dispatcher(kMaxPrio);
+  MultiQueue<JData> prio_qs(kMaxPrio);
+  dispatcher.LinkMultiQ(&prio_qs);
 
   JobIdFactory j_fact(0);
-  std::list<Priority> purged;
+  std::list<UniqJobPtr<JData>> purged;
 
-  auto job = std::make_unique<const Job<JData>>(kGenericData,
-                                                /*job_id=*/j_fact.CreateJobId(),
-                                                /*priority=*/0,
-                                                /*requested_duplication=*/2);
+  auto job =
+      std::make_unique<ConstJobJData>(kGenericData, j_fact.CreateJobId(),
+                                      /*priority=*/0, kGenericDuplication);
   JobId job_id = job->job_id;
-  disp.Dispatch(std::move(job));
+  dispatcher.Dispatch(std::move(job), /*requested_duplication=*/2);
   assert(prio_qs.Purge(job_id).size() == kMaxPrio + 1);
 
-  job = std::make_unique<const Job<JData>>(kGenericData,
-                                           /*job_id=*/j_fact.CreateJobId(),
-                                           /*priority=*/1,
-                                           /*requested_duplication=*/0);
+  job = std::make_unique<ConstJobJData>(kGenericData, j_fact.CreateJobId(),
+                                        /*priority=*/1, kGenericDuplication);
   job_id = job->job_id;
   Priority prio = job->priority;
-  disp.Dispatch(std::move(job));
+  dispatcher.Dispatch(std::move(job), /*requested_duplication=*/0);
   purged = prio_qs.Purge(job_id);
   assert(purged.size() == 1);
-  assert(purged.front() == prio);
+  assert(purged.front()->priority == prio);
 
-  job = std::make_unique<const Job<JData>>(kGenericData,
-                                           /*job_id=*/j_fact.CreateJobId(),
-                                           /*priority=*/2,
-                                           /*requested_duplication=*/5);
+  job = std::make_unique<ConstJobJData>(kGenericData, j_fact.CreateJobId(),
+                                        /*priority=*/2, kGenericDuplication);
   job_id = job->job_id;
   prio = job->priority;
-  disp.Dispatch(std::move(job));
+  dispatcher.Dispatch(std::move(job), /*requested_duplication=*/5);
   purged = prio_qs.Purge(job_id);
   assert(purged.size() == 1);
-  assert(purged.front() == prio);
+  assert(purged.front()->priority == prio);
 
   if (success) {
     fprintf(stderr, " Passed\n");

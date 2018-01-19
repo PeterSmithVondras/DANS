@@ -11,19 +11,19 @@ namespace duplicate_aware_scheduling {
 template <typename T>
 class Dispatcher {
  public:
-  Dispatcher(unsigned max_priority);
+  Dispatcher(Priority max_priority);
 
   // Introduces an ApplicationRequest to a DStage. base_prio is the incoming
   // Priority of the ApplicationRequest. The Dispatcher will make
   // duplication_level duplicates of the request for the Scheduler's use.
-  void Dispatch(std::unique_ptr<const Job<T>> job);
+  void Dispatch(UniqJobPtr<T> job, unsigned requested_duplication);
 
-  void LinkMultiQ(MultiQueue<JobId, std::shared_ptr<const Job<T>>>* multi_q_p);
+  void LinkMultiQ(MultiQueue<T>* multi_q_p);
 
  private:
   bool _running;
-  const unsigned _max_priority;
-  MultiQueue<JobId, std::shared_ptr<const Job<T>>>* _multi_q_p;
+  const Priority _max_priority;
+  MultiQueue<T>* _multi_q_p;
 };
 }  // namespace duplicate_aware_scheduling
 

@@ -13,7 +13,7 @@ namespace {
 using namespace duplicate_aware_scheduling;
 using ConstJobJData = const Job<JData>;
 
-auto kGenericData = std::make_shared<const JData>(5);
+auto kGenericData = std::make_shared<JData>(5);
 
 }  // namespace
 

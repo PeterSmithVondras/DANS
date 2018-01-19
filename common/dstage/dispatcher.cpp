@@ -19,26 +19,26 @@ Dispatcher<T>::Dispatcher(unsigned max_priority)
 
 // Duplicates job and inserts into MultiQueue
 template <typename T>
-void Dispatcher<T>::Dispatch(std::unique_ptr<const Job<T>> job) {
+void Dispatcher<T>::Dispatch(UniqJobPtr<T> job,
+                             unsigned requested_duplication) {
   assert(_running);
   assert(job->priority <= _max_priority);
 
-  std::shared_ptr<const Job<T>> duplicate_job(std::move(job));
+  // Get lowest priority (highest value) appropriate.
+  Priority max_prio = job->priority + requested_duplication > _max_priority
+                          ? _max_priority
+                          : job->priority + requested_duplication;
+  unsigned duplication = max_prio - job->priority;
 
-  Priority max_prio =
-      duplicate_job->priority + duplicate_job->requested_duplication >
-              _max_priority
-          ? _max_priority
-          : duplicate_job->priority + duplicate_job->requested_duplication;
-
-  for (Priority prio = duplicate_job->priority; prio <= max_prio; prio++) {
-    _multi_q_p->Enqueue({duplicate_job->job_id, duplicate_job}, prio);
+  for (Priority prio = job->priority; prio <= max_prio; prio++) {
+    auto duplicate_job = std::make_unique<const Job<T>>(
+        job->job_data, job->job_id, prio, duplication);
+    _multi_q_p->Enqueue(std::move(duplicate_job));
   }
 }
 
 template <typename T>
-void Dispatcher<T>::LinkMultiQ(
-    MultiQueue<JobId, std::shared_ptr<const Job<T>>>* multi_q_p) {
+void Dispatcher<T>::LinkMultiQ(MultiQueue<T>* multi_q_p) {
   assert(multi_q_p != nullptr);
   _multi_q_p = multi_q_p;
   _running = true;
