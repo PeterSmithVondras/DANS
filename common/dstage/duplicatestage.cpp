@@ -5,7 +5,7 @@
 #include "common/dstage/dstage.h"
 #include "common/dstage/job.h"
 
-namespace duplicate_aware_scheduling {
+namespace dans {
 
 template <typename T>
 DuplicateStage<T>::DuplicateStage(unsigned max_duplication_level,
@@ -20,4 +20,4 @@ DuplicateStage<T>::DuplicateStage(unsigned max_duplication_level,
 // compiler which types to compile...
 template class Dispatcher<JData>;
 
-}  // namespace duplicate_aware_scheduling
+}  // namespace dans

@@ -10,7 +10,7 @@
 
 #include "common/dstage/job.h"
 
-namespace duplicate_aware_scheduling {
+namespace dans {
 
 template <typename T>
 class MultiQueue {
@@ -57,6 +57,6 @@ class MultiQueue {
       _value_mapper;
 };
 
-}  // namespace duplicate_aware_scheduling
+}  // namespace dans
 
 #endif  // DANS02_DSTAGE_MULTIQUEUE_H

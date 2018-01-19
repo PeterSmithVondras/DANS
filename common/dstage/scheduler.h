@@ -5,7 +5,7 @@
 #include "dstage/dstage.h"
 #include "util/status.h"
 
-namespace duplicate_aware_scheduling {
+namespace dans {
 class Scheduler {
  public:
   // Purge will attempt to remove all instances of the Job linked to job_id in
@@ -18,6 +18,6 @@ class Scheduler {
  protected:
   Dispatcher* _dispatcher;
 };
-}  // namespace duplicate_aware_scheduling
+}  // namespace dans
 
 #endif  // DANS02_DSTAGE_SCHEDULERCHER_H

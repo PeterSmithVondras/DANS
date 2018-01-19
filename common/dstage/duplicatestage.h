@@ -10,7 +10,7 @@
 #include "common/dstage/job.h"
 #include "common/dstage/multiqueue.h"
 
-namespace duplicate_aware_scheduling {
+namespace dans {
 
 template <typename T>
 class DuplicateStage : public DStage<T> {
@@ -29,6 +29,6 @@ class DuplicateStage : public DStage<T> {
   std::unique_ptr<Dispatcher<T>> _dispatcher;
   // std::unique_ptr<scheduler<T>> _scheduler;
 };
-}  // namespace duplicate_aware_scheduling
+}  // namespace dans
 
 #endif  // DANS02_DSTAGE_DUPLICATESTAGE_H

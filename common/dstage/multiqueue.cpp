@@ -8,7 +8,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace duplicate_aware_scheduling {
+namespace dans {
 
 template <typename T>
 MultiQueue<T>::MultiQueue(unsigned max_priority)
@@ -174,4 +174,4 @@ bool MultiQueue<T>::Empty(Priority prio) {
 // compiler which types to compile...
 template class MultiQueue<JData>;
 
-}  // namespace duplicate_aware_scheduling
+}  // namespace dans

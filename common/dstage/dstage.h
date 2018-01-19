@@ -3,7 +3,7 @@
 
 #include "common/dstage/job.h"
 
-namespace duplicate_aware_scheduling {
+namespace dans {
 
 template <typename T>
 class DStage {
@@ -19,6 +19,6 @@ class DStage {
   // the Dispatcher, Scheduler and forward the request on to any linked DStages.
   virtual bool Purge(JobId job_id);
 };
-}  // namespace duplicate_aware_scheduling
+}  // namespace dans
 
 #endif  // DANS02_DSTAGE_DSTAGE_H

@@ -8,7 +8,7 @@
 
 namespace {
 
-using namespace duplicate_aware_scheduling;
+using namespace dans;
 using ConstJobJData = const Job<JData>;
 auto kGenericData = std::make_shared<JData>(5);
 unsigned kNumberOfQueues = 3;

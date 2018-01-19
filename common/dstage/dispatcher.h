@@ -6,7 +6,7 @@
 #include "common/dstage/job.h"
 #include "common/dstage/multiqueue.h"
 
-namespace duplicate_aware_scheduling {
+namespace dans {
 
 template <typename T>
 class Dispatcher {
@@ -25,6 +25,6 @@ class Dispatcher {
   const Priority _max_priority;
   MultiQueue<T>* _multi_q_p;
 };
-}  // namespace duplicate_aware_scheduling
+}  // namespace dans
 
 #endif  // DANS02_DSTAGE_DISPATCHER_H

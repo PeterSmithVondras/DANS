@@ -1,9 +1,9 @@
 #ifndef DANS02_DSTAGE_PRIORITY_H
 #define DANS02_DSTAGE_PRIORITY_H
 
-namespace duplicate_aware_scheduling {
+namespace dans {
 typedef unsigned Priority;
 
-}  // namespace duplicate_aware_scheduling
+}  // namespace dans
 
 #endif  // DANS02_DSTAGE_PRIORITY_H

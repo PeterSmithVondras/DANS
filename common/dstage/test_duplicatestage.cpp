@@ -10,23 +10,24 @@
 
 namespace {
 
-using namespace duplicate_aware_scheduling;
-
-unsigned kMaxPrio = 2;
-const JData kGenericData{5};
+using namespace dans;
+using ConstJobJData = const Job<JData>;
+const Priority kMaxPrio = 2;
+auto kGenericData = std::make_shared<JData>(5);
+const unsigned kGenericDuplication = 0;
 
 }  // namespace
 
 int main() {
   bool success = true;
-  fprintf(stderr, "test_dispatcher...");
+  fprintf(stderr, "test_duplicatestage...");
 
   Dispatcher<JData> disp(kMaxPrio);
   MultiQueue<JData> prio_qs(kMaxPrio);
   disp.LinkMultiQ(&prio_qs);
 
   JobIdFactory j_fact(0);
-  std::list<Priority> purged;
+  std::list<UniqConstJobPtr<JData>> purged;
 
   Job<JData> job(kGenericData, /*job_id=*/j_fact.CreateJobId(),
                  /*priority=*/0, /*requested_duplication=*/2);

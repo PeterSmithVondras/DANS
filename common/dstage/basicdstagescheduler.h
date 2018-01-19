@@ -9,7 +9,7 @@
 #include "dstage/scheduler.h"
 #include "util/status.h"
 
-namespace duplicate_aware_scheduling {
+namespace dans {
 class BasicDStageScheduler : public Scheduler {
  public:
   BasicDStageScheduler(vector<unique_ptr<Callback>> job_callbacks, );
@@ -22,6 +22,6 @@ class BasicDStageScheduler : public Scheduler {
   ThreadPoop _primary_threadpool;
   ThreadPoop _secondary_threadpool;
 };
-}  // namespace duplicate_aware_scheduling
+}  // namespace dans
 
 #endif  // DANS02_DSTAGE_BASICDSTAGESCHEDULER_H

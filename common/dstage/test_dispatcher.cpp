@@ -10,7 +10,7 @@
 #include <cstdlib>  // EXIT_SUCCESS and EXIT_FAILURE
 
 namespace {
-using namespace duplicate_aware_scheduling;
+using namespace dans;
 using ConstJobJData = const Job<JData>;
 const Priority kMaxPrio = 2;
 auto kGenericData = std::make_shared<JData>(5);
@@ -20,7 +20,7 @@ const unsigned kGenericDuplication = 0;
 
 int main() {
   bool success = true;
-  fprintf(stderr, "test_duplicatestage...");
+  fprintf(stderr, "test_dispatcher...");
 
   Dispatcher<JData> dispatcher(kMaxPrio);
   MultiQueue<JData> prio_qs(kMaxPrio);

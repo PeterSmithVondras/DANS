@@ -11,7 +11,7 @@
 
 namespace {}  // namespace
 
-namespace duplicate_aware_scheduling {
+namespace dans {
 
 template <typename T>
 Dispatcher<T>::Dispatcher(unsigned max_priority)
@@ -48,4 +48,4 @@ void Dispatcher<T>::LinkMultiQ(MultiQueue<T>* multi_q_p) {
 // compiler which types to compile...
 template class Dispatcher<JData>;
 
-}  // namespace duplicate_aware_scheduling
+}  // namespace dans

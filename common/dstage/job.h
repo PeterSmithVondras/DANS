@@ -5,7 +5,7 @@
 #include <vector>
 #include "common/dstage/priority.h"
 
-namespace duplicate_aware_scheduling {
+namespace dans {
 
 // This is an example of a specific data type for a specific dstage. In the
 // future we will either define these in a more separate place or put the
@@ -50,6 +50,6 @@ struct Job {
 template <typename T>
 using UniqConstJobPtr = std::unique_ptr<const Job<T>>;
 
-}  // namespace duplicate_aware_scheduling
+}  // namespace dans
 
 #endif  // DANS02_DSTAGE_JOB_H
