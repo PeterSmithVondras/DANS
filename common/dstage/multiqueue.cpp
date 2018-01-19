@@ -23,14 +23,14 @@ MultiQueue<T>::MultiQueue(unsigned max_priority)
 }
 
 template <typename T>
-void MultiQueue<T>::Enqueue(UniqJobPtr<T> job_p) {
+void MultiQueue<T>::Enqueue(UniqConstJobPtr<T> job_p) {
   // Ensuring that purging is not in effect.
   std::shared_lock<std::shared_timed_mutex> no_pruging(_purge_shared_mutex);
 
   Priority prio = job_p->priority;
   JobId job_id = job_p->job_id;
   // Adding value to the queue and saving the iterator.
-  std::list<std::pair<UniqJobPtr<T>, typename std::list<JobId>::iterator>>
+  std::list<std::pair<UniqConstJobPtr<T>, typename std::list<JobId>::iterator>>
       duplicate_list;
   {
     assert(prio <= _max_prio);
@@ -65,7 +65,7 @@ void MultiQueue<T>::Enqueue(UniqJobPtr<T> job_p) {
 }
 
 template <typename T>
-UniqJobPtr<T> MultiQueue<T>::Dequeue(Priority prio) {
+UniqConstJobPtr<T> MultiQueue<T>::Dequeue(Priority prio) {
   assert(prio <= _max_prio);
 
   // This lock is not being acquired right now as we do not want to block
@@ -113,7 +113,7 @@ UniqJobPtr<T> MultiQueue<T>::Dequeue(Priority prio) {
   assert(search != _value_mapper.end());
   auto duplicate_list_iter = search->second.begin();
 
-  UniqJobPtr<T> job_p;
+  UniqConstJobPtr<T> job_p;
   bool found = false;
   while (duplicate_list_iter != search->second.end()) {
     if (duplicate_list_iter->first->priority == prio) {
@@ -135,11 +135,11 @@ UniqJobPtr<T> MultiQueue<T>::Dequeue(Priority prio) {
 }
 
 template <typename T>
-std::list<UniqJobPtr<T>> MultiQueue<T>::Purge(JobId job_id) {
+std::list<UniqConstJobPtr<T>> MultiQueue<T>::Purge(JobId job_id) {
   // Ensure complete control of the multiqueue
   std::unique_lock<std::shared_timed_mutex> no_pruging(_purge_shared_mutex);
 
-  std::list<UniqJobPtr<T>> purged;
+  std::list<UniqConstJobPtr<T>> purged;
   auto search = _value_mapper.find(job_id);
 
   // If value is already purged we can just return an empty list.
@@ -147,7 +147,7 @@ std::list<UniqJobPtr<T>> MultiQueue<T>::Purge(JobId job_id) {
 
   auto duplicate_list_iter = search->second.begin();
   while (duplicate_list_iter != search->second.end()) {
-    UniqJobPtr<T> job_p = std::move(duplicate_list_iter->first);
+    UniqConstJobPtr<T> job_p = std::move(duplicate_list_iter->first);
     _priority_qs[job_p->priority].erase(duplicate_list_iter->second);
     purged.push_back(std::move(job_p));
 

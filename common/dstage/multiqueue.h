@@ -20,13 +20,13 @@ class MultiQueue {
 
   // Adds a job_id to all priority queues referenced in prio_list.
   // This function is thread safe.
-  void Enqueue(UniqJobPtr<T> job_p);
+  void Enqueue(UniqConstJobPtr<T> job_p);
 
   // Thread safe and blocking dequeue function will dequeue from the queue
   // associated to "prio."
-  UniqJobPtr<T> Dequeue(Priority prio);
+  UniqConstJobPtr<T> Dequeue(Priority prio);
 
-  std::list<UniqJobPtr<T>> Purge(JobId job_id);
+  std::list<UniqConstJobPtr<T>> Purge(JobId job_id);
 
   // Returns the size of the queue related to Priority prio. There is no
   // guarantee that this value is valid even at the time of the return.
@@ -53,7 +53,7 @@ class MultiQueue {
   std::mutex _value_map_mutex;
   std::unordered_map<
       JobId,
-      std::list<std::pair<UniqJobPtr<T>, typename std::list<JobId>::iterator>>>
+      std::list<std::pair<UniqConstJobPtr<T>, typename std::list<JobId>::iterator>>>
       _value_mapper;
 };
 

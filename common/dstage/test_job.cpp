@@ -41,7 +41,7 @@ int main() {
   assert(*original == *same_as_original);
   assert(*original != *different);
 
-  UniqJobPtr<JData> decoy_a =
+  UniqConstJobPtr<JData> decoy_a =
       std::make_unique<ConstJobJData>(kGenericData, j_fact.CreateJobId(),
                                       /*priority=*/1,
                                       /*requested_duplication=*/1);

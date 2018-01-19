@@ -27,7 +27,7 @@ int main() {
   dispatcher.LinkMultiQ(&prio_qs);
 
   JobIdFactory j_fact(0);
-  std::list<UniqJobPtr<JData>> purged;
+  std::list<UniqConstJobPtr<JData>> purged;
 
   auto job =
       std::make_unique<ConstJobJData>(kGenericData, j_fact.CreateJobId(),

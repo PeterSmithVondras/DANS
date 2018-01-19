@@ -19,7 +19,7 @@ Dispatcher<T>::Dispatcher(unsigned max_priority)
 
 // Duplicates job and inserts into MultiQueue
 template <typename T>
-void Dispatcher<T>::Dispatch(UniqJobPtr<T> job,
+void Dispatcher<T>::Dispatch(UniqConstJobPtr<T> job,
                              unsigned requested_duplication) {
   assert(_running);
   assert(job->priority <= _max_priority);
