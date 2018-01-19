@@ -3,29 +3,24 @@
 
 #include <memory>
 #include <mutex>
-#include <vector>
 
 #include "common/dstage/dispatcher.h"
-#include "common/dstage/dstage.h"
+// #include "common/dstage/dstage.h"
 #include "common/dstage/job.h"
 #include "common/dstage/multiqueue.h"
 
 namespace dans {
 
 template <typename T>
-class DuplicateStage : public DStage<T> {
+class DuplicateStage /*: public DStage<T>*/ {
  public:
-  DuplicateStage(unsigned max_duplication_level,
+  DuplicateStage(Priority max_priority,
                  std::unique_ptr<Dispatcher<T>> dispatcher);
   ~DuplicateStage() {}
 
  protected:
-  const unsigned _max_duplication_level;
-
+  const Priority _max_priority;
   MultiQueue<T> _multi_q;
-
-  std::unordered_map<JobId, struct Job<T>> _active_jobs;
-
   std::unique_ptr<Dispatcher<T>> _dispatcher;
   // std::unique_ptr<scheduler<T>> _scheduler;
 };
