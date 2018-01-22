@@ -26,7 +26,9 @@ void DuplicateStage<T>::Dispatch(UniqConstJobPtr<T> job,
 
 template <typename T>
 std::list<UniqConstJobPtr<T>> DuplicateStage<T>::Purge(JobId job_id) {
-  return _multi_q.Purge(job_id);
+  std::list<UniqConstJobPtr<T>> purged = _multi_q.Purge(job_id);
+  purged.splice(purged.end(), _scheduler->Purge(job_id));
+  return purged;
 }
 
 // As long as template implementation is in .cpp file, must explicitly tell
