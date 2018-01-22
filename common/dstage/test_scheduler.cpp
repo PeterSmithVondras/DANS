@@ -2,9 +2,9 @@
 #include <mutex>
 #include <utility>
 
-#include "common/dstage/scheduler.h"
 #include "common/dstage/job.h"
 #include "common/dstage/multiqueue.h"
+#include "common/dstage/scheduler.h"
 
 #include <cassert>
 #include <cstdlib>  // EXIT_SUCCESS and EXIT_FAILURE

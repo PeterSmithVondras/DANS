@@ -25,8 +25,7 @@ int main() {
 
   auto dispatcher = std::make_unique<Dispatcher<JData>>(kMaxPrio);
   auto scheduler = std::make_unique<Scheduler<JData>>(kMaxPrio);
-  DuplicateStage<JData> dstage(kMaxPrio,
-                               std::move(dispatcher),
+  DuplicateStage<JData> dstage(kMaxPrio, std::move(dispatcher),
                                std::move(scheduler));
 
   JobIdFactory j_fact(0);
