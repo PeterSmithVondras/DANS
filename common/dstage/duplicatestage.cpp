@@ -15,6 +15,7 @@ DuplicateStage<T>::DuplicateStage(Priority max_priority,
       _scheduler(std::move(scheduler)) {
   // Linking scheduler first so that multiqueue has an outlet before a source.
   _scheduler->LinkMultiQ(&_multi_q);
+  _scheduler->Run();
   _dispatcher->LinkMultiQ(&_multi_q);
 }
 

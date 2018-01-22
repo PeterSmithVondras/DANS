@@ -25,6 +25,7 @@ int main() {
   Scheduler<JData> scheduler(kMaxPrio);
   MultiQueue<JData> prio_qs(kMaxPrio);
   scheduler.LinkMultiQ(&prio_qs);
+  scheduler.Run();
 
   // JobIdFactory j_fact(0);
   // std::list<UniqConstJobPtr<JData>> purged;

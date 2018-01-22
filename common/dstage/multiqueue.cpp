@@ -170,6 +170,12 @@ bool MultiQueue<T>::Empty(Priority prio) {
   return _priority_qs[prio].empty();
 }
 
+template <typename T>
+void MultiQueue<T>::ReleaseQueues() {
+  // Ensure complete control of the multiqueue
+  std::unique_lock<std::shared_timed_mutex> no_pruging(_purge_shared_mutex);
+}
+
 // As long as template implementation is in .cpp file, must explicitly tell
 // compiler which types to compile...
 template class MultiQueue<JData>;

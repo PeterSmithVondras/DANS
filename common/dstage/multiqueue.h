@@ -34,6 +34,9 @@ class MultiQueue {
 
   bool Empty(Priority prio);
 
+  // Returns a nullptr to the next in line for the Priority `prio` queue.
+  void ReleaseQueues();
+
  protected:
   const unsigned _max_prio;
 
