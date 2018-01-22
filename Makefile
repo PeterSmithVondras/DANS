@@ -73,7 +73,7 @@ $(COM_DS)duplicatestage.o: $(COM_DS)duplicatestage.cpp $(COM_DS)priority.h \
 
 $(COM_DS)test_duplicatestage: $(COM_DS)test_duplicatestage.cpp $(COM_DS)job.h \
 		$(COM_DS)multiqueue.o  $(COM_DS)dispatcher.o $(COM_DS)priority.h \
-		$(COM_DS)duplicatestage.o
+		$(COM_DS)dstage.h $(COM_DS)duplicatestage.o
 	$(XX) -o $@ $< \
 		$(CXXFLAGS) $(LFLAGS) \
 		$(COM_DS)multiqueue.o  $(COM_DS)dispatcher.o $(COM_DS)duplicatestage.o
