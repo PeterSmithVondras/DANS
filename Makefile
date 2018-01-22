@@ -16,6 +16,7 @@ all: $(STORAGE)storage_client \
   $(COM_DS)test_job \
   $(COM_DS)multiqueue.o $(COM_DS)test_multiqueue \
   $(COM_DS)dispatcher.o $(COM_DS)test_dispatcher \
+  $(COM_DS)scheduler.o $(COM_DS)test_scheduler \
   $(COM_DS)duplicatestage.o $(COM_DS)test_duplicatestage
   
 
@@ -65,18 +66,31 @@ $(COM_DS)test_dispatcher: $(COM_DS)test_dispatcher.cpp $(COM_DS)dispatcher.o \
 		$(CXXFLAGS) $(LFLAGS) \
 		$(COM_DS)dispatcher.o $(COM_DS)multiqueue.o
 
-$(COM_DS)duplicatestage.o: $(COM_DS)duplicatestage.cpp $(COM_DS)priority.h \
-		$(COM_DS)duplicatestage.h $(COM_DS)dstage.h $(COM_DS)job.h \
-		$(COM_DS)multiqueue.h
+$(COM_DS)scheduler.o: $(COM_DS)scheduler.cpp $(COM_DS)scheduler.h \
+		$(COM_DS)multiqueue.h $(COM_DS)job.h $(COM_DS)priority.h
+	$(XX) -c -o $@ $< \
+		$(CXXFLAGS)
+
+$(COM_DS)test_scheduler: $(COM_DS)test_scheduler.cpp $(COM_DS)scheduler.o \
+		$(COM_DS)job.h $(COM_DS)multiqueue.o $(COM_DS)priority.h
+	$(XX) -o $@ $< \
+		$(CXXFLAGS) $(LFLAGS) \
+		$(COM_DS)scheduler.o $(COM_DS)multiqueue.o
+
+$(COM_DS)duplicatestage.o: $(COM_DS)duplicatestage.cpp \
+		$(COM_DS)duplicatestage.h $(COM_DS)dstage.h $(COM_DS)priority.h \
+		$(COM_DS)job.h $(COM_DS)multiqueue.h $(COM_DS)dispatcher.h \
+		$(COM_DS)scheduler.o
 	$(XX) -c -o $@ $< \
 		$(CXXFLAGS)
 
 $(COM_DS)test_duplicatestage: $(COM_DS)test_duplicatestage.cpp $(COM_DS)job.h \
-		$(COM_DS)multiqueue.o  $(COM_DS)dispatcher.o $(COM_DS)priority.h \
-		$(COM_DS)dstage.h $(COM_DS)duplicatestage.o
+		$(COM_DS)multiqueue.o  $(COM_DS)dispatcher.o $(COM_DS)scheduler.o \
+		$(COM_DS)priority.h $(COM_DS)dstage.h $(COM_DS)duplicatestage.o
 	$(XX) -o $@ $< \
 		$(CXXFLAGS) $(LFLAGS) \
-		$(COM_DS)multiqueue.o  $(COM_DS)dispatcher.o $(COM_DS)duplicatestage.o
+		$(COM_DS)multiqueue.o  $(COM_DS)dispatcher.o $(COM_DS)scheduler.o \
+		$(COM_DS)duplicatestage.o
 
 format:
 	clang-format -i  `find . -type f | command grep  '\.h\|\.cpp'`
@@ -87,6 +101,7 @@ clean:
   $(COM_DS)test_job \
   $(COM_DS)multiqueue.o $(COM_DS)test_multiqueue \
   $(COM_DS)dispatcher.o $(COM_DS)test_dispatcher \
+  $(COM_DS)scheduler.o $(COM_DS)test_scheduler \
   $(COM_DS)duplicatestage.o $(COM_DS)test_duplicatestage
 
 

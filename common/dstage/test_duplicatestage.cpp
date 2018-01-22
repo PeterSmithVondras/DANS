@@ -4,6 +4,7 @@
 #include "common/dstage/duplicatestage.h"
 #include "common/dstage/job.h"
 #include "common/dstage/multiqueue.h"
+#include "common/dstage/scheduler.h"
 
 #include <cassert>
 #include <cstdlib>  // EXIT_SUCCESS and EXIT_FAILURE
@@ -23,7 +24,10 @@ int main() {
   fprintf(stderr, "test_duplicatestage...");
 
   auto dispatcher = std::make_unique<Dispatcher<JData>>(kMaxPrio);
-  DuplicateStage<JData> dstage(kMaxPrio, std::move(dispatcher));
+  auto scheduler = std::make_unique<Scheduler<JData>>(kMaxPrio);
+  DuplicateStage<JData> dstage(kMaxPrio,
+                               std::move(dispatcher),
+                               std::move(scheduler));
 
   JobIdFactory j_fact(0);
   std::list<UniqConstJobPtr<JData>> purged;

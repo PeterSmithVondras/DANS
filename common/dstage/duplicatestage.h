@@ -8,6 +8,7 @@
 #include "common/dstage/dstage.h"
 #include "common/dstage/job.h"
 #include "common/dstage/multiqueue.h"
+#include "common/dstage/scheduler.h"
 
 namespace dans {
 
@@ -15,7 +16,8 @@ template <typename T>
 class DuplicateStage : public DStage<T> {
  public:
   DuplicateStage(Priority max_priority,
-                 std::unique_ptr<Dispatcher<T>> dispatcher);
+                 std::unique_ptr<Dispatcher<T>> dispatcher,
+                 std::unique_ptr<Scheduler<T>> scheduler);
   ~DuplicateStage() {}
 
   // Introduces an ApplicationJob to a DStage. base_prio is the incoming
@@ -32,7 +34,7 @@ class DuplicateStage : public DStage<T> {
   const Priority _max_priority;
   MultiQueue<T> _multi_q;
   std::unique_ptr<Dispatcher<T>> _dispatcher;
-  // std::unique_ptr<scheduler<T>> _scheduler;
+  std::unique_ptr<Scheduler<T>> _scheduler;
 };
 }  // namespace dans
 

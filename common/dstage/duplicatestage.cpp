@@ -7,10 +7,14 @@ namespace dans {
 
 template <typename T>
 DuplicateStage<T>::DuplicateStage(Priority max_priority,
-                                  std::unique_ptr<Dispatcher<T>> dispatcher)
+                                  std::unique_ptr<Dispatcher<T>> dispatcher,
+                                  std::unique_ptr<Scheduler<T>> scheduler)
     : _max_priority(max_priority),
       _multi_q(_max_priority),
-      _dispatcher(std::move(dispatcher)) {
+      _dispatcher(std::move(dispatcher)),
+      _scheduler(std::move(scheduler)) {
+  // Linking scheduler first so that multiqueue has an outlet before a source.
+  _scheduler->LinkMultiQ(&_multi_q);
   _dispatcher->LinkMultiQ(&_multi_q);
 }
 
