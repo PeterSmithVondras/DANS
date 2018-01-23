@@ -22,7 +22,7 @@ Scheduler<T>::~Scheduler() {
     std::unique_lock<std::shared_timed_mutex> lock(_destructing_lock);
     _destructing = true;
   }
-
+  _multi_q_p->ReleaseQueues();
   for (auto&& worker : _workers) {
     worker.join();
   }

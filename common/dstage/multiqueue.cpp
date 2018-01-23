@@ -13,6 +13,7 @@ namespace dans {
 template <typename T>
 MultiQueue<T>::MultiQueue(unsigned max_priority)
     : _max_prio(max_priority),
+      _released(false),
       _not_empty_mutexes(_max_prio + 1),
       _pq_mutexes(_max_prio + 1),
       _priority_qs(_max_prio + 1) {
@@ -21,6 +22,9 @@ MultiQueue<T>::MultiQueue(unsigned max_priority)
     _not_empty_mutexes[i].lock();
   }
 }
+
+template <typename T>
+MultiQueue<T>::~MultiQueue() {}
 
 template <typename T>
 void MultiQueue<T>::Enqueue(UniqConstJobPtr<T> job_p) {
@@ -86,7 +90,10 @@ UniqConstJobPtr<T> MultiQueue<T>::Dequeue(Priority prio) {
     // Protecting the race condition where there was an item in the queue when
     // we flipped the _not_empty_mutex but a purge call happened right before we
     // acquired the no_purging lock.
-    if (_priority_qs[prio].empty())
+    if (_priority_qs[prio].empty() && _released) {
+      _not_empty_mutexes[prio].unlock();
+      return nullptr;
+    } else if (_priority_qs[prio].empty())
       no_pruging.unlock();
     else
       break;
@@ -174,6 +181,11 @@ template <typename T>
 void MultiQueue<T>::ReleaseQueues() {
   // Ensure complete control of the multiqueue
   std::unique_lock<std::shared_timed_mutex> no_pruging(_purge_shared_mutex);
+  _released = true;
+
+  for (Priority p = 0; p <= _max_prio; ++p) {
+    if (_priority_qs[p].empty()) _not_empty_mutexes[p].unlock();
+  }
 }
 
 // As long as template implementation is in .cpp file, must explicitly tell

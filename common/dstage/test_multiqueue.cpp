@@ -108,6 +108,9 @@ int main() {
     assert(prio_qs.Empty(i));
   }
 
+  prio_qs.ReleaseQueues();
+  assert(prio_qs.Dequeue(0) == nullptr);
+
   if (success) {
     std::cerr << " Passed\n";
     return 0;

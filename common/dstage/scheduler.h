@@ -1,9 +1,9 @@
 #ifndef DANS02_DSTAGE_SCHEDULER_H
 #define DANS02_DSTAGE_SCHEDULER_H
 
-#include <vector>
 #include <shared_mutex>
 #include <thread>
+#include <vector>
 
 #include "common/dstage/job.h"
 #include "common/dstage/multiqueue.h"

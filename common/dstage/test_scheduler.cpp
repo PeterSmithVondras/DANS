@@ -1,5 +1,6 @@
 #include <memory>
 #include <mutex>
+#include <thread>
 #include <utility>
 
 #include "common/dstage/job.h"
@@ -22,10 +23,11 @@ int main() {
   bool success = true;
   fprintf(stderr, "test_scheduler...");
 
-  Scheduler<JData> scheduler(kMaxPrio);
+  auto scheduler = std::make_unique<Scheduler<JData>>(kMaxPrio);
   MultiQueue<JData> prio_qs(kMaxPrio);
-  scheduler.LinkMultiQ(&prio_qs);
-  scheduler.Run();
+  scheduler->LinkMultiQ(&prio_qs);
+  scheduler->Run();
+  scheduler = nullptr;
 
   // JobIdFactory j_fact(0);
   // std::list<UniqConstJobPtr<JData>> purged;

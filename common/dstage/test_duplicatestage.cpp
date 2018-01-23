@@ -1,3 +1,4 @@
+#include <iostream>
 #include <mutex>
 
 #include "common/dstage/dispatcher.h"
@@ -36,7 +37,9 @@ int main() {
                                       /*priority=*/0, kGenericDuplication);
   JobId job_id = job->job_id;
   dstage.Dispatch(std::move(job), /*requested_duplication=*/2);
-  assert(dstage.Purge(job_id).size() == kMaxPrio + 1);
+  purged = dstage.Purge(job_id);
+  std::cerr << "size: " << purged.size() << std::endl;
+  assert(purged.size() == kMaxPrio + 1);
 
   job = std::make_unique<ConstJobJData>(kGenericData, j_fact.CreateJobId(),
                                         /*priority=*/1, kGenericDuplication);

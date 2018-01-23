@@ -16,7 +16,7 @@ template <typename T>
 class MultiQueue {
  public:
   MultiQueue(unsigned max_priority);
-  ~MultiQueue() {}
+  ~MultiQueue();
 
   // Adds a job_id to all priority queues referenced in prio_list.
   // This function is thread safe.
@@ -39,6 +39,7 @@ class MultiQueue {
 
  protected:
   const unsigned _max_prio;
+  bool _released;
 
   // purge needs exclusive access to basically everything but all other calls
   // can share.
