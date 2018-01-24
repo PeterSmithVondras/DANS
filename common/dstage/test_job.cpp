@@ -7,6 +7,8 @@
 
 #include "common/dstage/job.h"
 #include "common/dstage/priority.h"
+#include "gflags/gflags.h"
+#include "glog/logging.h"
 
 namespace {
 
@@ -17,9 +19,17 @@ auto kGenericData = std::make_shared<JData>(5);
 
 }  // namespace
 
-int main() {
+int main(int argc, char* argv[]) {
+  static_cast<void>(argc);
+
+  // Parse all command line flags. This MUST go before InitGoogleLogging.
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
+  // Initialize Google's logging library.
+  google::InitGoogleLogging(argv[0]);
+
   bool success = true;
   std::cerr << "test_job...";
+  LOG(INFO) << "Found " << success << " cookies";
 
   JobIdFactory j_fact(0);
 

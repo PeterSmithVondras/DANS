@@ -1,3 +1,6 @@
+GLOG= /usr/local/lib/libglog.a
+GFLAGS= /usr/lib/x86_64-linux-gnu/libgflags.a
+
 CC=gcc
 # newest clang build on Tufts servers which really just won't work unless a
 # 	a newer version is built.
@@ -7,13 +10,13 @@ CC=gcc
 XX=clang++
 # Use this compiler for Tufts serves with redhat
 # XX=g++
-IFLAGS= -I . 
+IFLAGS= -I . -I /usr/local/include -I /usr/include
 CFLAGS= -g -Wall -Wextra $(IFLAGS)
 # If compiling with g++ then we want -fira-algorithm=priority for colored debug
 # 	output
 #CXXFLAGS= -std=c++14 -fira-algorithm=priority -g -Wall -Wextra $(IFLAGS)
 CXXFLAGS= -std=c++14 -g -Wall -Wextra $(IFLAGS)
-LFLAGS= -lpthread
+LFLAGS= -lpthread $(GLOG) $(GFLAGS)
 
 STORAGE= applications/storage/
 COM_AP=  common/application/
