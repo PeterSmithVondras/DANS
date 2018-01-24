@@ -1,10 +1,18 @@
 CC=gcc
+# newest clang build on Tufts servers which really just won't work unless a
+# 	a newer version is built.
 # XX=/usr/sup/llvm-5.0.0/bin/clang++.sh
-# XX=clang++
-XX=g++
+
+# Use this compiler for Ubuntu
+XX=clang++
+# Use this compiler for Tufts serves with redhat
+# XX=g++
 IFLAGS= -I . 
 CFLAGS= -g -Wall -Wextra $(IFLAGS)
-CXXFLAGS= -std=c++14 -fira-algorithm=priority -g -Wall -Wextra $(IFLAGS)
+# If compiling with g++ then we want -fira-algorithm=priority for colored debug
+# 	output
+#CXXFLAGS= -std=c++14 -fira-algorithm=priority -g -Wall -Wextra $(IFLAGS)
+CXXFLAGS= -std=c++14 -g -Wall -Wextra $(IFLAGS)
 LFLAGS= -lpthread
 
 STORAGE= applications/storage/

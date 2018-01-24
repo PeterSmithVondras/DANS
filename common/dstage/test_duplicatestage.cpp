@@ -38,7 +38,6 @@ int main() {
   JobId job_id = job->job_id;
   dstage.Dispatch(std::move(job), /*requested_duplication=*/2);
   purged = dstage.Purge(job_id);
-  std::cerr << "size: " << purged.size() << std::endl;
   // assert(purged.size() == kMaxPrio + 1);
 
   job = std::make_unique<ConstJobJData>(kGenericData, j_fact.CreateJobId(),

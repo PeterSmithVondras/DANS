@@ -1,6 +1,7 @@
 #include <cassert>
 #include <cstdlib>  // EXIT_SUCCESS and EXIT_FAILURE
 
+#include <pthread.h>
 #include <iostream>
 
 #include "common/dstage/job.h"
