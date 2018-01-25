@@ -1,11 +1,9 @@
-#include <cassert>
-#include <cstdlib>  // EXIT_SUCCESS and EXIT_FAILURE
-
 #include <pthread.h>
-#include <iostream>
 
 #include "common/dstage/job.h"
 #include "common/dstage/multiqueue.h"
+#include "gflags/gflags.h"
+#include "glog/logging.h"
 
 namespace {
 
@@ -16,9 +14,15 @@ unsigned kNumberOfQueues = 3;
 
 }  // namespace
 
-int main() {
-  bool success = true;
-  std::cerr << "test_multiqueue... ";
+int main(int argc, char* argv[]) {
+  // Parse all command line flags. This MUST go before InitGoogleLogging.
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
+  // Initialize Google's logging library.
+  google::InitGoogleLogging(argv[0]);
+  // Provides a failure signal handler.
+  google::InstallFailureSignalHandler();
+
+  LOG(INFO) << "test_multiqueue... ";
 
   JobIdFactory j_fact(0);
   MultiQueue<JData> prio_qs(kNumberOfQueues);
@@ -28,7 +32,7 @@ int main() {
                                                  /*priority=*/0,
                                                  /*duplication=*/1);
   // Purge a missing JobId returns empty list.
-  assert(prio_qs.Purge(decoy_a->job_id).empty());
+  CHECK(prio_qs.Purge(decoy_a->job_id).empty());
 
   // Purge a job with several instances.
   prio_qs.Enqueue(std::move(decoy_a));
@@ -40,7 +44,7 @@ int main() {
                                             /*priority=*/2,
                                             /*duplication=*/1);
   prio_qs.Enqueue(std::move(decoy_a));
-  assert(prio_qs.Purge(decoy_a_id).size() == kNumberOfQueues);
+  CHECK_EQ(prio_qs.Purge(decoy_a_id).size(), kNumberOfQueues);
 
   // Add some JobIds with some garbage in between.
   decoy_a = std::make_unique<ConstJobJData>(kGenericData, decoy_a_id,
@@ -99,24 +103,18 @@ int main() {
   prio_qs.Enqueue(std::move(target_b));
 
   // Purge the garbage.
-  assert(prio_qs.Purge(decoy_a_id).size() == kNumberOfQueues);
-  assert(prio_qs.Purge(decoy_b_id).size() == kNumberOfQueues);
+  CHECK_EQ(prio_qs.Purge(decoy_a_id).size(), kNumberOfQueues);
+  CHECK_EQ(prio_qs.Purge(decoy_b_id).size(), kNumberOfQueues);
 
   // Test that everything else is in order.
   for (unsigned i = 0; i < kNumberOfQueues; i++) {
-    assert(prio_qs.Dequeue(i)->job_id == target_a_id);
-    assert(prio_qs.Dequeue(i)->job_id == target_b_id);
-    assert(prio_qs.Empty(i));
+    CHECK_EQ(prio_qs.Dequeue(i)->job_id, target_a_id);
+    CHECK_EQ(prio_qs.Dequeue(i)->job_id, target_b_id);
+    CHECK(prio_qs.Empty(i));
   }
 
   prio_qs.ReleaseQueues();
-  assert(prio_qs.Dequeue(0) == nullptr);
+  CHECK(prio_qs.Dequeue(0) == nullptr);
 
-  if (success) {
-    std::cerr << " Passed\n";
-    return 0;
-  }
-
-  std::cerr << " Failed\n";
-  return 1;
+  LOG(INFO) << " Passed\n";
 }

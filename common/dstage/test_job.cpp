@@ -2,7 +2,6 @@
 #include <cstdlib>  // EXIT_SUCCESS and EXIT_FAILURE
 
 #include <iostream>
-
 #include <memory>
 
 #include "common/dstage/job.h"
@@ -20,16 +19,15 @@ auto kGenericData = std::make_shared<JData>(5);
 }  // namespace
 
 int main(int argc, char* argv[]) {
-  static_cast<void>(argc);
-
   // Parse all command line flags. This MUST go before InitGoogleLogging.
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   // Initialize Google's logging library.
   google::InitGoogleLogging(argv[0]);
+  // Provides a failure signal handler.
+  google::InstallFailureSignalHandler();
 
   bool success = true;
   std::cerr << "test_job...";
-  LOG(INFO) << "Found " << success << " cookies";
 
   JobIdFactory j_fact(0);
 

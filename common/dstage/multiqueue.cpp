@@ -1,12 +1,13 @@
 #include "common/dstage/multiqueue.h"
 
-#include <cassert>
 #include <list>
 #include <memory>
 #include <mutex>
 #include <shared_mutex>
 #include <unordered_map>
 #include <vector>
+
+#include "glog/logging.h"
 
 namespace dans {
 
@@ -28,6 +29,12 @@ MultiQueue<T>::~MultiQueue() {}
 
 template <typename T>
 void MultiQueue<T>::Enqueue(UniqConstJobPtr<T> job_p) {
+  VLOG(4) << __PRETTY_FUNCTION__
+          << ((job_p == nullptr) ? " job_p == nullptr" : " where job_id: ")
+          << job_p->job_id;
+
+  CHECK_NOTNULL(job_p);
+
   // Ensuring that purging is not in effect.
   std::shared_lock<std::shared_timed_mutex> no_pruging(_purge_shared_mutex);
 
@@ -37,7 +44,7 @@ void MultiQueue<T>::Enqueue(UniqConstJobPtr<T> job_p) {
   std::list<std::pair<UniqConstJobPtr<T>, typename std::list<JobId>::iterator>>
       duplicate_list;
   {
-    assert(prio <= _max_prio);
+    CHECK_LE(prio, _max_prio);
 
     // Locking this priority queue
     std::lock_guard<std::mutex> lock_pq(_pq_mutexes[prio]);
@@ -70,7 +77,7 @@ void MultiQueue<T>::Enqueue(UniqConstJobPtr<T> job_p) {
 
 template <typename T>
 UniqConstJobPtr<T> MultiQueue<T>::Dequeue(Priority prio) {
-  assert(prio <= _max_prio);
+  CHECK_LE(prio, _max_prio);
 
   // This lock is not being acquired right now as we do not want to block
   // purging for no reason.
@@ -117,7 +124,7 @@ UniqConstJobPtr<T> MultiQueue<T>::Dequeue(Priority prio) {
   // insert.
   std::lock_guard<std::mutex> lock_pq(_value_map_mutex);
   auto search = _value_mapper.find(job_id);
-  assert(search != _value_mapper.end());
+  CHECK(search != _value_mapper.end());
   auto duplicate_list_iter = search->second.begin();
 
   UniqConstJobPtr<T> job_p;
@@ -133,7 +140,7 @@ UniqConstJobPtr<T> MultiQueue<T>::Dequeue(Priority prio) {
     duplicate_list_iter++;
   }
   // We should always find what we removed from the queue.
-  assert(found);
+  CHECK(found);
 
   // Removing entry from _value_mapper if it is now empty.
   if (search->second.empty()) _value_mapper.erase(search);
@@ -167,13 +174,13 @@ std::list<UniqConstJobPtr<T>> MultiQueue<T>::Purge(JobId job_id) {
 
 template <typename T>
 unsigned MultiQueue<T>::Size(Priority prio) {
-  assert(prio <= _max_prio);
+  CHECK_LE(prio, _max_prio);
   return _priority_qs[prio].size();
 }
 
 template <typename T>
 bool MultiQueue<T>::Empty(Priority prio) {
-  assert(prio <= _max_prio);
+  CHECK_LE(prio, _max_prio);
   return _priority_qs[prio].empty();
 }
 
