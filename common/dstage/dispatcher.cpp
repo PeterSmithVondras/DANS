@@ -38,7 +38,7 @@ void Dispatcher<T>::Dispatch(UniqConstJobPtr<T> job,
 }
 
 template <typename T>
-void Dispatcher<T>::LinkMultiQ(MultiQueue<T>* multi_q_p) {
+void Dispatcher<T>::LinkMultiQ(BaseMultiQueue<T>* multi_q_p) {
   assert(multi_q_p != nullptr);
   _multi_q_p = multi_q_p;
   _running = true;

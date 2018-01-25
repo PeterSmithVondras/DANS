@@ -1,7 +1,3 @@
-#include <cassert>
-#include <cstdlib>  // EXIT_SUCCESS and EXIT_FAILURE
-
-#include <iostream>
 #include <memory>
 
 #include "common/dstage/job.h"
@@ -26,8 +22,7 @@ int main(int argc, char* argv[]) {
   // Provides a failure signal handler.
   google::InstallFailureSignalHandler();
 
-  bool success = true;
-  std::cerr << "test_job...";
+  LOG(INFO) << "test_job...";
 
   JobIdFactory j_fact(0);
 
@@ -46,18 +41,14 @@ int main(int argc, char* argv[]) {
                                       /*priority=*/3,
                                       /*requested_duplication=*/3);
 
-  assert(*original == *same_as_original);
-  assert(*original != *different);
+  CHECK(*original == *same_as_original);
+  CHECK(*original != *different);
 
   UniqConstJobPtr<JData> decoy_a =
       std::make_unique<ConstJobJData>(kGenericData, j_fact.CreateJobId(),
                                       /*priority=*/1,
                                       /*requested_duplication=*/1);
 
-  if (success) {
-    std::cerr << " Passed\n";
-    return 0;
-  } else
-    std::cerr << " Failed\n";
-  return 1;
+  LOG(INFO) << "PASS";
+  return 0;
 }

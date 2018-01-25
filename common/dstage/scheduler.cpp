@@ -4,6 +4,7 @@
 #include <cassert>
 
 #include <memory>
+#include "glog/logging.h"
 
 namespace {}  // namespace
 
@@ -36,7 +37,7 @@ std::list<UniqConstJobPtr<T>> Scheduler<T>::Purge(JobId job_id) {
 }
 
 template <typename T>
-void Scheduler<T>::LinkMultiQ(MultiQueue<T>* multi_q_p) {
+void Scheduler<T>::LinkMultiQ(BaseMultiQueue<T>* multi_q_p) {
   assert(multi_q_p != nullptr);
   _multi_q_p = multi_q_p;
 }

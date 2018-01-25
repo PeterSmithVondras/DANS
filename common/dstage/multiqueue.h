@@ -8,12 +8,13 @@
 #include <unordered_map>
 #include <vector>
 
+#include "common/dstage/basemultiqueue.h"
 #include "common/dstage/job.h"
 
 namespace dans {
 
 template <typename T>
-class MultiQueue {
+class MultiQueue : public BaseMultiQueue<T> {
  public:
   MultiQueue(unsigned max_priority);
   ~MultiQueue();

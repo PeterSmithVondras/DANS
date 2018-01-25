@@ -1,31 +1,33 @@
 #include <memory>
-#include <mutex>
-#include <thread>
-#include <utility>
 
 #include "common/dstage/job.h"
 #include "common/dstage/multiqueue.h"
 #include "common/dstage/scheduler.h"
-
-#include <cassert>
-#include <cstdlib>  // EXIT_SUCCESS and EXIT_FAILURE
+#include "gflags/gflags.h"
+#include "glog/logging.h"
 
 namespace {
 using namespace dans;
 using ConstJobJData = const Job<JData>;
 const Priority kMaxPrio = 2;
 auto kGenericData = std::make_shared<JData>(5);
-const unsigned kGenericDuplication = 0;
+// const unsigned kGenericDuplication = 0;
 
 }  // namespace
 
-int main() {
-  bool success = true;
-  fprintf(stderr, "test_scheduler...");
+int main(int argc, char* argv[]) {
+  // Parse all command line flags. This MUST go before InitGoogleLogging.
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
+  // Initialize Google's logging library.
+  google::InitGoogleLogging(argv[0]);
+  // Provides a failure signal handler.
+  google::InstallFailureSignalHandler();
+
+  LOG(INFO) << "test_dispatcher...";
 
   auto scheduler = std::make_unique<Scheduler<JData>>(kMaxPrio);
-  MultiQueue<JData> prio_qs(kMaxPrio);
-  scheduler->LinkMultiQ(&prio_qs);
+  auto prio_qs = std::make_unique<MultiQueue<JData>>(kMaxPrio);
+  scheduler->LinkMultiQ(prio_qs.get());
   scheduler->Run();
   scheduler = nullptr;
 
@@ -57,10 +59,6 @@ int main() {
   // assert(purged.size() == 1);
   // assert(purged.front()->priority == prio);
 
-  if (success) {
-    fprintf(stderr, " Passed\n");
-    return 0;
-  } else
-    fprintf(stderr, " Failed\n");
-  return 1;
+  LOG(INFO) << "PASS";
+  return 0;
 }
