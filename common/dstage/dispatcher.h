@@ -1,11 +1,9 @@
 #ifndef DANS02_DSTAGE_DISPATCHER_H
 #define DANS02_DSTAGE_DISPATCHER_H
 
-#include <mutex>
-
 #include "common/dstage/basedispatcher.h"
+#include "common/dstage/basemultiqueue.h"
 #include "common/dstage/job.h"
-#include "common/dstage/multiqueue.h"
 
 namespace dans {
 

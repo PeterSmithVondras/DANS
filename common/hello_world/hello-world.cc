@@ -1,7 +1,8 @@
-#include "hello-greet.h"
 #include <ctime>
 #include <iostream>
 #include <string>
+
+#include "common/hello_world/hello-greet.h"
 #include "gflags/gflags.h"
 #include "glog/logging.h"
 

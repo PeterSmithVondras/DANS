@@ -3,7 +3,6 @@
 
 #include "common/dstage/basemultiqueue.h"
 #include "common/dstage/job.h"
-#include "common/dstage/priority.h"
 
 namespace dans {
 template <typename T>

@@ -1,13 +1,9 @@
 
 #include "common/dstage/dispatcher.h"
 
-#include <cassert>
-
 #include <memory>
-#include <vector>
 
-#include "common/dstage/job.h"
-#include "common/dstage/multiqueue.h"
+#include "glog/logging.h"
 
 namespace {}  // namespace
 
@@ -21,8 +17,8 @@ Dispatcher<T>::Dispatcher(unsigned max_priority)
 template <typename T>
 void Dispatcher<T>::Dispatch(UniqConstJobPtr<T> job,
                              unsigned requested_duplication) {
-  assert(_running);
-  assert(job->priority <= _max_priority);
+  CHECK(_running);
+  CHECK_LE(job->priority, _max_priority);
 
   // Get lowest priority (highest value) appropriate.
   Priority max_prio = job->priority + requested_duplication > _max_priority
@@ -39,7 +35,7 @@ void Dispatcher<T>::Dispatch(UniqConstJobPtr<T> job,
 
 template <typename T>
 void Dispatcher<T>::LinkMultiQ(BaseMultiQueue<T>* multi_q_p) {
-  assert(multi_q_p != nullptr);
+  CHECK_NOTNULL(multi_q_p);
   _multi_q_p = multi_q_p;
   _running = true;
 }

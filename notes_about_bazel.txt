@@ -1,0 +1,20 @@
+
+
+Make graph with:
+  $ bazel query --nohost_deps --noimplicit_deps 'deps(//common/dstage:dstage_test)'   --output graph | sed '/glog/d' | sed '/gflag/d'
+  Paste here: http://www.webgraphviz.com/
+
+Compile a target with:
+  $ bazel build --cxxopt='-std=c++14' common/dstage:target
+
+Compile all targets with:
+  $ bazel build --cxxopt='-std=c++14' common/dstage:all
+
+Compile all targets recrusively with:
+  $ bazel build --cxxopt='-std=c++14' common/dstage/...
+
+Test all dstage with:
+  $ bazel test --cxxopt='-std=c++14' common/dstage:all
+
+Run compiled target with:
+ $ ./bazel-bin/common/dstage/target --logtostderr=true --colorlogtostderr=true

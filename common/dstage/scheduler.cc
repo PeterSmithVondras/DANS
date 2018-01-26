@@ -1,7 +1,4 @@
-
 #include "common/dstage/scheduler.h"
-
-#include <cassert>
 
 #include <memory>
 #include "glog/logging.h"
@@ -38,14 +35,14 @@ std::list<UniqConstJobPtr<T>> Scheduler<T>::Purge(JobId job_id) {
 
 template <typename T>
 void Scheduler<T>::LinkMultiQ(BaseMultiQueue<T>* multi_q_p) {
-  assert(multi_q_p != nullptr);
+  CHECK_NOTNULL(multi_q_p);
   _multi_q_p = multi_q_p;
 }
 
 template <typename T>
 void Scheduler<T>::Run() {
-  assert(_multi_q_p != nullptr);
-  assert(!_running);
+  CHECK_NOTNULL(_multi_q_p);
+  CHECK(!_running);
 
   _running = true;
   for (Priority p = 0; p <= _max_priority; ++p) {
