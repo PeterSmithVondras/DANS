@@ -25,7 +25,8 @@ int main(int argc, char* argv[]) {
 
   LOG(INFO) << "test_dispatcher...";
 
-  auto scheduler = std::make_unique<Scheduler<JData>>(kMaxPrio);
+  auto scheduler = std::make_unique<Scheduler<JData>>(
+      std::vector<unsigned>(kMaxPrio + 1, 2));
   auto prio_qs = std::make_unique<MultiQueue<JData>>(kMaxPrio);
   scheduler->LinkMultiQ(prio_qs.get());
   scheduler->Run();

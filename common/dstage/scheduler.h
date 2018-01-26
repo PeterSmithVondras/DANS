@@ -15,7 +15,7 @@ namespace dans {
 template <typename T>
 class Scheduler : public BaseScheduler<T> {
  public:
-  Scheduler(Priority max_priority);
+  Scheduler(std::vector<unsigned> threads_per_prio);
 
   ~Scheduler() override;
 
@@ -39,7 +39,8 @@ class Scheduler : public BaseScheduler<T> {
   // Signals the destruction phase to all threads.
   bool _destructing;
 
-  std::vector<std::thread> _workers;
+  std::vector<unsigned> _threads_per_prio;
+  std::vector<std::vector<std::thread>> _workers;
 
   void StartScheduling(Priority prio);
 };

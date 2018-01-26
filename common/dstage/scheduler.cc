@@ -8,11 +8,14 @@ namespace {}  // namespace
 namespace dans {
 
 template <typename T>
-Scheduler<T>::Scheduler(unsigned max_priority)
+Scheduler<T>::Scheduler(std::vector<unsigned> threads_per_prio)
     : _running(false),
-      _max_priority(max_priority),
+      _max_priority(threads_per_prio.size() - 1),
       _multi_q_p(nullptr),
-      _destructing(false) {}
+      _destructing(false),
+      _threads_per_prio(threads_per_prio) {
+  CHECK(!_threads_per_prio.empty());
+}
 
 template <typename T>
 Scheduler<T>::~Scheduler() {
@@ -20,9 +23,13 @@ Scheduler<T>::~Scheduler() {
     std::unique_lock<std::shared_timed_mutex> lock(_destructing_lock);
     _destructing = true;
   }
-  _multi_q_p->ReleaseQueues();
-  for (auto&& worker : _workers) {
-    worker.join();
+  if (_running) {
+    _multi_q_p->ReleaseQueues();
+    for (auto&& threads_the_this_prio : _workers) {
+      for (auto&& worker : threads_the_this_prio) {
+        worker.join();
+      }
+    }
   }
 }
 
@@ -45,13 +52,26 @@ void Scheduler<T>::Run() {
   CHECK(!_running);
 
   _running = true;
-  for (Priority p = 0; p <= _max_priority; ++p) {
-    _workers.push_back(std::thread(&Scheduler<T>::StartScheduling, this, p));
+  Priority p = 0;
+  // Creating number_threads_at_this_prio threads for each priority, where
+  // number_threads_at_this_prio can be different at each level.
+  for (auto&& number_threads_at_this_prio : _threads_per_prio) {
+    LOG(INFO) << "Creating threadpool of size " << number_threads_at_this_prio
+              << " for scheduler at priority " << p;
+    std::vector<std::thread> threads_at_this_prio;
+    _workers.push_back(std::vector<std::thread>());
+    for (unsigned i = 0; i < number_threads_at_this_prio; ++i) {
+      // std::thread thread(&Scheduler<T>::StartScheduling, this, p);
+      _workers.back().push_back(
+          std::thread(&Scheduler<T>::StartScheduling, this, p));
+    }
+    p++;
   }
 }
 
 template <typename T>
 void Scheduler<T>::StartScheduling(Priority prio) {
+  VLOG(4) << __PRETTY_FUNCTION__ << " prio: " << prio;
   while (true) {
     {
       std::shared_lock<std::shared_timed_mutex> lock(_destructing_lock);

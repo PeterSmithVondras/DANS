@@ -30,7 +30,7 @@ MultiQueue<T>::~MultiQueue() {}
 template <typename T>
 void MultiQueue<T>::Enqueue(UniqConstJobPtr<T> job_p) {
   VLOG(4) << __PRETTY_FUNCTION__
-          << ((job_p == nullptr) ? " job_p == nullptr" : " where job_id: ")
+          << ((job_p == nullptr) ? " job_p == nullptr" : " job_id: ")
           << job_p->job_id;
 
   CHECK_NOTNULL(job_p);
