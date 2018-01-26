@@ -7,6 +7,10 @@ https://github.com/google/glog/
 sudo apt-get autoconf install libtool m4 automake
 ./autogen.sh && ./configure && make && make install
 
+# just use package manager thank god!!!!!!!!
+sudo apt-get install libgflags-dev
+sudo apt-get install libgoogle-glog-dev
+
 pvondras@ubuntu:~/libs/glog$ sudo make install
 make[1]: Entering directory '/home/pvondras/libs/glog'
  /bin/mkdir -p '/usr/local/lib'

@@ -1,10 +1,6 @@
 #ifndef DANS02_DSTAGE_BASE_SCHEDULER_H
 #define DANS02_DSTAGE_BASE_SCHEDULER_H
 
-#include <shared_mutex>
-#include <thread>
-#include <vector>
-
 #include "common/dstage/basemultiqueue.h"
 #include "common/dstage/job.h"
 #include "common/dstage/priority.h"

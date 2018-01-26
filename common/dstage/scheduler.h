@@ -17,17 +17,17 @@ class Scheduler : public BaseScheduler<T> {
  public:
   Scheduler(Priority max_priority);
 
-  ~Scheduler();
+  ~Scheduler() override;
 
   // Tells the Scheduler what multiqueue to pull from.
-  void LinkMultiQ(BaseMultiQueue<T>* multi_q_p);
+  void LinkMultiQ(BaseMultiQueue<T>* multi_q_p) override;
 
-  void Run();
+  void Run() override;
 
   // Purge will attempt to remove all instances of the Job linked to job_id in
   // the Dispatcher, Scheduler and forward the request on to any linked
   // DStages.
-  std::list<UniqConstJobPtr<T>> Purge(JobId job_id);
+  std::list<UniqConstJobPtr<T>> Purge(JobId job_id) override;
 
  protected:
   bool _running;
