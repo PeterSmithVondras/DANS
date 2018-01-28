@@ -61,7 +61,6 @@ void Scheduler<T>::Run() {
     std::vector<std::thread> threads_at_this_prio;
     _workers.push_back(std::vector<std::thread>());
     for (unsigned i = 0; i < number_threads_at_this_prio; ++i) {
-      // std::thread thread(&Scheduler<T>::StartScheduling, this, p);
       _workers.back().push_back(
           std::thread(&Scheduler<T>::StartScheduling, this, p));
     }

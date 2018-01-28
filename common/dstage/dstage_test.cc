@@ -46,14 +46,14 @@ int main(int argc, char* argv[]) {
   job = std::make_unique<ConstJobJData>(kGenericData, j_fact.CreateJobId(),
                                         /*priority=*/1, kGenericDuplication);
   job_id = job->job_id;
-  Priority prio = job->priority;
+  // Priority prio = job->priority;
   dstage.Dispatch(std::move(job), /*requested_duplication=*/0);
   purged = dstage.Purge(job_id);
 
   job = std::make_unique<ConstJobJData>(kGenericData, j_fact.CreateJobId(),
                                         /*priority=*/2, kGenericDuplication);
   job_id = job->job_id;
-  prio = job->priority;
+  // prio = job->priority;
   dstage.Dispatch(std::move(job), /*requested_duplication=*/5);
   purged = dstage.Purge(job_id);
 

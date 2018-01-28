@@ -1,5 +1,0 @@
-Note:
-This folder should have:
-  - BUILD file
-  - symlink to libgflags.so or libgflags.a
-  - symlink to gflags folder containing headers

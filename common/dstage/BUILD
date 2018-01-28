@@ -12,11 +12,12 @@ cc_library(
 
 cc_test(
   name = "job_test",
+  size = "small",
   srcs = [ "job_test.cc" ],
   deps = [
     ":dstage_base",
-    "//glog",
-    "//gflags",
+    "@glog//:main",
+    "@gflags//:main",
   ],
 )
 
@@ -27,19 +28,20 @@ cc_library(
   linkopts = [ "-lpthread" ],
   deps = [
     ":dstage_base",
-    "//glog",
-    "//gflags",
+    "@glog//:main",
+    "@gflags//:main",
   ],
 )
 
 cc_test(
   name = "multiqueue_test",
+  size = "small",
   srcs = [ "multiqueue_test.cc" ],
   deps = [
     ":dstage_base",
     ":multiqueue",
-    "//glog",
-    "//gflags",
+    "@glog//:main",
+    "@gflags//:main",
   ],
 )
 
@@ -49,20 +51,21 @@ cc_library(
   srcs =     [ "dispatcher.cc" ],
   deps = [
     ":dstage_base",
-    "//glog",
-    "//gflags",
+    "@glog//:main",
+    "@gflags//:main",
   ],
 )
 
 cc_test(
   name = "dispatcher_test",
+  size = "small",
   srcs = [ "dispatcher_test.cc" ],
   deps = [
     ":dstage_base",
     ":dispatcher",
     ":multiqueue",
-    "//glog",
-    "//gflags",
+    "@glog//:main",
+    "@gflags//:main",
   ],
 )
 
@@ -72,20 +75,21 @@ cc_library(
   srcs =     [ "scheduler.cc" ],
   deps = [
     ":dstage_base",
-    "//glog",
-    "//gflags",
+    "@glog//:main",
+    "@gflags//:main",
   ],
 )
 
 cc_test(
   name = "scheduler_test",
+  size = "small",
   srcs = [ "scheduler_test.cc" ],
   deps = [
     ":dstage_base",
     ":scheduler",
     ":multiqueue",
-    "//glog",
-    "//gflags",
+    "@glog//:main",
+    "@gflags//:main",
   ],
 )
 
@@ -95,13 +99,14 @@ cc_library(
   srcs =     [ "dstage.cc" ],
   deps = [
     ":dstage_base",
-    "//glog",
-    "//gflags",
+    "@glog//:main",
+    "@gflags//:main",
   ],
 )
 
 cc_test(
   name = "dstage_test",
+  size = "small",
   srcs = [ "dstage_test.cc" ],
   deps = [
     ":dstage",
@@ -109,7 +114,7 @@ cc_test(
     ":dispatcher",
     ":scheduler",
     ":multiqueue",
-    "//glog",
-    "//gflags",
+    "@glog//:main",
+    "@gflags//:main",
   ],
 )
