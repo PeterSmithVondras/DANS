@@ -30,6 +30,7 @@ class Scheduler : public BaseScheduler<T> {
   std::list<UniqConstJobPtr<T>> Purge(JobId job_id) override;
 
  protected:
+  const bool _set_thread_priority;
   bool _running;
   const Priority _max_priority;
   BaseMultiQueue<T>* _multi_q_p;

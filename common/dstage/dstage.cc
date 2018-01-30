@@ -15,6 +15,7 @@ DStage<T>::DStage(Priority max_priority,
       _multi_q(std::move(multi_q)),
       _dispatcher(std::move(dispatcher)),
       _scheduler(std::move(scheduler)) {
+  VLOG(4) << __PRETTY_FUNCTION__ << " max_priority=" << max_priority;
   // Linking scheduler first so that multiqueue has an outlet before a source.
   _scheduler->LinkMultiQ(_multi_q.get());
   _scheduler->Run();
@@ -22,13 +23,19 @@ DStage<T>::DStage(Priority max_priority,
 }
 
 template <typename T>
-void DStage<T>::Dispatch(UniqConstJobPtr<T> job,
+void DStage<T>::Dispatch(UniqConstJobPtr<T> job_p,
                          unsigned requested_duplication) {
-  _dispatcher->Dispatch(std::move(job), requested_duplication);
+  VLOG(4) << __PRETTY_FUNCTION__
+          << ((job_p == nullptr) ? " job_p=nullptr," : " job_id=")
+          << ((job_p == nullptr) ? ' ' : job_p->job_id)
+          << ((job_p == nullptr) ? ' ' : ',')
+          << " requested_duplication=" << requested_duplication;
+  _dispatcher->Dispatch(std::move(job_p), requested_duplication);
 }
 
 template <typename T>
 std::list<UniqConstJobPtr<T>> DStage<T>::Purge(JobId job_id) {
+  VLOG(4) << __PRETTY_FUNCTION__ << " job_id=" << job_id;
   std::list<UniqConstJobPtr<T>> purged = _multi_q->Purge(job_id);
   purged.splice(purged.end(), _scheduler->Purge(job_id));
   return purged;

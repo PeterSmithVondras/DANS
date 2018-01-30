@@ -1,4 +1,5 @@
 #include <memory>
+#include <string>
 
 #include "common/dstage/job.h"
 #include "common/dstage/multiqueue.h"

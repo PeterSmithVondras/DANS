@@ -18,6 +18,7 @@ MultiQueue<T>::MultiQueue(unsigned max_priority)
       _not_empty_mutexes(_max_prio + 1),
       _pq_mutexes(_max_prio + 1),
       _priority_qs(_max_prio + 1) {
+  VLOG(4) << __PRETTY_FUNCTION__ << " max_priority=" << max_priority;
   for (unsigned i = 0; i < _max_prio; i++) {
     // Queues start empty and therefore "not empty" is locked.
     _not_empty_mutexes[i].lock();
@@ -25,14 +26,16 @@ MultiQueue<T>::MultiQueue(unsigned max_priority)
 }
 
 template <typename T>
-MultiQueue<T>::~MultiQueue() {}
+MultiQueue<T>::~MultiQueue() {
+  VLOG(4) << __PRETTY_FUNCTION__;
+}
 
 template <typename T>
 void MultiQueue<T>::Enqueue(UniqConstJobPtr<T> job_p) {
   VLOG(4) << __PRETTY_FUNCTION__
-          << ((job_p == nullptr) ? " job_p == nullptr" : " job_id: ")
-          << job_p->job_id;
-
+          << ((job_p == nullptr) ? " job_p=nullptr," : " job_id=")
+          << ((job_p == nullptr) ? ' ' : job_p->job_id)
+          << ((job_p == nullptr) ? ' ' : ',');
   CHECK_NOTNULL(job_p);
 
   // Ensuring that purging is not in effect.
@@ -77,6 +80,7 @@ void MultiQueue<T>::Enqueue(UniqConstJobPtr<T> job_p) {
 
 template <typename T>
 UniqConstJobPtr<T> MultiQueue<T>::Dequeue(Priority prio) {
+  VLOG(4) << __PRETTY_FUNCTION__ << " prio=" << prio;
   CHECK_LE(prio, _max_prio);
 
   // This lock is not being acquired right now as we do not want to block
@@ -150,6 +154,7 @@ UniqConstJobPtr<T> MultiQueue<T>::Dequeue(Priority prio) {
 
 template <typename T>
 std::list<UniqConstJobPtr<T>> MultiQueue<T>::Purge(JobId job_id) {
+  VLOG(4) << __PRETTY_FUNCTION__ << " job_id=" << job_id;
   // Ensure complete control of the multiqueue
   std::unique_lock<std::shared_timed_mutex> no_pruging(_purge_shared_mutex);
 

@@ -75,6 +75,7 @@ cc_library(
   srcs =     [ "scheduler.cc" ],
   deps = [
     ":dstage_base",
+    "//common/thread:thread_utility",
     "@glog//:main",
     "@gflags//:main",
   ],
