@@ -22,9 +22,9 @@ cc_test(
 )
 
 cc_library(
-  name =       "multiqueue",
-  hdrs =     [ "multiqueue.h" ],
-  srcs =     [ "multiqueue.cc" ],
+  name = "multiqueue",
+  hdrs = [ "multiqueue.h" ],
+  srcs = [ "multiqueue.cc" ],
   linkopts = [ "-lpthread" ],
   deps = [
     ":dstage_base",
@@ -46,9 +46,9 @@ cc_test(
 )
 
 cc_library(
-  name =       "dispatcher",
-  hdrs =     [ "dispatcher.h" ],
-  srcs =     [ "dispatcher.cc" ],
+  name = "dispatcher",
+  hdrs = [ "dispatcher.h" ],
+  srcs = [ "dispatcher.cc" ],
   deps = [
     ":dstage_base",
     "@glog//:main",
@@ -70,9 +70,9 @@ cc_test(
 )
 
 cc_library(
-  name =       "scheduler",
-  hdrs =     [ "scheduler.h" ],
-  srcs =     [ "scheduler.cc" ],
+  name = "scheduler",
+  hdrs = [ "scheduler.h" ],
+  srcs = [ "scheduler.cc" ],
   deps = [
     ":dstage_base",
     "//common/thread:thread_utility",
@@ -95,9 +95,9 @@ cc_test(
 )
 
 cc_library(
-  name =       "dstage",
-  hdrs =     [ "dstage.h" ],
-  srcs =     [ "dstage.cc" ],
+  name = "dstage",
+  hdrs = [ "dstage.h" ],
+  srcs = [ "dstage.cc" ],
   deps = [
     ":dstage_base",
     "@glog//:main",
@@ -117,5 +117,29 @@ cc_test(
     ":multiqueue",
     "@glog//:main",
     "@gflags//:main",
+  ],
+)
+
+cc_library(
+  name = "linux_communication_handler",
+  hdrs = [
+    "linux_communication_handler.h",
+    "communication_handler_interface.h",
+  ],
+  srcs = [ "linux_communication_handler.cc" ],
+  deps = [
+    "@glog//:main",
+    "@gflags//:main",
+  ],
+)
+
+cc_test(
+  name = "linux_communication_handler_test",
+  srcs = [ "linux_communication_handler_test.cc" ],
+  deps = [
+    ":linux_communication_handler",
+    "@glog//:main",
+    "@gflags//:main",
+    "@gtest//:main",
   ],
 )
