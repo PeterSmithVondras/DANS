@@ -1,4 +1,9 @@
+#include <sys/socket.h>
+#include <sys/types.h>
+
 #include <chrono>
+#include <cstring>
+#include <functional>
 #include <thread>
 
 #include "common/dstage/linux_communication_handler.h"
@@ -11,6 +16,42 @@ using dans::LinuxCommunicationHandler;
 int kNumberOfSockets = 10;
 }  // namespace
 
+void MonitorCallback(LinuxCommunicationHandler* handler, int soc,
+                     LinuxCommunicationHandler::ReadyFor ready_for) {
+  VLOG(1) << "MONITOR CALLBACK";
+  if (ready_for.out) {
+    char buf[15];
+    read(soc, buf, 15);
+    LOG(INFO) << buf;
+    // epoll_event event;
+    // event.events = 0;
+    // epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, soc, &event);
+    // close(soc);
+  }
+}
+
+void ConnectCallback(LinuxCommunicationHandler* handler, int soc,
+                     LinuxCommunicationHandler::ReadyFor ready_for) {
+  char buf[] =
+      "GET / HTTP/1.1\n"
+      "Host: www.google.com\n"
+      "User-Agent: curl/7.54.0\n"
+      "Accept: */*\n"
+      "\n";
+
+  LOG(INFO) << "Test printed socket=" << soc;
+  int ret = send(soc, buf, std::strlen(buf), /*flags=*/0);
+  PLOG_IF(ERROR, ret != static_cast<int>(std::strlen(buf)))
+      << "Failed to send: socket=" << soc << "\n"
+      << buf;
+
+  // LinuxCommunicationHandler::CallBack2 done(std::bind(
+  //     MonitorCallback, handler, std::placeholders::_1,
+  //     std::placeholders::_2));
+  // handler->Monitor(soc, LinuxCommunicationHandler::ReadyFor{/*in=*/true,
+  // /*out=*/false}, done);
+}
+
 TEST(LinuxCommunicationHandler, CreateHandler) {
   LinuxCommunicationHandler handler;
   for (int i = 0; i < kNumberOfSockets; i++) {
@@ -18,11 +59,15 @@ TEST(LinuxCommunicationHandler, CreateHandler) {
     EXPECT_GE(soc, 0);
     VLOG(4) << "Socket=" << soc;
   }
-  handler.Connect();
+
+  LinuxCommunicationHandler::CallBack2 done(std::bind(
+      ConnectCallback, &handler, std::placeholders::_1, std::placeholders::_2));
+  handler.Connect("172.217.10.36", "80", done);
+
   std::this_thread::sleep_for(std::chrono::milliseconds(250));
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   // Parse all command line flags. This MUST go before InitGoogleLogging.
   gflags::ParseCommandLineFlags(&argc, &argv, true);
