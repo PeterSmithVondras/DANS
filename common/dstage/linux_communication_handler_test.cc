@@ -4,6 +4,8 @@
 #include <chrono>
 #include <cstring>
 #include <functional>
+#include <memory>
+#include <mutex>
 #include <thread>
 
 #include "common/dstage/linux_communication_handler.h"
@@ -15,54 +17,74 @@ namespace {
 using dans::LinuxCommunicationHandler;
 using CallBack2 = LinuxCommunicationHandler::CallBack2;
 int kNumberOfSockets = 10;
+int kReadSize = 15;
 }  // namespace
 
-void MonitorCallback(LinuxCommunicationHandler* handler, int soc,
-                     LinuxCommunicationHandler::ReadyFor ready_for) {
-  if (ready_for.in) {
-    char buf[15];
-    read(soc, buf, 15);
-    LOG(INFO) << buf;
-    handler->Close(soc);
+class LinuxCommunicationHandlerTest : public testing::Test {
+ protected:
+  virtual void SetUp() { _complete_lock.lock(); }
+
+  void ReadCallback(int soc, LinuxCommunicationHandler::ReadyFor ready_for) {
+    if (ready_for.in) {
+      EXPECT_TRUE(ready_for.in);
+      char buf[15];
+      EXPECT_EQ(read(soc, buf, kReadSize), kReadSize);
+      EXPECT_STREQ(buf, "HTTP/1.1 200 OK");
+      VLOG(1) << buf;
+      _handler.Close(soc);
+      // Signal that we have completed the chain of events.
+      _complete_lock.unlock();
+    }
   }
-}
 
-void ConnectCallback(LinuxCommunicationHandler* handler, int soc,
-                     LinuxCommunicationHandler::ReadyFor ready_for) {
-  char buf[] =
-      "GET / HTTP/1.1\n"
-      "Host: www.google.com\n"
-      "User-Agent: curl/7.54.0\n"
-      "Accept: */*\n"
-      "\n";
+  void SendCallback(int soc, LinuxCommunicationHandler::ReadyFor ready_for) {
+    EXPECT_TRUE(ready_for.out) << "Failed to create TCP connection.";
+    EXPECT_FALSE(ready_for.in) << "Failed to create TCP connection.";
+    char buf[] =
+        "GET / HTTP/1.1\n"
+        "Host: www.google.com\n"
+        "User-Agent: curl/7.54.0\n"
+        "Accept: */*\n"
+        "\n";
 
-  int ret = send(soc, buf, std::strlen(buf), /*flags=*/0);
-  PLOG_IF(ERROR, ret != static_cast<int>(std::strlen(buf)))
-      << "Failed to send: socket=" << soc << "\n"
-      << buf;
+    int ret = send(soc, buf, std::strlen(buf), /*flags=*/0);
+    EXPECT_EQ(ret, static_cast<int>(std::strlen(buf)))
+        << "Failed to send: socket=" << soc << "\n"
+        << "Tried to send: " << buf;
 
-  CallBack2 done(std::bind(MonitorCallback, handler, std::placeholders::_1,
-                           std::placeholders::_2));
-  handler->Monitor(soc,
-                   LinuxCommunicationHandler::ReadyFor{/*in=*/true,
-                                                       /*out=*/false},
-                   done);
-}
+    CallBack2 done(std::bind(&LinuxCommunicationHandlerTest::ReadCallback, this,
+                             std::placeholders::_1, std::placeholders::_2));
+    _handler.Monitor(soc,
+                     LinuxCommunicationHandler::ReadyFor{/*in=*/true,
+                                                         /*out=*/false},
+                     done);
+  }
 
-TEST(LinuxCommunicationHandler, CreateHandler) {
-  LinuxCommunicationHandler handler;
+  // This function is used for a test, but must be written inside of the
+  // LinuxCommunicationHandlerTest class because of google magic, where it will
+  // not allow passing of non-static member functions from within the TEST_F.
+  void Get() {
+    CallBack2 done(std::bind(&LinuxCommunicationHandlerTest::SendCallback, this,
+                             std::placeholders::_1, std::placeholders::_2));
+    _handler.Connect("172.217.10.36", "80", done);
+    EXPECT_TRUE(_complete_lock.try_lock_for(std::chrono::milliseconds(250)))
+        << "ReadCallback was never called which means that we never received"
+        << "an HTTP response. Check internet connection.";
+  }
+
+  std::timed_mutex _complete_lock;
+  LinuxCommunicationHandler _handler;
+};
+
+TEST_F(LinuxCommunicationHandlerTest, CreateSocket) {
   for (int i = 0; i < kNumberOfSockets; i++) {
-    int soc = handler.CreateSocket();
+    int soc = _handler.CreateSocket();
     EXPECT_GE(soc, 0);
     VLOG(4) << "Socket=" << soc;
   }
-
-  CallBack2 done(std::bind(ConnectCallback, &handler, std::placeholders::_1,
-                           std::placeholders::_2));
-  handler.Connect("172.217.10.36", "80", done);
-
-  std::this_thread::sleep_for(std::chrono::milliseconds(250));
 }
+
+TEST_F(LinuxCommunicationHandlerTest, GetGoogle) { Get(); }
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
