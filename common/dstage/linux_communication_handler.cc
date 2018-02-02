@@ -124,29 +124,19 @@ void LinuxCommunicationHandler::MonitorAllSockets() {
 
 void LinuxCommunicationHandler::ConnectionReady(int soc, CallBack2 done,
                                                 uint32_t events) {
-  LOG(INFO) << "Handling a socket! socket=" << soc;
+  VLOG(4) << __PRETTY_FUNCTION__ << " soc=" << soc;
   // connection established
   // check pending error if ever
-  int err = 0;
-  socklen_t len = sizeof(int);
-  int soc_opt = getsockopt(soc, SOL_SOCKET, SO_ERROR, &err, &len);
-  if (events & EPOLLOUT) {
-    if (soc_opt != 0) {
-      PLOG(WARNING) << "Failed to get sock options: socket=" << soc;
-      done(-errno, {/*in=*/false, /*out=*/false});
-    } else {
-      if (err != 0) {
-        PLOG(WARNING) << "Error in socket connect.";
-        done(-errno, {/*in=*/false, /*out=*/false});
-      } else {
-        VLOG(1) << "TCP connection established for socket=" << soc;
-        ReadyFor ready{/*in=*/false, /*out=*/true};
-        if (events & EPOLLIN) {
-          ready.in = true;
-        }
-        done(soc, ready);
-      }
+  int err = CheckForSocketErrors(soc);
+  if (err < 0) {
+    done(err, {/*in=*/false, /*out=*/false});
+  } else if (events & EPOLLOUT) {
+    VLOG(1) << "TCP connection established for socket=" << soc;
+    ReadyFor ready{/*in=*/false, /*out=*/true};
+    if (events & EPOLLIN) {
+      ready.in = true;
     }
+    done(soc, ready);
   } else if (events & EPOLLIN) {
     done(soc, ReadyFor{/*in=*/true, /*out=*/false});
   } else {
@@ -155,18 +145,9 @@ void LinuxCommunicationHandler::ConnectionReady(int soc, CallBack2 done,
   }
 }
 
-void LinuxCommunicationHandler::Read(int soc, uint32_t events) {
-  char buf[15];
-  read(soc, buf, 15);
-  LOG(INFO) << buf;
-  epoll_event event;
-  event.events = 0;
-  epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, soc, &event);
-  close(soc);
-}
-
 void LinuxCommunicationHandler::Monitor(int soc, ReadyFor ready_for,
                                         CallBack2 done) {
+  VLOG(4) << __PRETTY_FUNCTION__ << " soc=" << soc;
   CHECK_GE(soc, 0);
   if (!ready_for.in && !ready_for.out) {
     LOG(WARNING) << "Request to monitor nothing for socket=" << soc;
@@ -186,60 +167,53 @@ void LinuxCommunicationHandler::Monitor(int soc, ReadyFor ready_for,
                            << soc;
 }
 
-// int LinuxCommunicationHandler::CheckForSocketErrors(int soc) {
-//   // check pending error if ever
-//   int err = 0;
-//   socklen_t len = sizeof(int);
-//   int soc_opt = getsockopt(soc, SOL_SOCKET, SO_ERROR, &err, &len);
-//   if (soc_opt != 0) {
-//     PLOG(WARNING) << "Failed to get sock options: socket=" << soc;
-//     done(-errno, {/*in=*/false, /*out=*/false});
-//   } else {
-//     if (err != 0) {
-//       PLOG(WARNING) << "Error in socket connect.";
-//       done(-errno, {/*in=*/false, /*out=*/false});
-//     }
-//   }
-
-//   return soc;
-// }
-
-void LinuxCommunicationHandler::MonitorSocketReady(int soc, CallBack2 done,
-                                                   uint32_t events) {
-  LOG(INFO) << "Handling a socket! socket=" << soc;
-  // connection established
+int LinuxCommunicationHandler::CheckForSocketErrors(int soc) {
+  VLOG(4) << __PRETTY_FUNCTION__ << " soc=" << soc;
   // check pending error if ever
   int err = 0;
   socklen_t len = sizeof(int);
   int soc_opt = getsockopt(soc, SOL_SOCKET, SO_ERROR, &err, &len);
   if (soc_opt != 0) {
     PLOG(WARNING) << "Failed to get sock options: socket=" << soc;
-    done(-errno, {/*in=*/false, /*out=*/false});
+    close(soc);
+    PLOG_IF(WARNING, close(soc) != 0) << "Failed to close socket=" << soc;
+    soc = -errno;
   } else {
     if (err != 0) {
       PLOG(WARNING) << "Error in socket connect.";
-      done(-errno, {/*in=*/false, /*out=*/false});
-    } else {
-      // Custom for this function.
-      ReadyFor ready{/*in=*/false, /*out=*/false};
-      if (events & EPOLLIN) ready.in = true;
-      if (events & EPOLLOUT) ready.out = true;
-      done(soc, ready);
+      close(soc);
+      PLOG_IF(WARNING, close(soc) != 0) << "Failed to close socket=" << soc;
+      soc = -errno;
     }
+  }
+
+  return soc;
+}
+
+void LinuxCommunicationHandler::MonitorSocketReady(int soc, CallBack2 done,
+                                                   uint32_t events) {
+  VLOG(4) << __PRETTY_FUNCTION__ << " soc=" << soc;
+  VLOG(1) << "Monitor handling a socket=" << soc;
+  // connection established
+  // check pending error if ever
+  int err = CheckForSocketErrors(soc);
+  if (err < 0) {
+    done(err, {/*in=*/false, /*out=*/false});
+  } else {
+    // Custom for this function.
+    ReadyFor ready{/*in=*/false, /*out=*/false};
+    if (events & EPOLLIN) ready.in = true;
+    if (events & EPOLLOUT) ready.out = true;
+    done(soc, ready);
   }
 }
 
 void LinuxCommunicationHandler::Close(int soc) {
+  VLOG(4) << __PRETTY_FUNCTION__ << " soc=" << soc;
   if (soc < 0) {
     LOG(WARNING) << "Cannot close negative socket=" << soc;
     return;
   }
-
-  epoll_event event;
-  event.events = 0;
-  int ret = epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, soc, &event);
-  PLOG_IF(ERROR, ret != 0) << "Failed to remove socket from epoll set: socket="
-                           << soc;
   PLOG_IF(WARNING, close(soc) != 0) << "Failed to close socket=" << soc;
 }
 

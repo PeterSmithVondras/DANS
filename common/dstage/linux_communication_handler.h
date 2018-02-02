@@ -28,7 +28,7 @@ class LinuxCommunicationHandler : public CommunicationHandlerInterface {
   void MonitorAllSockets();
   void MonitorSocketReady(int soc, CallBack2 done, uint32_t events);
   void ConnectionReady(int soc, CallBack2 done, uint32_t events);
-  void Read(int soc, uint32_t events);
+  int CheckForSocketErrors(int soc);
 
   int _epoll_fd;
   std::vector<struct epoll_event> _events;

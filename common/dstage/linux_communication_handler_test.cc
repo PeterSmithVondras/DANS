@@ -13,6 +13,7 @@
 
 namespace {
 using dans::LinuxCommunicationHandler;
+using CallBack2 = LinuxCommunicationHandler::CallBack2;
 int kNumberOfSockets = 10;
 }  // namespace
 
@@ -42,8 +43,8 @@ void ConnectCallback(LinuxCommunicationHandler* handler, int soc,
       << "Failed to send: socket=" << soc << "\n"
       << buf;
 
-  LinuxCommunicationHandler::CallBack2 done(std::bind(
-      MonitorCallback, handler, std::placeholders::_1, std::placeholders::_2));
+  CallBack2 done(std::bind(MonitorCallback, handler, std::placeholders::_1,
+                           std::placeholders::_2));
   handler->Monitor(soc,
                    LinuxCommunicationHandler::ReadyFor{/*in=*/true,
                                                        /*out=*/false},
@@ -58,8 +59,8 @@ TEST(LinuxCommunicationHandler, CreateHandler) {
     VLOG(4) << "Socket=" << soc;
   }
 
-  LinuxCommunicationHandler::CallBack2 done(std::bind(
-      ConnectCallback, &handler, std::placeholders::_1, std::placeholders::_2));
+  CallBack2 done(std::bind(ConnectCallback, &handler, std::placeholders::_1,
+                           std::placeholders::_2));
   handler.Connect("172.217.10.36", "80", done);
 
   std::this_thread::sleep_for(std::chrono::milliseconds(250));
