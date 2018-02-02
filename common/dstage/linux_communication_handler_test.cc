@@ -19,14 +19,11 @@ int kNumberOfSockets = 10;
 void MonitorCallback(LinuxCommunicationHandler* handler, int soc,
                      LinuxCommunicationHandler::ReadyFor ready_for) {
   VLOG(1) << "MONITOR CALLBACK";
-  if (ready_for.out) {
+  if (ready_for.in) {
     char buf[15];
     read(soc, buf, 15);
     LOG(INFO) << buf;
-    // epoll_event event;
-    // event.events = 0;
-    // epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, soc, &event);
-    // close(soc);
+    handler->Close(soc);
   }
 }
 
@@ -45,11 +42,12 @@ void ConnectCallback(LinuxCommunicationHandler* handler, int soc,
       << "Failed to send: socket=" << soc << "\n"
       << buf;
 
-  // LinuxCommunicationHandler::CallBack2 done(std::bind(
-  //     MonitorCallback, handler, std::placeholders::_1,
-  //     std::placeholders::_2));
-  // handler->Monitor(soc, LinuxCommunicationHandler::ReadyFor{/*in=*/true,
-  // /*out=*/false}, done);
+  LinuxCommunicationHandler::CallBack2 done(std::bind(
+      MonitorCallback, handler, std::placeholders::_1, std::placeholders::_2));
+  handler->Monitor(soc,
+                   LinuxCommunicationHandler::ReadyFor{/*in=*/true,
+                                                       /*out=*/false},
+                   done);
 }
 
 TEST(LinuxCommunicationHandler, CreateHandler) {

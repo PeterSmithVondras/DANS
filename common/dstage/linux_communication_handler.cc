@@ -78,7 +78,7 @@ void LinuxCommunicationHandler::Connect(const std::string& ip,
 
   struct epoll_event event;
   // Need to wait on socket for ability to connect.
-  event.events = EPOLLIN | EPOLLOUT;
+  event.events = EPOLLIN | EPOLLOUT | EPOLLONESHOT;
 
   // Setting user data in the event structure to be a callback with relevant
   // data.
@@ -139,17 +139,7 @@ void LinuxCommunicationHandler::ConnectionReady(int soc, CallBack2 done,
         PLOG(WARNING) << "Error in socket connect.";
         done(-errno, {/*in=*/false, /*out=*/false});
       } else {
-        LOG(INFO) << "Connection established";
-        // disable write event: to reenable when
-        // data are to be sent on the socket
-        epoll_event event;
-        event.events = EPOLLIN;
-        event.data.ptr = new DynamicallyAllocatedCallback(
-            std::bind(&LinuxCommunicationHandler::Read, this, soc,
-                      std::placeholders::_1));
-        int ret = epoll_ctl(_epoll_fd, EPOLL_CTL_MOD, soc, &event);
-        PLOG_IF(ERROR, ret != 0)
-            << "Failed to add socket to epoll set: socket=" << soc;
+        VLOG(1) << "TCP connection established for socket=" << soc;
         ReadyFor ready{/*in=*/false, /*out=*/true};
         if (events & EPOLLIN) {
           ready.in = true;
@@ -184,7 +174,7 @@ void LinuxCommunicationHandler::Monitor(int soc, ReadyFor ready_for,
     return;
   }
   epoll_event event;
-  event.events = 0;
+  event.events = EPOLLONESHOT;
   if (ready_for.in) event.events |= EPOLLIN;
   if (ready_for.out) event.events |= EPOLLOUT;
 
@@ -195,6 +185,24 @@ void LinuxCommunicationHandler::Monitor(int soc, ReadyFor ready_for,
   PLOG_IF(ERROR, ret != 0) << "Failed to add socket to epoll set: socket="
                            << soc;
 }
+
+// int LinuxCommunicationHandler::CheckForSocketErrors(int soc) {
+//   // check pending error if ever
+//   int err = 0;
+//   socklen_t len = sizeof(int);
+//   int soc_opt = getsockopt(soc, SOL_SOCKET, SO_ERROR, &err, &len);
+//   if (soc_opt != 0) {
+//     PLOG(WARNING) << "Failed to get sock options: socket=" << soc;
+//     done(-errno, {/*in=*/false, /*out=*/false});
+//   } else {
+//     if (err != 0) {
+//       PLOG(WARNING) << "Error in socket connect.";
+//       done(-errno, {/*in=*/false, /*out=*/false});
+//     }
+//   }
+
+//   return soc;
+// }
 
 void LinuxCommunicationHandler::MonitorSocketReady(int soc, CallBack2 done,
                                                    uint32_t events) {
@@ -221,6 +229,18 @@ void LinuxCommunicationHandler::MonitorSocketReady(int soc, CallBack2 done,
   }
 }
 
-void LinuxCommunicationHandler::Close(int soc) {}
+void LinuxCommunicationHandler::Close(int soc) {
+  if (soc < 0) {
+    LOG(WARNING) << "Cannot close negative socket=" << soc;
+    return;
+  }
+
+  epoll_event event;
+  event.events = 0;
+  int ret = epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, soc, &event);
+  PLOG_IF(ERROR, ret != 0) << "Failed to remove socket from epoll set: socket="
+                           << soc;
+  PLOG_IF(WARNING, close(soc) != 0) << "Failed to close socket=" << soc;
+}
 
 }  // namespace dans
