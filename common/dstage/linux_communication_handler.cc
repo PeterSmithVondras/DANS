@@ -100,7 +100,7 @@ void LinuxCommunicationHandler::MonitorAllSockets() {
 
     // Handle every returned socket.
     for (int i = 0; i < returned_events_count; i++) {
-      VLOG(1) << "MonitorAllSockets reactor handling a socket.";
+      VLOG(2) << "MonitorAllSockets reactor handling a socket.";
       auto cb_p =
           static_cast<DynamicallyAllocatedCallback*>(_events[i].data.ptr);
       (*cb_p)(_events[i].events);
@@ -186,7 +186,6 @@ int LinuxCommunicationHandler::CheckForSocketErrors(int soc) {
       soc = -errno;
     }
   }
-
   return soc;
 }
 

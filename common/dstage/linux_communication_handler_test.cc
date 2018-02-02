@@ -19,7 +19,6 @@ int kNumberOfSockets = 10;
 
 void MonitorCallback(LinuxCommunicationHandler* handler, int soc,
                      LinuxCommunicationHandler::ReadyFor ready_for) {
-  VLOG(1) << "MONITOR CALLBACK";
   if (ready_for.in) {
     char buf[15];
     read(soc, buf, 15);
@@ -37,7 +36,6 @@ void ConnectCallback(LinuxCommunicationHandler* handler, int soc,
       "Accept: */*\n"
       "\n";
 
-  LOG(INFO) << "Test printed socket=" << soc;
   int ret = send(soc, buf, std::strlen(buf), /*flags=*/0);
   PLOG_IF(ERROR, ret != static_cast<int>(std::strlen(buf)))
       << "Failed to send: socket=" << soc << "\n"
