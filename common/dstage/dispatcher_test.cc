@@ -11,7 +11,7 @@ namespace {
 using namespace dans;
 using ConstJobJData = const Job<JData>;
 const Priority kMaxPrio = 2;
-auto kGenericData = std::make_shared<JData>(5);
+JData kGenericData = {5};
 const unsigned kGenericDuplication = 0;
 
 class TestDispatcher : public Dispatcher<JData, JData> {
@@ -20,13 +20,16 @@ class TestDispatcher : public Dispatcher<JData, JData> {
       : Dispatcher<JData, JData>(max_priority) {}
 
  protected:
-  UniqConstJobPtr<JData> DuplicateAndConvert(const Job<JData>* job_in,
-                                             Priority prio,
-                                             unsigned duplication) override {
-    VLOG(4) << __PRETTY_FUNCTION__ << " prio=" << prio
+  void DuplicateAndEnqueue(UniqConstJobPtr<JData> job_in, Priority max_prio,
+                           unsigned duplication) override {
+    VLOG(4) << __PRETTY_FUNCTION__ << " max_prio=" << max_prio
             << ", duplication= " << duplication;
-    return std::make_unique<const Job<JData>>(job_in->job_data, job_in->job_id,
-                                              prio, duplication);
+
+    for (Priority prio = job_in->priority; prio <= max_prio; prio++) {
+      auto duplicate_job_p = std::make_unique<const Job<JData>>(
+          job_in->job_data, job_in->job_id, prio, duplication);
+      _multi_q_p->Enqueue(std::move(duplicate_job_p));
+    }
   }
 };
 }  // namespace

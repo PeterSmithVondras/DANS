@@ -6,12 +6,9 @@
 #include "glog/logging.h"
 
 namespace {
-
 using namespace dans;
 using ConstJobJData = const Job<JData>;
-
-auto kGenericData = std::make_shared<JData>(5);
-
+JData kGenericData = {5};
 }  // namespace
 
 int main(int argc, char* argv[]) {

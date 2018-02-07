@@ -9,7 +9,7 @@ namespace {
 
 using namespace dans;
 using ConstJobJData = const Job<JData>;
-auto kGenericData = std::make_shared<JData>(5);
+JData kGenericData = {5};
 unsigned kNumberOfQueues = 3;
 
 }  // namespace

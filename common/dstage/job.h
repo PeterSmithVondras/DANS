@@ -31,8 +31,7 @@ class JobIdFactory {
 
 template <typename T>
 struct Job {
-  Job(std::shared_ptr<T> job_data, JobId job_id, Priority priority,
-      unsigned duplication)
+  Job(T job_data, JobId job_id, Priority priority, unsigned duplication)
       : job_id(job_id),
         priority(priority),
         duplication(duplication),
@@ -44,7 +43,7 @@ struct Job {
   JobId job_id;
   Priority priority;
   unsigned duplication;
-  std::shared_ptr<T> job_data;
+  T job_data;
 };
 
 template <typename T>

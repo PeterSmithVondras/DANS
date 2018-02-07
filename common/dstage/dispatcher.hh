@@ -40,14 +40,15 @@ void Dispatcher<T_INPUT, T_INTERNAL>::Dispatch(UniqConstJobPtr<T_INPUT> job_p,
   Priority max_prio = job_p->priority + requested_duplication > _max_priority
                           ? _max_priority
                           : job_p->priority + requested_duplication;
-  unsigned duplication = max_prio - job_p->priority;
+  // unsigned duplication = max_prio - job_p->priority;
 
-  for (Priority prio = job_p->priority; prio <= max_prio; prio++) {
-    // This is where the conversion needs to happen from Job<T_INPUT> to
-    // Job<T_INTERNAL>
-    auto duplicate_job_p = DuplicateAndConvert(job_p.get(), prio, duplication);
-    SendToMultiQueue(std::move(duplicate_job_p));
-  }
+  DuplicateAndEnqueue(std::move(job_p), max_prio, max_prio - job_p->priority);
+  // for (Priority prio = job_p->priority; prio <= max_prio; prio++) {
+  //   // This is where the conversion needs to happen from Job<T_INPUT> to
+  //   // Job<T_INTERNAL>
+  //   auto duplicate_job_p = DuplicateAndConvert(job_p.get(), prio,
+  //   duplication); SendToMultiQueue(std::move(duplicate_job_p));
+  // }
 }
 
 template <typename T_INPUT, typename T_INTERNAL>
