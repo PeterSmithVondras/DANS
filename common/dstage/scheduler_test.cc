@@ -33,34 +33,6 @@ int main(int argc, char* argv[]) {
   scheduler->Run();
   scheduler = nullptr;
 
-  // JobIdFactory j_fact(0);
-  // std::list<UniqConstJobPtr<JData>> purged;
-
-  // auto job =
-  //     std::make_unique<ConstJobJData>(kGenericData, j_fact.CreateJobId(),
-  //                                     /*priority=*/0, kGenericDuplication);
-  // JobId job_id = job->job_id;
-  // dispatcher.Dispatch(std::move(job), /*requested_duplication=*/2);
-  // assert(prio_qs.Purge(job_id).size() == kMaxPrio + 1);
-
-  // job = std::make_unique<ConstJobJData>(kGenericData, j_fact.CreateJobId(),
-  //                                       /*priority=*/1, kGenericDuplication);
-  // job_id = job->job_id;
-  // Priority prio = job->priority;
-  // dispatcher.Dispatch(std::move(job), /*requested_duplication=*/0);
-  // purged = prio_qs.Purge(job_id);
-  // assert(purged.size() == 1);
-  // assert(purged.front()->priority == prio);
-
-  // job = std::make_unique<ConstJobJData>(kGenericData, j_fact.CreateJobId(),
-  //                                       /*priority=*/2, kGenericDuplication);
-  // job_id = job->job_id;
-  // prio = job->priority;
-  // dispatcher.Dispatch(std::move(job), /*requested_duplication=*/5);
-  // purged = prio_qs.Purge(job_id);
-  // assert(purged.size() == 1);
-  // assert(purged.front()->priority == prio);
-
   LOG(INFO) << "PASS";
   return 0;
 }

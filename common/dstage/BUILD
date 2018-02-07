@@ -148,3 +148,27 @@ cc_test(
     "@gtest//:main",
   ],
 )
+
+cc_library(
+  name = "client_request_handler",
+  hdrs = [
+    "client_request_handler.h",
+  ],
+  srcs = [ "client_request_handler.cc" ],
+  deps = [
+    ":dstage_base",
+    ":multiqueue",
+    ":dispatcher",
+    ":scheduler",
+    ":dstage",
+    "@glog//:main",
+    "@gflags//:main",
+  ],
+
+
+
+
+
+
+
+)

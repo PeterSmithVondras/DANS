@@ -118,7 +118,7 @@ $(COM_DS)dstage_test: $(COM_DS)dstage_test.cc $(COM_DS)job.h \
 		$(COM_DS)scheduler.o $(COM_DS)dstage.o
 
 format:
-	clang-format -i  `find . -type f | command grep  '\.h\|\.cc'`
+	clang-format -i  `find . -type f | command grep  '\.h\|\.cc\|\.hh'`
 
 clean:
 	rm $(STORAGE)storage_client \

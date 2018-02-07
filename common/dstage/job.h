@@ -2,6 +2,7 @@
 #define DANS02_DSTAGE_JOB_H
 
 #include <memory>
+#include <string>
 #include <vector>
 #include "common/dstage/priority.h"
 
@@ -12,6 +13,13 @@ namespace dans {
 struct JData {
   JData(unsigned foo) : foo(foo) {}
   unsigned foo;
+};
+
+// struct ClientReqData {
+
+// };
+struct JDatas {
+  JData jdata;
 };
 
 typedef unsigned JobId;
