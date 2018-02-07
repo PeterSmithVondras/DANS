@@ -64,4 +64,6 @@ class MultiQueue : public BaseMultiQueue<T> {
 
 }  // namespace dans
 
+#include "common/dstage/multiqueue.hh"
+
 #endif  // DANS02_DSTAGE_MULTIQUEUE_H

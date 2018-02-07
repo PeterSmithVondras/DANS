@@ -38,4 +38,6 @@ class DStage : public BaseDStage<T> {
 };
 }  // namespace dans
 
+#include "common/dstage/dstage.hh"
+
 #endif  // DANS02_DSTAGE_DSTAGE_H

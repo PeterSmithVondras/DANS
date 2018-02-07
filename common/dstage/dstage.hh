@@ -1,3 +1,8 @@
+// This is an implementation file which is being included as a header so that
+// we can have dynamic template specialization at compile time.
+#ifndef DANS02_DSTAGE_CC_IMPL__
+#define DANS02_DSTAGE_CC_IMPL__
+
 #include "common/dstage/dstage.h"
 
 #include "common/dstage/dstage.h"
@@ -41,8 +46,6 @@ std::list<UniqConstJobPtr<T>> DStage<T>::Purge(JobId job_id) {
   return purged;
 }
 
-// As long as template implementation is in .cpp file, must explicitly tell
-// compiler which types to compile...
-template class DStage<JData>;
-
 }  // namespace dans
+
+#endif // DANS02_DSTAGE_CC_IMPL__

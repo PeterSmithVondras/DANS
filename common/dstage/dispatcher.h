@@ -34,4 +34,6 @@ class Dispatcher : public BaseDispatcher<T_INPUT> {
 };
 }  // namespace dans
 
+#include "common/dstage/dispatcher.hh"
+
 #endif  // DANS02_DSTAGE_DISPATCHER_H

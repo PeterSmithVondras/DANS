@@ -1,3 +1,8 @@
+// This is an implementation file which is being included as a header so that
+// we can have dynamic template specialization at compile time.
+#ifndef DANS02_SCHEDULER_CC_IMPL__
+#define DANS02_SCHEDULER_CC_IMPL__
+
 #include "common/dstage/scheduler.h"
 
 #include <memory>
@@ -117,8 +122,6 @@ void Scheduler<T>::StartScheduling(Priority prio) {
   // }
 }
 
-// As long as template implementation is in .cpp file, must explicitly tell
-// compiler which types to compile...
-template class Scheduler<JData>;
-
 }  // namespace dans
+
+#endif // DANS02_SCHEDULER_CC_IMPL__

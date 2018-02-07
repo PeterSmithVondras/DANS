@@ -24,8 +24,10 @@ cc_test(
 
 cc_library(
   name = "multiqueue",
-  hdrs = [ "multiqueue.h" ],
-  srcs = [ "multiqueue.cc" ],
+  hdrs = [
+    "multiqueue.h",
+    "multiqueue.hh",
+  ],
   linkopts = [ "-lpthread" ],
   deps = [
     ":dstage_base",
@@ -49,8 +51,10 @@ cc_test(
 
 cc_library(
   name = "dispatcher",
-  hdrs = [ "dispatcher.h" ],
-  srcs = [ "dispatcher.cc" ],
+  hdrs = [
+    "dispatcher.h",
+    "dispatcher.hh",
+  ],
   deps = [
     ":dstage_base",
     "@glog//:main",
@@ -74,8 +78,10 @@ cc_test(
 
 cc_library(
   name = "scheduler",
-  hdrs = [ "scheduler.h" ],
-  srcs = [ "scheduler.cc" ],
+  hdrs = [
+    "scheduler.h",
+    "scheduler.hh",
+  ],
   deps = [
     ":dstage_base",
     "//common/thread:thread_utility",
@@ -100,8 +106,10 @@ cc_test(
 
 cc_library(
   name = "dstage",
-  hdrs = [ "dstage.h" ],
-  srcs = [ "dstage.cc" ],
+  hdrs = [
+    "dstage.h",
+    "dstage.hh"
+  ],
   deps = [
     ":dstage_base",
     "@glog//:main",

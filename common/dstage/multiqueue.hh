@@ -1,3 +1,8 @@
+// This is an implementation file which is being included as a header so that
+// we can have dynamic template specialization at compile time.
+#ifndef DANS02_MULTIQUEUE_CC_IMPL__
+#define DANS02_MULTIQUEUE_CC_IMPL__
+
 #include "common/dstage/multiqueue.h"
 
 #include <list>
@@ -200,8 +205,6 @@ void MultiQueue<T>::ReleaseQueues() {
   }
 }
 
-// As long as template implementation is in .cpp file, must explicitly tell
-// compiler which types to compile...
-template class MultiQueue<JData>;
-
 }  // namespace dans
+
+#endif // DANS02_MULTIQUEUE_CC_IMPL__

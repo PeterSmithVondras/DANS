@@ -1,3 +1,7 @@
+// This is an implementation file which is being included as a header so that
+// we can have dynamic template specialization at compile time.
+#ifndef DANS02_DISPATCHER_CC_IMPL__
+#define DANS02_DISPATCHER_CC_IMPL__
 
 #include "common/dstage/dispatcher.h"
 
@@ -55,8 +59,6 @@ void Dispatcher<T_INPUT, T_INTERNAL>::LinkMultiQ(
   _running = true;
 }
 
-// As long as template implementation is in .cpp file, must explicitly tell
-// compiler which types to compile...
-template class Dispatcher<JData, JData>;
-
 }  // namespace dans
+
+#endif // DANS02_DISPATCHER_CC_IMPL__

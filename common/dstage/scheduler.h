@@ -48,4 +48,6 @@ class Scheduler : public BaseScheduler<T> {
 };
 }  // namespace dans
 
+#include "common/dstage/scheduler.hh"
+
 #endif  // DANS02_DSTAGE_SCHEDULER_H
