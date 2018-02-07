@@ -25,13 +25,6 @@ class Dispatcher : public BaseDispatcher<T_INPUT> {
   const Priority _max_priority;
   BaseMultiQueue<T_INTERNAL>* _multi_q_p;
 
-  // virtual UniqConstJobPtr<T_INTERNAL> DuplicateAndConvert(
-  //     const Job<T_INPUT>* job_in, Priority prio, unsigned duplication) = 0;
-
-  // virtual void SendToMultiQueue(UniqConstJobPtr<T_INTERNAL> duplicate_job) {
-  //   _multi_q_p->Enqueue(std::move(duplicate_job));
-  // }
-
   virtual void DuplicateAndEnqueue(UniqConstJobPtr<T_INPUT> job_in,
                                    Priority max_prio, unsigned duplication) = 0;
 };
