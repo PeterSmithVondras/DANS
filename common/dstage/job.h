@@ -6,7 +6,6 @@
 #include "common/dstage/priority.h"
 
 namespace dans {
-
 // This is an example of a specific data type for a specific dstage. In the
 // future we will either define these in a more separate place or put the
 // template classes implementations all in a header file.

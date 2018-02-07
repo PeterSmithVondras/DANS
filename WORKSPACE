@@ -15,6 +15,14 @@ new_local_repository(
      build_file = "gtest.BUILD",
 )
 
+# this currently breaks gtest
+# gmock using ubuntu package
+#new_local_repository(
+#     name = "gtest",
+#     path = "/usr/src/googletest/googlemock",
+#     build_file = "gmock.BUILD",
+#)
+
 # gflags using ubuntu package
 new_local_repository(
      name = "gflags",

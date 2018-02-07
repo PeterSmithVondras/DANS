@@ -18,6 +18,7 @@ cc_test(
     ":dstage_base",
     "@glog//:main",
     "@gflags//:main",
+    "@gtest//:main",
   ],
 )
 
@@ -42,6 +43,7 @@ cc_test(
     ":multiqueue",
     "@glog//:main",
     "@gflags//:main",
+    "@gtest//:main",
   ],
 )
 
@@ -66,6 +68,7 @@ cc_test(
     ":multiqueue",
     "@glog//:main",
     "@gflags//:main",
+    "@gtest//:main",
   ],
 )
 
@@ -91,6 +94,7 @@ cc_test(
     ":multiqueue",
     "@glog//:main",
     "@gflags//:main",
+    "@gtest//:main",
   ],
 )
 
@@ -117,6 +121,7 @@ cc_test(
     ":multiqueue",
     "@glog//:main",
     "@gflags//:main",
+    "@gtest//:main",
   ],
 )
 

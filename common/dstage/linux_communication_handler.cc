@@ -18,7 +18,7 @@ namespace {
 // Currently have no flags to pass to epoll_create.
 int kFlags = 0;
 int kMaxEvents = 64;
-int kTimeoutInMilliseconds = 250;
+int kTimeoutInMilliseconds = 100;
 }  // namespace
 
 namespace dans {
@@ -129,7 +129,7 @@ void LinuxCommunicationHandler::ConnectionReady(int soc, CallBack2 done,
   // check pending error if ever
   int err = CheckForSocketErrors(soc);
   if (err < 0) {
-    done(err, {/*in=*/false, /*out=*/false});
+    done(err, ReadyFor{/*in=*/false, /*out=*/false});
   } else if (events & EPOLLOUT) {
     VLOG(1) << "TCP connection established for socket=" << soc;
     ReadyFor ready{/*in=*/false, /*out=*/true};

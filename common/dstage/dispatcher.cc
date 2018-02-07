@@ -9,16 +9,16 @@ namespace {}  // namespace
 
 namespace dans {
 
-template <typename T>
-Dispatcher<T>::Dispatcher(unsigned max_priority)
+template <typename T_INPUT, typename T_INTERNAL>
+Dispatcher<T_INPUT, T_INTERNAL>::Dispatcher(unsigned max_priority)
     : _running(false), _max_priority(max_priority), _multi_q_p(nullptr) {
   VLOG(4) << __PRETTY_FUNCTION__ << " max_priority=" << max_priority;
 }
 
 // Duplicates job and inserts into MultiQueue
-template <typename T>
-void Dispatcher<T>::Dispatch(UniqConstJobPtr<T> job_p,
-                             unsigned requested_duplication) {
+template <typename T_INPUT, typename T_INTERNAL>
+void Dispatcher<T_INPUT, T_INTERNAL>::Dispatch(UniqConstJobPtr<T_INPUT> job_p,
+                                               unsigned requested_duplication) {
   VLOG(4) << __PRETTY_FUNCTION__
           << ((job_p == nullptr) ? " job_p=nullptr," : " job_id=")
           << ((job_p == nullptr) ? ' ' : job_p->job_id)
@@ -39,14 +39,16 @@ void Dispatcher<T>::Dispatch(UniqConstJobPtr<T> job_p,
   unsigned duplication = max_prio - job_p->priority;
 
   for (Priority prio = job_p->priority; prio <= max_prio; prio++) {
-    auto duplicate_job_p = std::make_unique<const Job<T>>(
-        job_p->job_data, job_p->job_id, prio, duplication);
-    _multi_q_p->Enqueue(std::move(duplicate_job_p));
+    // This is where the conversion needs to happen from Job<T_INPUT> to
+    // Job<T_INTERNAL>
+    auto duplicate_job_p = DuplicateAndConvert(job_p.get(), prio, duplication);
+    SendToMultiQueue(std::move(duplicate_job_p));
   }
 }
 
-template <typename T>
-void Dispatcher<T>::LinkMultiQ(BaseMultiQueue<T>* multi_q_p) {
+template <typename T_INPUT, typename T_INTERNAL>
+void Dispatcher<T_INPUT, T_INTERNAL>::LinkMultiQ(
+    BaseMultiQueue<T_INTERNAL>* multi_q_p) {
   VLOG(4) << __PRETTY_FUNCTION__;
   CHECK_NOTNULL(multi_q_p);
   _multi_q_p = multi_q_p;
@@ -55,6 +57,6 @@ void Dispatcher<T>::LinkMultiQ(BaseMultiQueue<T>* multi_q_p) {
 
 // As long as template implementation is in .cpp file, must explicitly tell
 // compiler which types to compile...
-template class Dispatcher<JData>;
+template class Dispatcher<JData, JData>;
 
 }  // namespace dans

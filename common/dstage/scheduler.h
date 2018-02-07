@@ -35,15 +35,16 @@ class Scheduler : public BaseScheduler<T> {
   const Priority _max_priority;
   BaseMultiQueue<T>* _multi_q_p;
 
-  // Guards the destruction state.
-  std::shared_timed_mutex _destructing_lock;
-  // Signals the destruction phase to all threads.
-  bool _destructing;
+  // this might be for a derived class
+  // // Guards the destruction state.
+  // std::shared_timed_mutex _destructing_lock;
+  // // Signals the destruction phase to all threads.
+  // bool _destructing;
 
   std::vector<unsigned> _threads_per_prio;
   std::vector<std::vector<std::thread>> _workers;
 
-  void StartScheduling(Priority prio);
+  virtual void StartScheduling(Priority prio);
 };
 }  // namespace dans
 
