@@ -1,6 +1,7 @@
 #ifndef DANS02_CLIENT_REQUEST_HANDLER_H
 #define DANS02_CLIENT_REQUEST_HANDLER_H
 
+#include <functional>
 #include <memory>
 #include <string>
 
@@ -11,16 +12,27 @@
 
 namespace dans {
 
-class RequestDispatcher : public Dispatcher<JData, JData> {
+struct ReqData {
+  std::vector<std::string> ip_addresses;
+  std::vector<std::string> ports;
+  std::function<void(int)> done;
+};
+
+struct ReqDataInternal {
+  int soc;
+  std::function<void(int)> done;
+};
+
+class RequestDispatcher : public Dispatcher<ReqData, ReqDataInternal> {
  public:
   RequestDispatcher(Priority max_priority);
 
  protected:
-  UniqConstJobPtr<JData> DuplicateAndConvert(const Job<JData>* job_in,
-                                             Priority prio,
-                                             unsigned duplication) override;
+  UniqConstJobPtr<ReqDataInternal> DuplicateAndConvert(
+      const Job<ReqData>* job_in, Priority prio, unsigned duplication) override;
 
-  void SendToMultiQueue(UniqConstJobPtr<JData> duplicate_job) override;
+  // void SendToMultiQueue(
+  //     UniqConstJobPtr<ReqDataInternal> duplicate_job) override;
 };
 
 }  // namespace dans

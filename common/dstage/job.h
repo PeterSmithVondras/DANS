@@ -15,13 +15,6 @@ struct JData {
   unsigned foo;
 };
 
-// struct ClientReqData {
-
-// };
-struct JDatas {
-  JData jdata;
-};
-
 typedef unsigned JobId;
 
 class JobIdFactory {

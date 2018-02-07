@@ -124,4 +124,4 @@ void Scheduler<T>::StartScheduling(Priority prio) {
 
 }  // namespace dans
 
-#endif // DANS02_SCHEDULER_CC_IMPL__
+#endif  // DANS02_SCHEDULER_CC_IMPL__

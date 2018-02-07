@@ -61,4 +61,4 @@ void Dispatcher<T_INPUT, T_INTERNAL>::LinkMultiQ(
 
 }  // namespace dans
 
-#endif // DANS02_DISPATCHER_CC_IMPL__
+#endif  // DANS02_DISPATCHER_CC_IMPL__

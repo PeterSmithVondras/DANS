@@ -207,4 +207,4 @@ void MultiQueue<T>::ReleaseQueues() {
 
 }  // namespace dans
 
-#endif // DANS02_MULTIQUEUE_CC_IMPL__
+#endif  // DANS02_MULTIQUEUE_CC_IMPL__

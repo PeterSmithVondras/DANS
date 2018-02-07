@@ -48,4 +48,4 @@ std::list<UniqConstJobPtr<T>> DStage<T>::Purge(JobId job_id) {
 
 }  // namespace dans
 
-#endif // DANS02_DSTAGE_CC_IMPL__
+#endif  // DANS02_DSTAGE_CC_IMPL__
