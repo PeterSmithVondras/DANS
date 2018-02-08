@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <memory>
+#include <shared_mutex>
 #include <string>
 
 #include "common/dstage/dispatcher.h"
@@ -30,6 +31,19 @@ class RequestDispatcher : public Dispatcher<ReqData, ReqDataInternal> {
  protected:
   void DuplicateAndEnqueue(UniqConstJobPtr<ReqData> job_in, Priority max_prio,
                            unsigned duplication) override;
+};
+
+class RequestScheduler : public Scheduler<ReqDataInternal> {
+ public:
+  RequestScheduler(std::vector<unsigned> threads_per_prio);
+  ~RequestScheduler();
+
+ protected:
+  void StartScheduling(Priority prio) override;
+
+ private:
+  bool _destructing;
+  std::shared_timed_mutex _destructing_lock;
 };
 
 }  // namespace dans
