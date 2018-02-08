@@ -172,22 +172,16 @@ cc_library(
     "@glog//:main",
     "@gflags//:main",
   ],
+)
 
 cc_test(
-  name = "file_client_test",
-  srcs = [ "file_client_test.cc" ],
+  name = "file_client_dstage_chain_test",
+  srcs = [ "file_client_dstage_chain_test.cc" ],
   deps = [
     ":client_request_handler",
-    ":dstage_base",
     "@glog//:main",
     "@gflags//:main",
     "@gtest//:main",
   ],
 )
 
-
-
-
-
-
-)

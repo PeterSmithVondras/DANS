@@ -7,6 +7,10 @@
 #include "glog/logging.h"
 #include "gtest/gtest.h"
 
+DEFINE_bool(set_thread_priority, false,
+            "Set thread priority with Linux OS, "
+            "which requires running with `sudo`.");
+
 namespace {
 
 using namespace dans;
@@ -38,8 +42,8 @@ class TestDispatcher : public Dispatcher<JData, int> {
 
 TEST(DStageTest, MainTest) {
   auto dispatcher = std::make_unique<TestDispatcher>(kMaxPrio);
-  auto scheduler =
-      std::make_unique<Scheduler<int>>(std::vector<unsigned>(kMaxPrio + 1, 2));
+  auto scheduler = std::make_unique<Scheduler<int>>(
+      std::vector<unsigned>(kMaxPrio + 1, 2), FLAGS_set_thread_priority);
   auto prio_qs = std::make_unique<MultiQueue<int>>(kMaxPrio);
   DStage<JData, int> dstage(kMaxPrio, std::move(prio_qs), std::move(dispatcher),
                             std::move(scheduler));

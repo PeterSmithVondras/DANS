@@ -27,8 +27,10 @@ void RequestDispatcher::DuplicateAndEnqueue(UniqConstJobPtr<ReqData> job_in,
   }
 }
 
-RequestScheduler::RequestScheduler(std::vector<unsigned> threads_per_prio)
-    : Scheduler<ReqDataInternal>(threads_per_prio), _destructing(false) {
+RequestScheduler::RequestScheduler(std::vector<unsigned> threads_per_prio,
+                                   bool set_thread_priority)
+    : Scheduler<ReqDataInternal>(threads_per_prio, set_thread_priority),
+      _destructing(false) {
   VLOG(4) << __PRETTY_FUNCTION__;
 }
 

@@ -35,7 +35,8 @@ class RequestDispatcher : public Dispatcher<ReqData, ReqDataInternal> {
 
 class RequestScheduler : public Scheduler<ReqDataInternal> {
  public:
-  RequestScheduler(std::vector<unsigned> threads_per_prio);
+  RequestScheduler(std::vector<unsigned> threads_per_prio,
+                   bool set_thread_priority);
   ~RequestScheduler();
 
  protected:

@@ -10,10 +10,6 @@
 #include "common/thread/thread_utility.h"
 #include "glog/logging.h"
 
-DEFINE_bool(set_thread_priority, false,
-            "Set thread priority with Linux OS, "
-            "which requires running with `sudo`.");
-
 namespace {
 const int kSchedule = SCHED_RR;
 }  // namespace
@@ -21,8 +17,9 @@ const int kSchedule = SCHED_RR;
 namespace dans {
 
 template <typename T>
-Scheduler<T>::Scheduler(std::vector<unsigned> threads_per_prio)
-    : _set_thread_priority(FLAGS_set_thread_priority),
+Scheduler<T>::Scheduler(std::vector<unsigned> threads_per_prio,
+                        bool set_thread_priority)
+    : _set_thread_priority(set_thread_priority),
       _running(false),
       _max_priority(threads_per_prio.size() - 1),
       _multi_q_p(nullptr),
@@ -81,8 +78,6 @@ void Scheduler<T>::Run() {
       _workers.back().push_back(
           std::thread(&Scheduler<T>::StartScheduling, this, p));
       if (_set_thread_priority) {
-        // TODO(pvondras) Thred policy and priority mapping should be
-        // set from the options in scheduler constructor.
         int new_prio = 90 - (p * 30) < 1 ? 1 : 90 - (p * 30);
         threadutility::ThreadUtility::SetPriority(_workers.back().back(),
                                                   kSchedule, new_prio);

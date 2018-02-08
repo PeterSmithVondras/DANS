@@ -15,7 +15,7 @@ namespace dans {
 template <typename T>
 class Scheduler : public BaseScheduler<T> {
  public:
-  Scheduler(std::vector<unsigned> threads_per_prio);
+  Scheduler(std::vector<unsigned> threads_per_prio, bool set_thread_priority);
 
   ~Scheduler() override;
 
@@ -34,12 +34,6 @@ class Scheduler : public BaseScheduler<T> {
   bool _running;
   const Priority _max_priority;
   BaseMultiQueue<T>* _multi_q_p;
-
-  // this might be for a derived class
-  // // Guards the destruction state.
-  // std::shared_timed_mutex _destructing_lock;
-  // // Signals the destruction phase to all threads.
-  // bool _destructing;
 
   std::vector<unsigned> _threads_per_prio;
   std::vector<std::vector<std::thread>> _workers;

@@ -7,6 +7,10 @@
 #include "gflags/gflags.h"
 #include "glog/logging.h"
 
+DEFINE_bool(set_thread_priority, false,
+            "Set thread priority with Linux OS, "
+            "which requires running with `sudo`.");
+
 namespace {
 using namespace dans;
 using ConstJobJData = const Job<JData>;
@@ -27,7 +31,7 @@ int main(int argc, char* argv[]) {
   LOG(INFO) << "test_dispatcher...";
 
   auto scheduler = std::make_unique<Scheduler<JData>>(
-      std::vector<unsigned>(kMaxPrio + 1, 2));
+      std::vector<unsigned>(kMaxPrio + 1, 2), FLAGS_set_thread_priority);
   auto prio_qs = std::make_unique<MultiQueue<JData>>(kMaxPrio);
   scheduler->LinkMultiQ(prio_qs.get());
   scheduler->Run();
