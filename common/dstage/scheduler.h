@@ -27,7 +27,7 @@ class Scheduler : public BaseScheduler<T> {
   // Purge will attempt to remove all instances of the Job linked to job_id in
   // the Dispatcher, Scheduler and forward the request on to any linked
   // DStages.
-  std::list<UniqConstJobPtr<T>> Purge(JobId job_id) override;
+  unsigned Purge(JobId job_id) override;
 
  protected:
   const bool _set_thread_priority;

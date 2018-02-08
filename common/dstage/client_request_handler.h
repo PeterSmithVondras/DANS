@@ -23,18 +23,14 @@ struct ReqDataInternal {
   std::function<void(int)> done;
 };
 
-// class RequestDispatcher : public Dispatcher<ReqData, ReqDataInternal> {
-//  public:
-//   RequestDispatcher(Priority max_priority);
+class RequestDispatcher : public Dispatcher<ReqData, ReqDataInternal> {
+ public:
+  RequestDispatcher(Priority max_priority);
 
-//  protected:
-//   UniqConstJobPtr<ReqDataInternal> DuplicateAndConvert(
-//       const Job<ReqData>* job_in, Priority prio, unsigned duplication)
-//       override;
-
-//   void SendToMultiQueue(
-//       UniqConstJobPtr<ReqDataInternal> duplicate_job) override;
-// };
+ protected:
+  void DuplicateAndEnqueue(UniqConstJobPtr<ReqData> job_in, Priority max_prio,
+                           unsigned duplication) override;
+};
 
 }  // namespace dans
 

@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
                                                  /*priority=*/0,
                                                  /*duplication=*/1);
   // Purge a missing JobId returns empty list.
-  CHECK(prio_qs.Purge(decoy_a->job_id).empty());
+  CHECK_EQ(prio_qs.Purge(decoy_a->job_id), 0);
 
   // Purge a job with several instances.
   prio_qs.Enqueue(std::move(decoy_a));
@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
                                             /*priority=*/2,
                                             /*duplication=*/1);
   prio_qs.Enqueue(std::move(decoy_a));
-  CHECK_EQ(prio_qs.Purge(decoy_a_id).size(), kNumberOfQueues);
+  CHECK_EQ(prio_qs.Purge(decoy_a_id), kNumberOfQueues);
 
   // Add some JobIds with some garbage in between.
   decoy_a = std::make_unique<ConstJobJData>(kGenericData, decoy_a_id,
@@ -103,8 +103,8 @@ int main(int argc, char* argv[]) {
   prio_qs.Enqueue(std::move(target_b));
 
   // Purge the garbage.
-  CHECK_EQ(prio_qs.Purge(decoy_a_id).size(), kNumberOfQueues);
-  CHECK_EQ(prio_qs.Purge(decoy_b_id).size(), kNumberOfQueues);
+  CHECK_EQ(prio_qs.Purge(decoy_a_id), kNumberOfQueues);
+  CHECK_EQ(prio_qs.Purge(decoy_b_id), kNumberOfQueues);
 
   // Test that everything else is in order.
   for (unsigned i = 0; i < kNumberOfQueues; i++) {

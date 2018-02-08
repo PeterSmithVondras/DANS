@@ -17,7 +17,7 @@ class BaseScheduler {
 
   // Purge will attempt to remove all instances of the Job linked to job_id in
   // the Dispatcher, Scheduler and forward the request on to any linked DStages.
-  virtual std::list<UniqConstJobPtr<T>> Purge(JobId job_id) = 0;
+  virtual unsigned Purge(JobId job_id) = 0;
 };
 }  // namespace dans
 

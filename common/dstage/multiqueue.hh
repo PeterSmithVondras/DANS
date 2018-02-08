@@ -158,12 +158,12 @@ UniqConstJobPtr<T> MultiQueue<T>::Dequeue(Priority prio) {
 }
 
 template <typename T>
-std::list<UniqConstJobPtr<T>> MultiQueue<T>::Purge(JobId job_id) {
+unsigned MultiQueue<T>::Purge(JobId job_id) {
   VLOG(4) << __PRETTY_FUNCTION__ << " job_id=" << job_id;
   // Ensure complete control of the multiqueue
   std::unique_lock<std::shared_timed_mutex> no_pruging(_purge_shared_mutex);
 
-  std::list<UniqConstJobPtr<T>> purged;
+  unsigned purged = 0;
   auto search = _value_mapper.find(job_id);
 
   // If value is already purged we can just return an empty list.
@@ -173,7 +173,7 @@ std::list<UniqConstJobPtr<T>> MultiQueue<T>::Purge(JobId job_id) {
   while (duplicate_list_iter != search->second.end()) {
     UniqConstJobPtr<T> job_p = std::move(duplicate_list_iter->first);
     _priority_qs[job_p->priority].erase(duplicate_list_iter->second);
-    purged.push_back(std::move(job_p));
+    purged++;
 
     duplicate_list_iter++;
   }

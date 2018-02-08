@@ -60,10 +60,10 @@ Scheduler<T>::~Scheduler() {
 }
 
 template <typename T>
-std::list<UniqConstJobPtr<T>> Scheduler<T>::Purge(JobId job_id) {
+unsigned Scheduler<T>::Purge(JobId job_id) {
   VLOG(4) << __PRETTY_FUNCTION__ << " job_id=" << job_id;
   static_cast<void>(job_id);
-  std::list<UniqConstJobPtr<T>> purged;
+  unsigned purged = 0;
   return purged;
 }
 

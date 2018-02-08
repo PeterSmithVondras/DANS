@@ -5,32 +5,26 @@
 #include "glog/logging.h"
 
 namespace {
-using namespace dans;
-using ConstJobJData = const Job<JData>;
-const Priority kMaxPrio = 2;
-auto kGenericData = std::make_shared<JData>(5);
-// const unsigned kGenericDuplication = 0;
-
-ReqData req_data = {{"172.217.10.36"}, {"80"}, [](int foo) {}};
+// ReqData req_data = {{"172.217.10.36"}, {"80"}, [](int foo) {}};
 }  // namespace
 
 namespace dans {
 
-// RequestDispatcher::RequestDispatcher(Priority max_priority)
-//     : Dispatcher<ReqData, ReqDataInternal>(max_priority) {}
+RequestDispatcher::RequestDispatcher(Priority max_priority)
+    : Dispatcher<ReqData, ReqDataInternal>(max_priority) {}
 
-// UniqConstJobPtr<ReqDataInternal> RequestDispatcher::DuplicateAndConvert(
-//     const Job<ReqData>* job_in, Priority prio, unsigned duplication) {
-//   VLOG(4) << __PRETTY_FUNCTION__ << " prio=" << prio
-//           << ", duplication= " << duplication;
+void RequestDispatcher::DuplicateAndEnqueue(UniqConstJobPtr<ReqData> job_in,
+                                            Priority max_prio,
+                                            unsigned duplication) {
+  VLOG(4) << __PRETTY_FUNCTION__ << " max_prio=" << max_prio
+          << ", duplication= " << duplication;
 
-//   return std::make_unique<const Job<ReqDataInternal>>(
-//       {0, job_in->ReqData->done}, job_in->job_id, prio, duplication);
-// }
-
-// void RequestDispatcher::SendToMultiQueue(
-//     UniqConstJobPtr<ReqDataInternal> duplicate_job) {
-//   _multi_q_p->Enqueue(std::move(duplicate_job));
-// }
+  for (Priority prio = job_in->priority; prio <= max_prio; prio++) {
+    ReqDataInternal req_data_internal = {/*soc=*/-1, job_in->job_data.done};
+    auto duplicate_job_p = std::make_unique<const Job<ReqDataInternal>>(
+        req_data_internal, job_in->job_id, prio, duplication);
+    _multi_q_p->Enqueue(std::move(duplicate_job_p));
+  }
+}
 
 }  // namespace dans

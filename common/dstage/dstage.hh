@@ -11,11 +11,11 @@
 
 namespace dans {
 
-template <typename T>
-DStage<T>::DStage(Priority max_priority,
-                  std::unique_ptr<BaseMultiQueue<T>> multi_q,
-                  std::unique_ptr<BaseDispatcher<T>> dispatcher,
-                  std::unique_ptr<BaseScheduler<T>> scheduler)
+template <typename T_INPUT, typename T_INTERNAL>
+DStage<T_INPUT, T_INTERNAL>::DStage(
+    Priority max_priority, std::unique_ptr<BaseMultiQueue<T_INTERNAL>> multi_q,
+    std::unique_ptr<BaseDispatcher<T_INPUT, T_INTERNAL>> dispatcher,
+    std::unique_ptr<BaseScheduler<T_INTERNAL>> scheduler)
     : _max_priority(max_priority),
       _multi_q(std::move(multi_q)),
       _dispatcher(std::move(dispatcher)),
@@ -27,9 +27,9 @@ DStage<T>::DStage(Priority max_priority,
   _dispatcher->LinkMultiQ(_multi_q.get());
 }
 
-template <typename T>
-void DStage<T>::Dispatch(UniqConstJobPtr<T> job_p,
-                         unsigned requested_duplication) {
+template <typename T_INPUT, typename T_INTERNAL>
+void DStage<T_INPUT, T_INTERNAL>::Dispatch(UniqConstJobPtr<T_INPUT> job_p,
+                                           unsigned requested_duplication) {
   VLOG(4) << __PRETTY_FUNCTION__
           << ((job_p == nullptr) ? " job_p=nullptr," : " job_id=")
           << ((job_p == nullptr) ? ' ' : job_p->job_id)
@@ -38,11 +38,11 @@ void DStage<T>::Dispatch(UniqConstJobPtr<T> job_p,
   _dispatcher->Dispatch(std::move(job_p), requested_duplication);
 }
 
-template <typename T>
-std::list<UniqConstJobPtr<T>> DStage<T>::Purge(JobId job_id) {
+template <typename T_INPUT, typename T_INTERNAL>
+unsigned DStage<T_INPUT, T_INTERNAL>::Purge(JobId job_id) {
   VLOG(4) << __PRETTY_FUNCTION__ << " job_id=" << job_id;
-  std::list<UniqConstJobPtr<T>> purged = _multi_q->Purge(job_id);
-  purged.splice(purged.end(), _scheduler->Purge(job_id));
+  unsigned purged = _multi_q->Purge(job_id);
+  purged += _scheduler->Purge(job_id);
   return purged;
 }
 

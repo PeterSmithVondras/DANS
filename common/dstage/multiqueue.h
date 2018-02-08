@@ -27,7 +27,7 @@ class MultiQueue : public BaseMultiQueue<T> {
   // associated to "prio."
   UniqConstJobPtr<T> Dequeue(Priority prio);
 
-  std::list<UniqConstJobPtr<T>> Purge(JobId job_id);
+  unsigned Purge(JobId job_id);
 
   // Returns the size of the queue related to Priority prio. There is no
   // guarantee that this value is valid even at the time of the return.

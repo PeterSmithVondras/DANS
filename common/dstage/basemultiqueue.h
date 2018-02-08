@@ -21,7 +21,7 @@ class BaseMultiQueue {
   // associated to "prio."
   virtual UniqConstJobPtr<T> Dequeue(Priority prio) = 0;
 
-  virtual std::list<UniqConstJobPtr<T>> Purge(JobId job_id) = 0;
+  virtual unsigned Purge(JobId job_id) = 0;
 
   // Returns the size of the queue related to Priority prio. There is no
   // guarantee that this value is valid even at the time of the return.

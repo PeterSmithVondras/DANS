@@ -8,7 +8,7 @@
 namespace dans {
 
 template <typename T_INPUT, typename T_INTERNAL>
-class Dispatcher : public BaseDispatcher<T_INPUT> {
+class Dispatcher : public BaseDispatcher<T_INPUT, T_INTERNAL> {
  public:
   Dispatcher(Priority max_priority);
 
