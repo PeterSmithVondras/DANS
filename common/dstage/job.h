@@ -47,6 +47,9 @@ struct Job {
 };
 
 template <typename T>
+using ConstJob = const Job<T>;
+
+template <typename T>
 using UniqConstJobPtr = std::unique_ptr<const Job<T>>;
 
 }  // namespace dans

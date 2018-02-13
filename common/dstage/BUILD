@@ -158,17 +158,36 @@ cc_test(
 )
 
 cc_library(
-  name = "client_request_handler",
+  name = "client_connect_handler",
   hdrs = [
-    "client_request_handler.h",
+    "client_connect_handler.h",
   ],
-  srcs = [ "client_request_handler.cc" ],
+  srcs = [ "client_connect_handler.cc" ],
   deps = [
     ":dstage_base",
     ":multiqueue",
     ":dispatcher",
     ":scheduler",
     ":dstage",
+    ":linux_communication_handler",
+    "@glog//:main",
+    "@gflags//:main",
+  ],
+)
+
+cc_library(
+  name = "client_response_handler",
+  hdrs = [
+    "client_response_handler.h",
+  ],
+  srcs = [ "client_response_handler.cc" ],
+  deps = [
+    ":dstage_base",
+    ":multiqueue",
+    ":dispatcher",
+    ":scheduler",
+    ":dstage",
+    ":linux_communication_handler",
     "@glog//:main",
     "@gflags//:main",
   ],
@@ -178,7 +197,8 @@ cc_test(
   name = "file_client_dstage_chain_test",
   srcs = [ "file_client_dstage_chain_test.cc" ],
   deps = [
-    ":client_request_handler",
+    ":client_connect_handler",
+    ":linux_communication_handler",
     "@glog//:main",
     "@gflags//:main",
     "@gtest//:main",
