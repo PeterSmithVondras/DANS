@@ -18,8 +18,8 @@ DEFINE_bool(set_thread_priority, false,
 
 namespace {
 using namespace dans;
-const unsigned kMaxPrio = 0;
-const unsigned kThreadsPerPrio = 1;
+const unsigned kMaxPrio = 1;
+const unsigned kThreadsPerPrio = 2;
 
 }  // namespace
 

@@ -41,6 +41,9 @@ class RequestScheduler : public Scheduler<RequestData> {
  private:
   bool _destructing;
   std::shared_timed_mutex _destructing_lock;
+
+  void RequestCallback(SharedConstJobPtr<RequestData> old_job, int soc,
+                       CommunicationHandlerInterface::ReadyFor ready_for);
 };
 
 class RequestDStage : public DStage<RequestData, RequestData> {

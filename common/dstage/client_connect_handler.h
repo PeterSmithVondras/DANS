@@ -6,6 +6,7 @@
 #include <shared_mutex>
 #include <string>
 
+// Only needs this to get type ReQuestData
 #include "common/dstage/client_request_handler.h"
 #include "common/dstage/communication_handler_interface.h"
 #include "common/dstage/dispatcher.h"
