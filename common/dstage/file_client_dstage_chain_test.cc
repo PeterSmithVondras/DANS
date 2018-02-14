@@ -5,6 +5,7 @@
 
 #include "common/dstage/client_connect_handler.h"
 #include "common/dstage/client_request_handler.h"
+#include "common/dstage/client_response_handler.h"
 #include "common/dstage/dstage.h"
 #include "common/dstage/linux_communication_handler.h"
 #include "common/dstage/scheduler.h"
@@ -28,13 +29,13 @@ class FileClientDstageChainTest : public testing::Test {
   virtual void SetUp() {
     _complete_lock.lock();
 
-    // _response_dstage = std::make_unique<ResponseDStage>(
-    //     std::vector<unsigned>(kMaxPrio + 1, kThreadsPerPrio),
-    //     FLAGS_set_thread_priority, &_comm_handler);
+    _response_dstage = std::make_unique<ResponseDStage>(
+        std::vector<unsigned>(kMaxPrio + 1, kThreadsPerPrio),
+        FLAGS_set_thread_priority, &_comm_handler);
 
     _request_dstage = std::make_unique<RequestDStage>(
         std::vector<unsigned>(kMaxPrio + 1, kThreadsPerPrio),
-        FLAGS_set_thread_priority, &_comm_handler);
+        FLAGS_set_thread_priority, &_comm_handler, _response_dstage.get());
 
     _connect_dstage = std::make_unique<ConnectDStage>(
         std::vector<unsigned>(kMaxPrio + 1, kThreadsPerPrio),
@@ -43,7 +44,7 @@ class FileClientDstageChainTest : public testing::Test {
 
   std::timed_mutex _complete_lock;
   LinuxCommunicationHandler _comm_handler;
-  // std::unique_ptr<BaseDStage<RequestData>> _response_dstage;
+  std::unique_ptr<BaseDStage<RequestData>> _response_dstage;
   std::unique_ptr<BaseDStage<RequestData>> _request_dstage;
   std::unique_ptr<BaseDStage<ConnectData>> _connect_dstage;
 };

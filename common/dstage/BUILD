@@ -194,12 +194,32 @@ cc_library(
   ],
 )
 
+cc_library(
+  name = "client_response_handler",
+  hdrs = [
+    "client_response_handler.h",
+  ],
+  srcs = [ "client_response_handler.cc" ],
+  deps = [
+    ":dstage_base",
+    ":multiqueue",
+    ":dispatcher",
+    ":scheduler",
+    ":dstage",
+    ":linux_communication_handler",
+    ":client_request_handler",
+    "@glog//:main",
+    "@gflags//:main",
+  ],
+)
+
 cc_test(
   name = "file_client_dstage_chain_test",
   srcs = [ "file_client_dstage_chain_test.cc" ],
   deps = [
     ":client_connect_handler",
     ":client_request_handler",
+    ":client_response_handler",
     ":linux_communication_handler",
     "@glog//:main",
     "@gflags//:main",

@@ -1,5 +1,5 @@
-#ifndef DANS02_CLIENT_RESPONSE_HANDLER_H
-#define DANS02_CLIENT_RESPONSE_HANDLER_H
+#ifndef DANS02_CLIENT_REQUEST_HANDLER_H
+#define DANS02_CLIENT_REQUEST_HANDLER_H
 
 #include <functional>
 #include <memory>
@@ -32,13 +32,17 @@ class RequestDispatcher : public Dispatcher<RequestData, RequestData> {
 class RequestScheduler : public Scheduler<RequestData> {
  public:
   RequestScheduler(std::vector<unsigned> threads_per_prio,
-                   bool set_thread_priority);
+                   bool set_thread_priority,
+                   CommunicationHandlerInterface* comm_interface,
+                   BaseDStage<RequestData>* response_dstage);
   ~RequestScheduler();
 
  protected:
   void StartScheduling(Priority prio) override;
 
  private:
+  CommunicationHandlerInterface* _comm_interface;
+  BaseDStage<RequestData>* _response_dstage;
   bool _destructing;
   std::shared_timed_mutex _destructing_lock;
 
@@ -50,16 +54,19 @@ class RequestDStage : public DStage<RequestData, RequestData> {
  public:
   RequestDStage(std::vector<unsigned> threads_per_prio,
                 bool set_thread_priority,
-                CommunicationHandlerInterface* comm_interface)
+                CommunicationHandlerInterface* comm_interface,
+                BaseDStage<RequestData>* response_dstage)
       : DStage<RequestData, RequestData>(
             threads_per_prio.size() - 1,
             std::make_unique<MultiQueue<RequestData>>(threads_per_prio.size() -
                                                       1),
             std::make_unique<RequestDispatcher>(threads_per_prio.size() - 1),
             std::make_unique<RequestScheduler>(threads_per_prio,
-                                               set_thread_priority)) {}
+                                               set_thread_priority,
+                                               comm_interface,
+                                               response_dstage)) {}
 };
 
 }  // namespace dans
 
-#endif  // DANS02_CLIENT_RESPONSE_HANDLER_H
+#endif  // DANS02_CLIENT_REQUEST_HANDLER_H

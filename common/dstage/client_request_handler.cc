@@ -8,12 +8,7 @@
 #include "glog/logging.h"
 
 namespace {
-std::string buf =
-    "GET / HTTP/1.1\n"
-    "Host: www.google.com\n"
-    "User-Agent: curl/7.54.0\n"
-    "Accept: */*\n"
-    "\n";
+std::string buf = "GET / HTTP/1.1\n\n";
 
 using CallBack2 = dans::CommunicationHandlerInterface::CallBack2;
 using ReadyFor = dans::CommunicationHandlerInterface::ReadyFor;
@@ -32,12 +27,12 @@ void RequestDispatcher::DuplicateAndEnqueue(UniqConstJobPtr<RequestData> job_in,
 }
 
 RequestScheduler::RequestScheduler(
-    std::vector<unsigned> threads_per_prio, bool set_thread_priority)
-    // CommunicationHandlerInterface* comm_interface,
-    // BaseDStage<RequestData>* response_dstage)
+    std::vector<unsigned> threads_per_prio, bool set_thread_priority,
+    CommunicationHandlerInterface* comm_interface,
+    BaseDStage<RequestData>* response_dstage)
     : Scheduler<RequestData>(threads_per_prio, set_thread_priority),
-      // _comm_interface(comm_interface),
-      // _response_dstage(response_dstage),
+      _comm_interface(comm_interface),
+      _response_dstage(response_dstage),
       _destructing(false) {
   VLOG(3) << __PRETTY_FUNCTION__;
 }
@@ -82,6 +77,8 @@ void RequestScheduler::StartScheduling(Priority prio) {
     CallBack2 response(std::bind(&dans::RequestScheduler::RequestCallback, this,
                                  job, std::placeholders::_1,
                                  std::placeholders::_2));
+    _comm_interface->Monitor(job->job_data.soc,
+                             ReadyFor {/*in=*/true, /*out=*/false}, response);
   }
 }
 
@@ -92,8 +89,8 @@ void RequestScheduler::RequestCallback(SharedConstJobPtr<RequestData> old_job,
   auto response_job = std::make_unique<ConstJob<RequestData>>(
       RequestData{old_job->job_data.done, soc}, old_job->job_id,
       old_job->priority, old_job->duplication);
-  // _response_dstage->Dispatch(std::move(response_job),
-  //                           /*requested_dulpication=*/0);
+  _response_dstage->Dispatch(std::move(response_job),
+                             /*requested_dulpication=*/0);
 }
 
 }  // namespace dans

@@ -1,5 +1,5 @@
-#ifndef DANS02_CLIENT_REQUEST_HANDLER_H
-#define DANS02_CLIENT_REQUEST_HANDLER_H
+#ifndef DANS02_CLIENT_CONNECT_HANDLER_H
+#define DANS02_CLIENT_CONNECT_HANDLER_H
 
 #include <functional>
 #include <memory>
@@ -77,4 +77,4 @@ class ConnectDStage : public DStage<ConnectData, ConnectDataInternal> {
 
 }  // namespace dans
 
-#endif  // DANS02_CLIENT_REQUEST_HANDLER_H
+#endif  // DANS02_CLIENT_CONNECT_HANDLER_H
