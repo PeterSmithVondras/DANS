@@ -52,6 +52,9 @@ using ConstJob = const Job<T>;
 template <typename T>
 using UniqConstJobPtr = std::unique_ptr<const Job<T>>;
 
+template <typename T>
+using SharedConstJobPtr = std::shared_ptr<const Job<T>>;
+
 }  // namespace dans
 
 #endif  // DANS02_DSTAGE_JOB_H

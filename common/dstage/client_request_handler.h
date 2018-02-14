@@ -15,32 +15,25 @@
 
 namespace dans {
 
-struct ConnectData {
-  std::vector<std::string> ip_addresses;
-  std::vector<std::string> ports;
+struct RequestData {
   std::shared_ptr<std::function<void(int)>> done;
+  int soc;
 };
 
-struct ConnectDataInternal {
-  std::string ip;
-  std::string port;
-  std::shared_ptr<std::function<void(int)>> done;
-};
-
-class ConnectDispatcher : public Dispatcher<ConnectData, ConnectDataInternal> {
+class RequestDispatcher : public Dispatcher<RequestData, RequestData> {
  public:
-  ConnectDispatcher(Priority max_priority);
+  RequestDispatcher(Priority max_priority);
 
  protected:
-  void DuplicateAndEnqueue(UniqConstJobPtr<ConnectData> job_in,
+  void DuplicateAndEnqueue(UniqConstJobPtr<RequestData> job_in,
                            Priority max_prio, unsigned duplication) override;
 };
 
-class ConnectScheduler : public Scheduler<ConnectDataInternal> {
+class RequestScheduler : public Scheduler<RequestData> {
  public:
-  ConnectScheduler(std::vector<unsigned> threads_per_prio,
+  RequestScheduler(std::vector<unsigned> threads_per_prio,
                    bool set_thread_priority);
-  ~ConnectScheduler();
+  ~RequestScheduler();
 
  protected:
   void StartScheduling(Priority prio) override;
@@ -50,17 +43,17 @@ class ConnectScheduler : public Scheduler<ConnectDataInternal> {
   std::shared_timed_mutex _destructing_lock;
 };
 
-class ConnectDStage : public DStage<ConnectData, ConnectDataInternal> {
+class RequestDStage : public DStage<RequestData, RequestData> {
  public:
-  ConnectDStage(std::vector<unsigned> threads_per_prio,
+  RequestDStage(std::vector<unsigned> threads_per_prio,
                 bool set_thread_priority,
                 CommunicationHandlerInterface* comm_interface)
-      : DStage<ConnectData, ConnectDataInternal>(
+      : DStage<RequestData, RequestData>(
             threads_per_prio.size() - 1,
-            std::make_unique<MultiQueue<ConnectDataInternal>>(
-                threads_per_prio.size() - 1),
-            std::make_unique<ConnectDispatcher>(threads_per_prio.size() - 1),
-            std::make_unique<ConnectScheduler>(threads_per_prio,
+            std::make_unique<MultiQueue<RequestData>>(threads_per_prio.size() -
+                                                      1),
+            std::make_unique<RequestDispatcher>(threads_per_prio.size() - 1),
+            std::make_unique<RequestScheduler>(threads_per_prio,
                                                set_thread_priority)) {}
 };
 

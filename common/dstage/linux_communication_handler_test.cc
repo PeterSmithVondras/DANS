@@ -15,7 +15,8 @@
 
 namespace {
 using dans::LinuxCommunicationHandler;
-using CallBack2 = LinuxCommunicationHandler::CallBack2;
+using ReadyFor = dans::CommunicationHandlerInterface::ReadyFor;
+using CallBack2 = dans::CommunicationHandlerInterface::CallBack2;
 int kNumberOfSockets = 10;
 int kReadSize = 15;
 }  // namespace
@@ -24,7 +25,7 @@ class LinuxCommunicationHandlerTest : public testing::Test {
  protected:
   virtual void SetUp() { _complete_lock.lock(); }
 
-  void ReadCallback(int soc, LinuxCommunicationHandler::ReadyFor ready_for) {
+  void ReadCallback(int soc, ReadyFor ready_for) {
     if (ready_for.in) {
       EXPECT_TRUE(ready_for.in);
       char buf[15];
@@ -37,7 +38,7 @@ class LinuxCommunicationHandlerTest : public testing::Test {
     }
   }
 
-  void SendCallback(int soc, LinuxCommunicationHandler::ReadyFor ready_for) {
+  void SendCallback(int soc, ReadyFor ready_for) {
     EXPECT_TRUE(ready_for.out) << "Failed to create TCP connection.";
     EXPECT_FALSE(ready_for.in) << "Failed to create TCP connection.";
     char buf[] =
@@ -55,8 +56,8 @@ class LinuxCommunicationHandlerTest : public testing::Test {
     CallBack2 done(std::bind(&LinuxCommunicationHandlerTest::ReadCallback, this,
                              std::placeholders::_1, std::placeholders::_2));
     _handler.Monitor(soc,
-                     LinuxCommunicationHandler::ReadyFor{/*in=*/true,
-                                                         /*out=*/false},
+                     ReadyFor{/*in=*/true,
+                              /*out=*/false},
                      done);
   }
 

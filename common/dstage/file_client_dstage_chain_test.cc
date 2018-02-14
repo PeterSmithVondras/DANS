@@ -3,7 +3,8 @@
 #include <memory>
 #include <mutex>
 
-#include "common/dstage/client_connection_handler.h"
+#include "common/dstage/client_connect_handler.h"
+#include "common/dstage/client_request_handler.h"
 #include "common/dstage/dstage.h"
 #include "common/dstage/linux_communication_handler.h"
 #include "common/dstage/scheduler.h"
@@ -17,8 +18,8 @@ DEFINE_bool(set_thread_priority, false,
 
 namespace {
 using namespace dans;
-const unsigned kMaxPrio = 1;
-const unsigned kThreadsPerPrio = 2;
+const unsigned kMaxPrio = 0;
+const unsigned kThreadsPerPrio = 1;
 
 }  // namespace
 
@@ -26,13 +27,24 @@ class FileClientDstageChainTest : public testing::Test {
  protected:
   virtual void SetUp() {
     _complete_lock.lock();
-    _connect_dstage = std::make_unique<ConnectDStage>(
+
+    // _response_dstage = std::make_unique<ResponseDStage>(
+    //     std::vector<unsigned>(kMaxPrio + 1, kThreadsPerPrio),
+    //     FLAGS_set_thread_priority, &_comm_handler);
+
+    _request_dstage = std::make_unique<RequestDStage>(
         std::vector<unsigned>(kMaxPrio + 1, kThreadsPerPrio),
         FLAGS_set_thread_priority, &_comm_handler);
+
+    _connect_dstage = std::make_unique<ConnectDStage>(
+        std::vector<unsigned>(kMaxPrio + 1, kThreadsPerPrio),
+        FLAGS_set_thread_priority, &_comm_handler, _request_dstage.get());
   }
 
   std::timed_mutex _complete_lock;
   LinuxCommunicationHandler _comm_handler;
+  // std::unique_ptr<BaseDStage<RequestData>> _response_dstage;
+  std::unique_ptr<BaseDStage<RequestData>> _request_dstage;
   std::unique_ptr<BaseDStage<ConnectData>> _connect_dstage;
 };
 
@@ -46,7 +58,7 @@ TEST_F(FileClientDstageChainTest, CreateConnect) {
                                                      /*priority=*/0,
                                                      /*duplication*/ 0);
   _connect_dstage->Dispatch(std::move(job), 1);
-  std::this_thread::sleep_for(std::chrono::milliseconds(400));
+  std::this_thread::sleep_for(std::chrono::milliseconds(800));
 }
 
 int main(int argc, char** argv) {

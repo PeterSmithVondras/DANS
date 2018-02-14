@@ -6,6 +6,7 @@
 #include <shared_mutex>
 #include <string>
 
+#include "common/dstage/client_request_handler.h"
 #include "common/dstage/communication_handler_interface.h"
 #include "common/dstage/dispatcher.h"
 #include "common/dstage/dstage.h"
@@ -39,29 +40,38 @@ class ConnectDispatcher : public Dispatcher<ConnectData, ConnectDataInternal> {
 class ConnectScheduler : public Scheduler<ConnectDataInternal> {
  public:
   ConnectScheduler(std::vector<unsigned> threads_per_prio,
-                   bool set_thread_priority);
+                   bool set_thread_priority,
+                   CommunicationHandlerInterface* comm_interface,
+                   BaseDStage<RequestData>* request_dstage);
   ~ConnectScheduler();
 
  protected:
   void StartScheduling(Priority prio) override;
 
  private:
+  CommunicationHandlerInterface* _comm_interface;
+  BaseDStage<RequestData>* _request_dstage;
   bool _destructing;
   std::shared_timed_mutex _destructing_lock;
+
+  void ConnectCallback(SharedConstJobPtr<ConnectDataInternal> old_job, int soc,
+                       CommunicationHandlerInterface::ReadyFor ready_for);
 };
 
 class ConnectDStage : public DStage<ConnectData, ConnectDataInternal> {
  public:
   ConnectDStage(std::vector<unsigned> threads_per_prio,
                 bool set_thread_priority,
-                CommunicationHandlerInterface* comm_interface)
+                CommunicationHandlerInterface* comm_interface,
+                BaseDStage<RequestData>* request_dstage)
       : DStage<ConnectData, ConnectDataInternal>(
             threads_per_prio.size() - 1,
             std::make_unique<MultiQueue<ConnectDataInternal>>(
                 threads_per_prio.size() - 1),
             std::make_unique<ConnectDispatcher>(threads_per_prio.size() - 1),
-            std::make_unique<ConnectScheduler>(threads_per_prio,
-                                               set_thread_priority)) {}
+            std::make_unique<ConnectScheduler>(
+                threads_per_prio, set_thread_priority, comm_interface,
+                request_dstage)) {}
 };
 
 }  // namespace dans
