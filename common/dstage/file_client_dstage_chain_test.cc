@@ -54,12 +54,16 @@ TEST_F(FileClientDstageChainTest, CreateConnect) {
       {"172.217.10.36", "172.217.10.36"},
       {"80", "80"},
       std::make_shared<std::function<void(int)>>([](int foo) {})};
-  auto job = std::make_unique<ConstJob<ConnectData>>(connect_data,
-                                                     /*job_id=*/0,
-                                                     /*priority=*/0,
-                                                     /*duplication*/ 0);
-  _connect_dstage->Dispatch(std::move(job), 1);
-  std::this_thread::sleep_for(std::chrono::milliseconds(800));
+  UniqConstJobPtr<ConnectData> job;
+  for (unsigned i = 0; i < 100; i++) {
+    job = std::make_unique<ConstJob<ConnectData>>(connect_data,
+                                                  /*job_id=*/i,
+                                                  /*priority=*/0,
+                                                  /*duplication*/ 0);
+    _connect_dstage->Dispatch(std::move(job), /*requested_duplication=*/1);
+  }
+  
+  std::this_thread::sleep_for(std::chrono::milliseconds(3000));
 }
 
 int main(int argc, char** argv) {
