@@ -227,3 +227,29 @@ cc_test(
   ],
 )
 
+cc_library(
+  name = "job_state",
+  hdrs = [
+    "job_state.h",
+  ],
+  srcs = [ "job_state.cc" ],
+  deps = [
+    ":dstage_base",
+    "@glog//:main",
+  ],
+)
+
+
+cc_library(
+  name = "job_state_test",
+  hdrs = [
+    "job_state_test.h",
+  ],
+  srcs = [ "job_state_test.cc" ],
+  deps = [
+    "@glog//:main",
+    "@gflags//:main",
+    "@gtest//:main",
+  ],
+)
+

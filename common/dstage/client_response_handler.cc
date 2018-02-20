@@ -15,8 +15,8 @@ int kReadSize = 15;
 
 namespace dans {
 
-ResponseScheduler::ResponseScheduler(
-    std::vector<unsigned> threads_per_prio, bool set_thread_priority)
+ResponseScheduler::ResponseScheduler(std::vector<unsigned> threads_per_prio,
+                                     bool set_thread_priority)
     // CommunicationHandlerInterface* comm_interface,
     // BaseDStage<RequestData>* response_dstage)
     : Scheduler<RequestData>(threads_per_prio, set_thread_priority),
@@ -62,14 +62,15 @@ void ResponseScheduler::StartScheduling(Priority prio) {
     CHECK_EQ(read(job->job_data.soc, buf, kReadSize), kReadSize);
     VLOG(2) << "Read from server: " << buf;
 
-    // CallBack2 response(std::bind(&dans::ResponseScheduler::ResponseCallback, this,
+    // CallBack2 response(std::bind(&dans::ResponseScheduler::ResponseCallback,
+    // this,
     //                              job, std::placeholders::_1,
     //                              std::placeholders::_2));
   }
 }
 
 void ResponseScheduler::ResponseCallback(SharedConstJobPtr<RequestData> old_job,
-                                       int soc, ReadyFor ready_for) {
+                                         int soc, ReadyFor ready_for) {
   VLOG(3) << __PRETTY_FUNCTION__ << " soc=" << old_job->job_data.soc;
   CHECK(ready_for.in) << "Failed to receive response for socket=" << soc;
   auto response_job = std::make_unique<ConstJob<RequestData>>(

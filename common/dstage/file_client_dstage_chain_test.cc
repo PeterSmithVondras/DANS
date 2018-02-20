@@ -62,7 +62,7 @@ TEST_F(FileClientDstageChainTest, CreateConnect) {
                                                   /*duplication*/ 0);
     _connect_dstage->Dispatch(std::move(job), /*requested_duplication=*/1);
   }
-  
+
   std::this_thread::sleep_for(std::chrono::milliseconds(3000));
 }
 

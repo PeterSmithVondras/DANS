@@ -61,10 +61,9 @@ class RequestDStage : public DStage<RequestData, RequestData> {
             std::make_unique<MultiQueue<RequestData>>(threads_per_prio.size() -
                                                       1),
             std::make_unique<RequestDispatcher>(threads_per_prio.size() - 1),
-            std::make_unique<RequestScheduler>(threads_per_prio,
-                                               set_thread_priority,
-                                               comm_interface,
-                                               response_dstage)) {}
+            std::make_unique<RequestScheduler>(
+                threads_per_prio, set_thread_priority, comm_interface,
+                response_dstage)) {}
 };
 
 }  // namespace dans

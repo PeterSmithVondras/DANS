@@ -78,7 +78,7 @@ void RequestScheduler::StartScheduling(Priority prio) {
                                  job, std::placeholders::_1,
                                  std::placeholders::_2));
     _comm_interface->Monitor(job->job_data.soc,
-                             ReadyFor {/*in=*/true, /*out=*/false}, response);
+                             ReadyFor{/*in=*/true, /*out=*/false}, response);
   }
 }
 

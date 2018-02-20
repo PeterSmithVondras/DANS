@@ -1,7 +1,7 @@
 
 
 Make graph with:
-  $ bazel query --nohost_deps --noimplicit_deps 'deps(//common/dstage:dstage_test)'   --output graph | sed '/glog/d' | sed '/gflag/d'
+  $ bazel query --nohost_deps --noimplicit_deps 'deps(//common/dstage:file_client_dstage_chain_test)'   --output graph | sed '/glog/d' | sed '/gflag/d' | sed '/gtest/d'
   Paste here: http://www.webgraphviz.com/
 
 Compile a target with:

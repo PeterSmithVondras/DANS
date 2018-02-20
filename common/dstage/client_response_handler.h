@@ -19,7 +19,7 @@ namespace dans {
 class ResponseScheduler : public Scheduler<RequestData> {
  public:
   ResponseScheduler(std::vector<unsigned> threads_per_prio,
-                   bool set_thread_priority);
+                    bool set_thread_priority);
   ~ResponseScheduler();
 
  protected:
@@ -36,15 +36,15 @@ class ResponseScheduler : public Scheduler<RequestData> {
 class ResponseDStage : public DStage<RequestData, RequestData> {
  public:
   ResponseDStage(std::vector<unsigned> threads_per_prio,
-                bool set_thread_priority,
-                CommunicationHandlerInterface* comm_interface)
+                 bool set_thread_priority,
+                 CommunicationHandlerInterface* comm_interface)
       : DStage<RequestData, RequestData>(
             threads_per_prio.size() - 1,
             std::make_unique<MultiQueue<RequestData>>(threads_per_prio.size() -
                                                       1),
             std::make_unique<RequestDispatcher>(threads_per_prio.size() - 1),
             std::make_unique<ResponseScheduler>(threads_per_prio,
-                                               set_thread_priority)) {}
+                                                set_thread_priority)) {}
 };
 
 }  // namespace dans
