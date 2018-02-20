@@ -86,8 +86,7 @@ class JobStateMap {
 
   void remove(JobId job_id) {
     std::unique_lock<std::shared_timed_mutex> unique_lock(_state_shared_mutex);
-    auto iter = _job_state_map.find(job_id);
-    if (iter == _job_state_map.end()) return pair.first->second;
+    auto pair = _job_state_map.erase(job_id);
   }
 
  private:

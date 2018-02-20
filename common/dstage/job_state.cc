@@ -1,4 +1,4 @@
-#include "common/dstage/job_state_tracker.h"
+#include "common/dstage/job_state.h"
 
 #include "glog/logging.h"
 

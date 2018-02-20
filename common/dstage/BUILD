@@ -165,6 +165,7 @@ cc_library(
   srcs = [ "client_connect_handler.cc" ],
   deps = [
     ":dstage_base",
+    ":job_state",
     ":job_types",
     ":multiqueue",
     ":dispatcher",
@@ -185,6 +186,7 @@ cc_library(
   srcs = [ "client_request_handler.cc" ],
   deps = [
     ":dstage_base",
+    ":job_state",
     ":job_types",
     ":multiqueue",
     ":dispatcher",
@@ -204,6 +206,7 @@ cc_library(
   srcs = [ "client_response_handler.cc" ],
   deps = [
     ":dstage_base",
+    ":job_state",
     ":job_types",
     ":multiqueue",
     ":dispatcher",
