@@ -10,15 +10,11 @@
 #include "common/dstage/dispatcher.h"
 #include "common/dstage/dstage.h"
 #include "common/dstage/job.h"
+#include "common/dstage/job_types.h"
 #include "common/dstage/multiqueue.h"
 #include "common/dstage/scheduler.h"
 
 namespace dans {
-
-struct RequestData {
-  std::shared_ptr<std::function<void(int)>> done;
-  int soc;
-};
 
 class RequestDispatcher : public Dispatcher<RequestData, RequestData> {
  public:

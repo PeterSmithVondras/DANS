@@ -7,6 +7,7 @@
 #include "common/dstage/client_request_handler.h"
 #include "common/dstage/client_response_handler.h"
 #include "common/dstage/dstage.h"
+#include "common/dstage/job_types.h"
 #include "common/dstage/linux_communication_handler.h"
 #include "common/dstage/scheduler.h"
 #include "gflags/gflags.h"

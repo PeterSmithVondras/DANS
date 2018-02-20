@@ -4,8 +4,7 @@
 
 namespace dans {
 
-PurgeState::PurgeState()
-    : _purged(false) {}
+PurgeState::PurgeState() : _purged(false) {}
 
 bool PurgeState::IsPurged() {
   std::shared_lock<std::shared_timed_mutex> lock(_state_shared_mutex);

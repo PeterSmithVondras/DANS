@@ -165,6 +165,7 @@ cc_library(
   srcs = [ "client_connect_handler.cc" ],
   deps = [
     ":dstage_base",
+    ":job_types",
     ":multiqueue",
     ":dispatcher",
     ":scheduler",
@@ -184,6 +185,7 @@ cc_library(
   srcs = [ "client_request_handler.cc" ],
   deps = [
     ":dstage_base",
+    ":job_types",
     ":multiqueue",
     ":dispatcher",
     ":scheduler",
@@ -202,6 +204,7 @@ cc_library(
   srcs = [ "client_response_handler.cc" ],
   deps = [
     ":dstage_base",
+    ":job_types",
     ":multiqueue",
     ":dispatcher",
     ":scheduler",
@@ -217,6 +220,7 @@ cc_test(
   name = "file_client_dstage_chain_test",
   srcs = [ "file_client_dstage_chain_test.cc" ],
   deps = [
+    ":job_types",
     ":client_connect_handler",
     ":client_request_handler",
     ":client_response_handler",
@@ -250,6 +254,16 @@ cc_library(
     "@glog//:main",
     "@gflags//:main",
     "@gtest//:main",
+  ],
+)
+
+cc_library(
+  name = "job_types",
+  hdrs = [
+    "job_types.h",
+  ],
+  deps = [
+    "@glog//:main",
   ],
 )
 

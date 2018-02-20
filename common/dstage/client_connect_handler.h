@@ -6,28 +6,15 @@
 #include <shared_mutex>
 #include <string>
 
-// Only needs this to get type ReQuestData
-#include "common/dstage/client_request_handler.h"
 #include "common/dstage/communication_handler_interface.h"
 #include "common/dstage/dispatcher.h"
 #include "common/dstage/dstage.h"
 #include "common/dstage/job.h"
+#include "common/dstage/job_types.h"
 #include "common/dstage/multiqueue.h"
 #include "common/dstage/scheduler.h"
 
 namespace dans {
-
-struct ConnectData {
-  std::vector<std::string> ip_addresses;
-  std::vector<std::string> ports;
-  std::shared_ptr<std::function<void(int)>> done;
-};
-
-struct ConnectDataInternal {
-  std::string ip;
-  std::string port;
-  std::shared_ptr<std::function<void(int)>> done;
-};
 
 class ConnectDispatcher : public Dispatcher<ConnectData, ConnectDataInternal> {
  public:

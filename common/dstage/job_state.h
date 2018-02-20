@@ -1,12 +1,13 @@
-#ifndef DANS02_DSTAGE_JOB_STATE_TRACKER_H
-#define DANS02_DSTAGE_JOB_STATE_TRACKER_H
+#ifndef DANS02_DSTAGE_JOB_STATE_H
+#define DANS02_DSTAGE_JOB_STATE_H
 
-#include <vector>
 #include <memory>
 #include <shared_mutex>
 #include <unordered_map>
+#include <vector>
 
 #include "common/dstage/job.h"
+#include "glog/logging.h"
 
 namespace dans {
 
@@ -26,7 +27,6 @@ class PurgeState {
   std::shared_timed_mutex _state_shared_mutex;
   bool _purged;
 };
-
 
 // Thread safe counter.
 class Counter {
@@ -72,8 +72,13 @@ class JobStateMap {
     return (iter == _job_state_map.end()) ? nullptr : iter->second;
   }
 
-  // Either returns your shared_ptr or returns the pointer that was already their.
+  // Either returns your shared_ptr or returns the pointer that was already
+  // their.
   std::shared_ptr<T> Add(JobId job_id, std::shared_ptr<T> ptr) {
+    if (ptr == nullptr) {
+      LOG(WARNING) << "Attempted to add a nullptr for job_id=" << job_id;
+      return nullptr;
+    }
     std::unique_lock<std::shared_timed_mutex> unique_lock(_state_shared_mutex);
     auto pair = _job_state_map.insert({job_id, ptr});
     return pair.first->second;
@@ -82,17 +87,15 @@ class JobStateMap {
   void remove(JobId job_id) {
     std::unique_lock<std::shared_timed_mutex> unique_lock(_state_shared_mutex);
     auto iter = _job_state_map.find(job_id);
-    if (iter == _job_state_map.end())
-    return pair.first->second;
+    if (iter == _job_state_map.end()) return pair.first->second;
   }
 
  private:
   // guards state of whether job has been purged.
   std::shared_timed_mutex _state_shared_mutex;
   std::unordered_map<JobId, std::shared_ptr<T>> _job_state_map;
-
 };
 
 }  // namespace dans
 
-#endif  // DANS02_DSTAGE_JOB_STATE_TRACKER_H
+#endif  // DANS02_DSTAGE_JOB_STATE_H
