@@ -22,7 +22,7 @@ RequestDispatcher::RequestDispatcher(Priority max_priority)
 void RequestDispatcher::DuplicateAndEnqueue(UniqConstJobPtr<RequestData> job_in,
                                             Priority max_prio,
                                             unsigned duplication) {
-  VLOG(3) << __PRETTY_FUNCTION__ << " prio=" << job_in->priority;
+  VLOG(4) << __PRETTY_FUNCTION__ << " prio=" << job_in->priority;
   _multi_q_p->Enqueue(std::move(job_in));
 }
 
@@ -34,11 +34,11 @@ RequestScheduler::RequestScheduler(
       _comm_interface(comm_interface),
       _response_dstage(response_dstage),
       _destructing(false) {
-  VLOG(3) << __PRETTY_FUNCTION__;
+  VLOG(4) << __PRETTY_FUNCTION__;
 }
 
 RequestScheduler::~RequestScheduler() {
-  VLOG(3) << __PRETTY_FUNCTION__;
+  VLOG(4) << __PRETTY_FUNCTION__;
   {
     std::unique_lock<std::shared_timed_mutex> lock(_destructing_lock);
     _destructing = true;
@@ -50,8 +50,13 @@ RequestScheduler::~RequestScheduler() {
   }
 }
 
+unsigned RequestScheduler::Purge(JobId job_id) {
+  VLOG(4) << __PRETTY_FUNCTION__ << " job_id=" << job_id;
+  return _response_dstage->Purge(job_id);
+}
+
 void RequestScheduler::StartScheduling(Priority prio) {
-  VLOG(3) << __PRETTY_FUNCTION__ << " prio=" << prio;
+  VLOG(4) << __PRETTY_FUNCTION__ << " prio=" << prio;
   while (true) {
     {
       std::shared_lock<std::shared_timed_mutex> lock(_destructing_lock);
@@ -92,7 +97,7 @@ void RequestScheduler::StartScheduling(Priority prio) {
 
 void RequestScheduler::RequestCallback(SharedConstJobPtr<RequestData> old_job,
                                        int soc, ReadyFor ready_for) {
-  VLOG(3) << __PRETTY_FUNCTION__ << " soc=" << old_job->job_data.soc;
+  VLOG(4) << __PRETTY_FUNCTION__ << " soc=" << old_job->job_data.soc;
   CHECK(ready_for.in) << "Failed to receive response for socket=" << soc;
 
   // Pass on job if it is not complete.

@@ -37,6 +37,8 @@ class ConnectScheduler : public Scheduler<ConnectDataInternal> {
  protected:
   void StartScheduling(Priority prio) override;
 
+  unsigned Purge(JobId job_id) override;
+
  private:
   CommunicationHandlerInterface* _comm_interface;
   BaseDStage<RequestData>* _request_dstage;

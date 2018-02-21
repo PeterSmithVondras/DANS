@@ -23,12 +23,15 @@ class ResponseScheduler : public Scheduler<RequestData> {
                     bool set_thread_priority);
   ~ResponseScheduler();
 
+  void RegisterOriginDStage(BaseDStage<ConnectData>* origin_dstage);
+
  protected:
   void StartScheduling(Priority prio) override;
 
  private:
   bool _destructing;
   std::shared_timed_mutex _destructing_lock;
+  BaseDStage<ConnectData>* _origin_dstage;
 
   void ResponseCallback(SharedConstJobPtr<RequestData> old_job, int soc,
                         CommunicationHandlerInterface::ReadyFor ready_for);
@@ -46,6 +49,11 @@ class ResponseDStage : public DStage<RequestData, RequestData> {
             std::make_unique<RequestDispatcher>(threads_per_prio.size() - 1),
             std::make_unique<ResponseScheduler>(threads_per_prio,
                                                 set_thread_priority)) {}
+
+  void RegisterOriginDStage(BaseDStage<ConnectData>* origin_dstage) {
+    static_cast<ResponseScheduler*>(_scheduler.get())
+        ->RegisterOriginDStage(origin_dstage);
+  }
 };
 
 }  // namespace dans

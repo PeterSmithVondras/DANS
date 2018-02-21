@@ -36,6 +36,8 @@ class RequestScheduler : public Scheduler<RequestData> {
  protected:
   void StartScheduling(Priority prio) override;
 
+  unsigned Purge(JobId job_id) override;
+
  private:
   CommunicationHandlerInterface* _comm_interface;
   BaseDStage<RequestData>* _response_dstage;

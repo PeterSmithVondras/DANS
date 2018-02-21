@@ -22,12 +22,13 @@ ResponseScheduler::ResponseScheduler(std::vector<unsigned> threads_per_prio,
     : Scheduler<RequestData>(threads_per_prio, set_thread_priority),
       // _comm_interface(comm_interface),
       // _response_dstage(response_dstage),
-      _destructing(false) {
-  VLOG(3) << __PRETTY_FUNCTION__;
+      _destructing(false),
+      _origin_dstage(nullptr) {
+  VLOG(4) << __PRETTY_FUNCTION__;
 }
 
 ResponseScheduler::~ResponseScheduler() {
-  VLOG(3) << __PRETTY_FUNCTION__;
+  VLOG(4) << __PRETTY_FUNCTION__;
   {
     std::unique_lock<std::shared_timed_mutex> lock(_destructing_lock);
     _destructing = true;
@@ -39,8 +40,13 @@ ResponseScheduler::~ResponseScheduler() {
   }
 }
 
+void ResponseScheduler::RegisterOriginDStage(
+    BaseDStage<ConnectData>* origin_dstage) {
+  _origin_dstage = origin_dstage;
+}
+
 void ResponseScheduler::StartScheduling(Priority prio) {
-  VLOG(3) << __PRETTY_FUNCTION__ << " prio=" << prio;
+  VLOG(4) << __PRETTY_FUNCTION__ << " prio=" << prio;
   char buf[15];
   while (true) {
     {
@@ -73,6 +79,8 @@ void ResponseScheduler::StartScheduling(Priority prio) {
               << ", priority=" << job->priority;
       (*job->job_data.done)(job->priority, buf, kReadSize);
       close(job->job_data.soc);
+      CHECK_NOTNULL(_origin_dstage);
+      _origin_dstage->Purge(job->job_id);
     }
 
     // CallBack2 response(std::bind(&dans::ResponseScheduler::ResponseCallback,
@@ -84,7 +92,7 @@ void ResponseScheduler::StartScheduling(Priority prio) {
 
 void ResponseScheduler::ResponseCallback(SharedConstJobPtr<RequestData> old_job,
                                          int soc, ReadyFor ready_for) {
-  VLOG(3) << __PRETTY_FUNCTION__ << " soc=" << old_job->job_data.soc;
+  VLOG(4) << __PRETTY_FUNCTION__ << " soc=" << old_job->job_data.soc;
   CHECK(ready_for.in) << "Failed to receive response for socket=" << soc;
 
   // Pass on job if it is not complete.

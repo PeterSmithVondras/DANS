@@ -43,11 +43,13 @@ class FileClientDstageChainTest : public testing::Test {
     _connect_dstage = std::make_unique<ConnectDStage>(
         std::vector<unsigned>(kMaxPrio + 1, kThreadsPerPrio),
         FLAGS_set_thread_priority, &_comm_handler, _request_dstage.get());
+
+    _response_dstage->RegisterOriginDStage(_connect_dstage.get());
   }
 
   std::timed_mutex _complete_lock;
   LinuxCommunicationHandler _comm_handler;
-  std::unique_ptr<BaseDStage<RequestData>> _response_dstage;
+  std::unique_ptr<ResponseDStage> _response_dstage;
   std::unique_ptr<BaseDStage<RequestData>> _request_dstage;
   std::unique_ptr<BaseDStage<ConnectData>> _connect_dstage;
 };

@@ -179,6 +179,7 @@ unsigned MultiQueue<T>::Purge(JobId job_id) {
   }
 
   _value_mapper.erase(search);
+  VLOG(2) << "MultiQueue purged " << purged << " jobs.";
   return purged;
 }
 
