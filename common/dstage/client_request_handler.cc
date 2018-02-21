@@ -63,6 +63,13 @@ void RequestScheduler::StartScheduling(Priority prio) {
     VLOG(1) << "Request Handler Scheduler got job_id=" << job->job_id
             << ", socket=" << job->job_data.soc;
 
+    // Check if job has been purged
+    if (job->job_data.purge_state->IsPurged()) {
+      VLOG(2) << "Purged job_id=" << job->job_id
+              << ", Priority=" << job->priority;
+      continue;
+    }
+
     if (job->job_data.soc < 0) {
       errno = -job->job_data.soc;
       PLOG(WARNING) << "Dropped socket for job_id=" << job->job_id;
@@ -86,11 +93,18 @@ void RequestScheduler::RequestCallback(SharedConstJobPtr<RequestData> old_job,
                                        int soc, ReadyFor ready_for) {
   VLOG(3) << __PRETTY_FUNCTION__ << " soc=" << old_job->job_data.soc;
   CHECK(ready_for.in) << "Failed to receive response for socket=" << soc;
-  auto response_job = std::make_unique<ConstJob<RequestData>>(
-      RequestData{old_job->job_data.done, soc}, old_job->job_id,
-      old_job->priority, old_job->duplication);
-  _response_dstage->Dispatch(std::move(response_job),
-                             /*requested_dulpication=*/0);
+
+  // Pass on job if it is not complete.
+  if (!old_job->job_data.purge_state->IsPurged()) {
+    auto response_job = std::make_unique<ConstJob<RequestData>>(
+        RequestData{soc, old_job->job_data.done, old_job->job_data.purge_state},
+        old_job->job_id, old_job->priority, old_job->duplication);
+    _response_dstage->Dispatch(std::move(response_job),
+                               /*requested_dulpication=*/0);
+  } else {
+    VLOG(2) << "Purged job_id=" << old_job->job_id
+            << ", Priority=" << old_job->priority;
+  }
 }
 
 }  // namespace dans

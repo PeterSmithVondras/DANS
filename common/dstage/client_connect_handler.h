@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <shared_mutex>
 #include <string>
 
@@ -11,7 +12,6 @@
 #include "common/dstage/dstage.h"
 #include "common/dstage/job.h"
 #include "common/dstage/job_types.h"
-#include "common/dstage/job_state.h"
 #include "common/dstage/multiqueue.h"
 #include "common/dstage/scheduler.h"
 
@@ -40,8 +40,8 @@ class ConnectScheduler : public Scheduler<ConnectDataInternal> {
  private:
   CommunicationHandlerInterface* _comm_interface;
   BaseDStage<RequestData>* _request_dstage;
-  bool _destructing;
   std::shared_timed_mutex _destructing_lock;
+  bool _destructing;
 
   void ConnectCallback(SharedConstJobPtr<ConnectDataInternal> old_job, int soc,
                        CommunicationHandlerInterface::ReadyFor ready_for);

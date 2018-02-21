@@ -10,6 +10,7 @@
 #include "common/dstage/job_types.h"
 #include "common/dstage/linux_communication_handler.h"
 #include "common/dstage/scheduler.h"
+#include "common/dstage/synchronization.h"
 #include "gflags/gflags.h"
 #include "glog/logging.h"
 #include "gtest/gtest.h"
@@ -22,6 +23,7 @@ namespace {
 using namespace dans;
 const unsigned kMaxPrio = 1;
 const unsigned kThreadsPerPrio = 2;
+const unsigned kGetRequestsTotal = 100;
 
 }  // namespace
 
@@ -51,12 +53,22 @@ class FileClientDstageChainTest : public testing::Test {
 };
 
 TEST_F(FileClientDstageChainTest, CreateConnect) {
+  Counter counter(0);
+  std::timed_mutex complete_lock;
+  complete_lock.lock();
+  auto response = std::make_shared<std::function<void(unsigned, char*, int)>>(
+      [&counter, &complete_lock](unsigned prio, char* buf, int len) {
+        VLOG(1) << "Read from server: " << buf;
+        counter.Increment();
+        if (counter.Count() == kGetRequestsTotal) {
+          complete_lock.unlock();
+        }
+      });
+
   ConnectData connect_data = {
-      {"172.217.10.36", "172.217.10.36"},
-      {"80", "80"},
-      std::make_shared<std::function<void(int)>>([](int foo) {})};
+      {"172.217.10.36", "172.217.10.36"}, {"80", "80"}, response};
   UniqConstJobPtr<ConnectData> job;
-  for (unsigned i = 0; i < 100; i++) {
+  for (unsigned i = 0; i < kGetRequestsTotal; i++) {
     job = std::make_unique<ConstJob<ConnectData>>(connect_data,
                                                   /*job_id=*/i,
                                                   /*priority=*/0,
@@ -64,7 +76,10 @@ TEST_F(FileClientDstageChainTest, CreateConnect) {
     _connect_dstage->Dispatch(std::move(job), /*requested_duplication=*/1);
   }
 
-  std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+  EXPECT_TRUE(complete_lock.try_lock_for(std::chrono::milliseconds(3000)))
+      << "Did not get all responses. Check internet connection.";
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  EXPECT_EQ(kGetRequestsTotal, counter.Count());
 }
 
 int main(int argc, char** argv) {

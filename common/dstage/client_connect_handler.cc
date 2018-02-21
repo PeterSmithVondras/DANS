@@ -29,11 +29,12 @@ void ConnectDispatcher::DuplicateAndEnqueue(UniqConstJobPtr<ConnectData> job_in,
   Priority prio;
   int i;
   VLOG(2) << "ip_addresses size=" << job_in->job_data.ip_addresses.size();
+  auto purge_state = std::make_shared<PurgeState>();
   for (i = 0, prio = job_in->priority; prio <= max_prio; i++, prio++) {
     VLOG(2) << "duplicate_job=" << i << ", prio=" << prio;
-    ConnectDataInternal req_data_internal = {job_in->job_data.ip_addresses[i],
-                                             job_in->job_data.ports[i],
-                                             job_in->job_data.done};
+    ConnectDataInternal req_data_internal = {
+        job_in->job_data.ip_addresses[i], job_in->job_data.ports[i],
+        job_in->job_data.done, purge_state};
     auto duplicate_job_p = std::make_unique<const Job<ConnectDataInternal>>(
         req_data_internal, job_in->job_id, prio, duplication);
     _multi_q_p->Enqueue(std::move(duplicate_job_p));
@@ -80,6 +81,13 @@ void ConnectScheduler::StartScheduling(Priority prio) {
     VLOG(1) << "Connect Handler Scheduler got job_id=" << job->job_id
             << ", ip=" << job->job_data.ip << ", port=" << job->job_data.port;
 
+    // Check if job has been purged
+    if (job->job_data.purge_state->IsPurged()) {
+      VLOG(2) << "Purged job_id=" << job->job_id
+              << ", Priority=" << job->priority;
+      continue;
+    }
+
     CallBack2 connected(std::bind(&dans::ConnectScheduler::ConnectCallback,
                                   this, job, std::placeholders::_1,
                                   std::placeholders::_2));
@@ -94,11 +102,18 @@ void ConnectScheduler::ConnectCallback(
   VLOG(3) << __PRETTY_FUNCTION__ << " soc=" << soc;
   CHECK(ready_for.out) << "Failed to create TCP connection for socket=" << soc;
   CHECK(!ready_for.in) << "Failed to create TCP connection for socket=" << soc;
-  auto request_job = std::make_unique<ConstJob<RequestData>>(
-      RequestData{old_job->job_data.done, soc}, old_job->job_id,
-      old_job->priority, old_job->duplication);
-  _request_dstage->Dispatch(std::move(request_job),
-                            /*requested_dulpication=*/0);
+
+  // Pass on job if it is not complete.
+  if (!old_job->job_data.purge_state->IsPurged()) {
+    auto request_job = std::make_unique<ConstJob<RequestData>>(
+        RequestData{soc, old_job->job_data.done, old_job->job_data.purge_state},
+        old_job->job_id, old_job->priority, old_job->duplication);
+    _request_dstage->Dispatch(std::move(request_job),
+                              /*requested_dulpication=*/0);
+  } else {
+    VLOG(2) << "Purged job_id=" << old_job->job_id
+            << ", Priority=" << old_job->priority;
+  }
 }
 
 }  // namespace dans

@@ -165,7 +165,6 @@ cc_library(
   srcs = [ "client_connect_handler.cc" ],
   deps = [
     ":dstage_base",
-    ":job_state",
     ":job_types",
     ":multiqueue",
     ":dispatcher",
@@ -186,7 +185,6 @@ cc_library(
   srcs = [ "client_request_handler.cc" ],
   deps = [
     ":dstage_base",
-    ":job_state",
     ":job_types",
     ":multiqueue",
     ":dispatcher",
@@ -206,7 +204,6 @@ cc_library(
   srcs = [ "client_response_handler.cc" ],
   deps = [
     ":dstage_base",
-    ":job_state",
     ":job_types",
     ":multiqueue",
     ":dispatcher",
@@ -228,6 +225,7 @@ cc_test(
     ":client_request_handler",
     ":client_response_handler",
     ":linux_communication_handler",
+    ":synchronization",
     "@glog//:main",
     "@gflags//:main",
     "@gtest//:main",
@@ -235,28 +233,14 @@ cc_test(
 )
 
 cc_library(
-  name = "job_state",
+  name = "synchronization",
   hdrs = [
-    "job_state.h",
+    "synchronization.h",
   ],
-  srcs = [ "job_state.cc" ],
+  srcs = [ "synchronization.cc" ],
   deps = [
     ":dstage_base",
     "@glog//:main",
-  ],
-)
-
-
-cc_library(
-  name = "job_state_test",
-  hdrs = [
-    "job_state_test.h",
-  ],
-  srcs = [ "job_state_test.cc" ],
-  deps = [
-    "@glog//:main",
-    "@gflags//:main",
-    "@gtest//:main",
   ],
 )
 
@@ -266,6 +250,7 @@ cc_library(
     "job_types.h",
   ],
   deps = [
+    ":synchronization",
     "@glog//:main",
   ],
 )
