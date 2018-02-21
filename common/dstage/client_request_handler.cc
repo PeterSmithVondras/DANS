@@ -67,6 +67,7 @@ void RequestScheduler::StartScheduling(Priority prio) {
     if (job->job_data.purge_state->IsPurged()) {
       VLOG(2) << "Purged job_id=" << job->job_id
               << ", Priority=" << job->priority;
+      _comm_interface->Close(job->job_data.soc);
       continue;
     }
 
@@ -104,6 +105,7 @@ void RequestScheduler::RequestCallback(SharedConstJobPtr<RequestData> old_job,
   } else {
     VLOG(2) << "Purged job_id=" << old_job->job_id
             << ", Priority=" << old_job->priority;
+    _comm_interface->Close(soc);
   }
 }
 

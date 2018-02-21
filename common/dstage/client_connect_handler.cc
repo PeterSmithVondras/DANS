@@ -113,6 +113,7 @@ void ConnectScheduler::ConnectCallback(
   } else {
     VLOG(2) << "Purged job_id=" << old_job->job_id
             << ", Priority=" << old_job->priority;
+    _comm_interface->Close(soc);
   }
 }
 

@@ -57,6 +57,7 @@ void ResponseScheduler::StartScheduling(Priority prio) {
     if (job->job_data.purge_state->IsPurged()) {
       VLOG(2) << "Purged job_id=" << job->job_id
               << ", Priority=" << job->priority;
+      close(job->job_data.soc);
       continue;
     }
 
@@ -67,11 +68,11 @@ void ResponseScheduler::StartScheduling(Priority prio) {
     }
 
     CHECK_EQ(read(job->job_data.soc, buf, kReadSize), kReadSize);
-    VLOG(2) << "Read from server: " << buf;
     if (job->job_data.purge_state->SetPurged()) {
       VLOG(2) << "Completed job_id=" << job->job_id
               << ", priority=" << job->priority;
       (*job->job_data.done)(job->priority, buf, kReadSize);
+      close(job->job_data.soc);
     }
 
     // CallBack2 response(std::bind(&dans::ResponseScheduler::ResponseCallback,
