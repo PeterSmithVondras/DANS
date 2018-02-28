@@ -73,7 +73,8 @@ void ResponseScheduler::StartScheduling(Priority prio) {
       continue;
     }
 
-    CHECK_EQ(read(job->job_data.soc, &response, sizeof(Protocol)), sizeof(Protocol));
+    CHECK_EQ(read(job->job_data.soc, &response, sizeof(Protocol)),
+             sizeof(Protocol));
     if (job->job_data.purge_state->SetPurged()) {
       VLOG(2) << "Completed job_id=" << job->job_id
               << ", priority=" << job->priority;

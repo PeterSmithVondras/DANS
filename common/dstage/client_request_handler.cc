@@ -88,12 +88,11 @@ void RequestScheduler::StartScheduling(Priority prio) {
       continue;
     }
 
-    request = {REQUEST_GETFILE, static_cast<int>(job->priority), /*file=*/0,
-               kIndex, kSizeMB};
+    request = {REQUEST_GETFILE, static_cast<int>(job->priority),
+               job->job_data.object_id, kIndex, kSizeMB};
     int ret = send(job->job_data.soc, &request, sizeof(Protocol), /*flags=*/0);
-    CHECK_EQ(ret, static_cast<int>(buf.length()))
-        << "Failed to send: socket=" << job->job_data.soc << "\n"
-        << "Tried to send: " << buf;
+    CHECK_EQ(ret, static_cast<int>(sizeof(Protocol)))
+        << "Failed to send: socket=" << job->job_data.soc;
 
     CallBack2 response(std::bind(&dans::RequestScheduler::RequestCallback, this,
                                  job, std::placeholders::_1,
