@@ -7,6 +7,9 @@
 namespace {
 using CallBack2 = dans::CommunicationHandlerInterface::CallBack2;
 using ReadyFor = dans::CommunicationHandlerInterface::ReadyFor;
+
+const std::string kLowPrioPort = "5010";
+const std::string kHighPrioPort = "5011";
 }  // namespace
 
 namespace dans {
@@ -22,19 +25,15 @@ void ConnectDispatcher::DuplicateAndEnqueue(UniqConstJobPtr<ConnectData> job_in,
   CHECK(job_in->job_data.ip_addresses.size() > duplication)
       << "There are " << job_in->job_data.ip_addresses.size()
       << " ip_addresses, but we need at least " << duplication + 1;
-  CHECK(job_in->job_data.ports.size() > duplication)
-      << "There are " << job_in->job_data.ip_addresses.size()
-      << " ports, but we need at least " << duplication + 1;
 
   Priority prio;
   int i;
   CHECK_EQ(job_in->job_data.ip_addresses.size(), _max_priority + 1);
-  CHECK_EQ(job_in->job_data.ports.size(), _max_priority + 1);
   auto purge_state = std::make_shared<PurgeState>();
   for (i = 0, prio = job_in->priority; prio <= max_prio; i++, prio++) {
     VLOG(3) << "duplicate_job=" << i << ", prio=" << prio;
     ConnectDataInternal req_data_internal = {
-        job_in->job_data.ip_addresses[i], job_in->job_data.ports[i],
+        job_in->job_data.ip_addresses[i], job_in->job_data.object_id,
         job_in->job_data.done, purge_state};
     auto duplicate_job_p = std::make_unique<const Job<ConnectDataInternal>>(
         req_data_internal, job_in->job_id, prio, duplication);
@@ -85,7 +84,7 @@ void ConnectScheduler::StartScheduling(Priority prio) {
     SharedConstJobPtr<ConnectDataInternal> job = _multi_q_p->Dequeue(prio);
     if (job == nullptr) continue;
     VLOG(1) << "Connect Handler Scheduler got job_id=" << job->job_id
-            << ", ip=" << job->job_data.ip << ", port=" << job->job_data.port;
+            << ", ip=" << job->job_data.ip;
 
     // Check if job has been purged
     if (job->job_data.purge_state->IsPurged()) {
@@ -98,7 +97,9 @@ void ConnectScheduler::StartScheduling(Priority prio) {
                                   this, job, std::placeholders::_1,
                                   std::placeholders::_2));
 
-    _comm_interface->Connect(job->job_data.ip, job->job_data.port, connected);
+    _comm_interface->Connect(job->job_data.ip,
+                             job->priority == 0 ? kHighPrioPort : kLowPrioPort,
+                             connected);
   }
 }
 
@@ -112,7 +113,8 @@ void ConnectScheduler::ConnectCallback(
   // Pass on job if it is not complete.
   if (!old_job->job_data.purge_state->IsPurged()) {
     auto request_job = std::make_unique<ConstJob<RequestData>>(
-        RequestData{soc, old_job->job_data.done, old_job->job_data.purge_state},
+        RequestData{soc, old_job->job_data.object_id, old_job->job_data.done,
+                    old_job->job_data.purge_state},
         old_job->job_id, old_job->priority, old_job->duplication);
     _request_dstage->Dispatch(std::move(request_job),
                               /*requested_dulpication=*/0);

@@ -9,6 +9,9 @@
 
 namespace {
 std::string buf = "GET / HTTP/1.1\n\n";
+const std::string request = "GET / HTTP/1.1\n\n";
+const int kIndex = 0;
+const int kSizeMB = 0;
 
 using CallBack2 = dans::CommunicationHandlerInterface::CallBack2;
 using ReadyFor = dans::CommunicationHandlerInterface::ReadyFor;
@@ -57,6 +60,9 @@ unsigned RequestScheduler::Purge(JobId job_id) {
 
 void RequestScheduler::StartScheduling(Priority prio) {
   VLOG(4) << __PRETTY_FUNCTION__ << " prio=" << prio;
+
+  Protocol request;
+
   while (true) {
     {
       std::shared_lock<std::shared_timed_mutex> lock(_destructing_lock);
@@ -82,7 +88,9 @@ void RequestScheduler::StartScheduling(Priority prio) {
       continue;
     }
 
-    int ret = send(job->job_data.soc, buf.c_str(), buf.length(), /*flags=*/0);
+    request = {REQUEST_GETFILE, static_cast<int>(job->priority), /*file=*/0,
+               kIndex, kSizeMB};
+    int ret = send(job->job_data.soc, &request, sizeof(Protocol), /*flags=*/0);
     CHECK_EQ(ret, static_cast<int>(buf.length()))
         << "Failed to send: socket=" << job->job_data.soc << "\n"
         << "Tried to send: " << buf;
@@ -103,7 +111,8 @@ void RequestScheduler::RequestCallback(SharedConstJobPtr<RequestData> old_job,
   // Pass on job if it is not complete.
   if (!old_job->job_data.purge_state->IsPurged()) {
     auto response_job = std::make_unique<ConstJob<RequestData>>(
-        RequestData{soc, old_job->job_data.done, old_job->job_data.purge_state},
+        RequestData{soc, old_job->job_data.object_id, old_job->job_data.done,
+                    old_job->job_data.purge_state},
         old_job->job_id, old_job->priority, old_job->duplication);
     _response_dstage->Dispatch(std::move(response_job),
                                /*requested_dulpication=*/0);

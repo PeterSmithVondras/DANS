@@ -10,7 +10,6 @@
 namespace {
 using CallBack2 = dans::CommunicationHandlerInterface::CallBack2;
 using ReadyFor = dans::CommunicationHandlerInterface::ReadyFor;
-int kReadSize = 15;
 }  // namespace
 
 namespace dans {
@@ -47,7 +46,8 @@ void ResponseScheduler::RegisterOriginDStage(
 
 void ResponseScheduler::StartScheduling(Priority prio) {
   VLOG(4) << __PRETTY_FUNCTION__ << " prio=" << prio;
-  char buf[15];
+  Protocol response;
+
   while (true) {
     {
       std::shared_lock<std::shared_timed_mutex> lock(_destructing_lock);
@@ -73,11 +73,11 @@ void ResponseScheduler::StartScheduling(Priority prio) {
       continue;
     }
 
-    CHECK_EQ(read(job->job_data.soc, buf, kReadSize), kReadSize);
+    CHECK_EQ(read(job->job_data.soc, &response, sizeof(Protocol)), sizeof(Protocol));
     if (job->job_data.purge_state->SetPurged()) {
       VLOG(2) << "Completed job_id=" << job->job_id
               << ", priority=" << job->priority;
-      (*job->job_data.done)(job->priority, buf, kReadSize);
+      (*job->job_data.done)(job->priority, &response, sizeof(Protocol));
       close(job->job_data.soc);
       CHECK_NOTNULL(_origin_dstage);
       _origin_dstage->Purge(job->job_id);
@@ -98,8 +98,8 @@ void ResponseScheduler::ResponseCallback(SharedConstJobPtr<RequestData> old_job,
   // Pass on job if it is not complete.
   if (!old_job->job_data.purge_state->IsPurged()) {
     auto response_job = std::make_unique<ConstJob<RequestData>>(
-        RequestData{soc, old_job->job_data.done}, old_job->job_id,
-        old_job->priority, old_job->duplication);
+        RequestData{soc, old_job->job_data.object_id, old_job->job_data.done},
+        old_job->job_id, old_job->priority, old_job->duplication);
     // _response_dstage->Dispatch(std::move(response_job),
     //                           /*requested_dulpication=*/0);
   } else {

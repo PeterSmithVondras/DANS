@@ -58,9 +58,13 @@ TEST_F(FileClientDstageChainTest, CreateConnect) {
   Counter counter(0);
   std::timed_mutex complete_lock;
   complete_lock.lock();
-  auto response = std::make_shared<std::function<void(unsigned, char*, int)>>(
-      [&counter, &complete_lock](unsigned prio, char* buf, int len) {
-        VLOG(1) << "Read from server: " << buf;
+  auto response = std::make_shared<std::function<void(unsigned, Protocol*, int)>>(
+      [&counter, &complete_lock](unsigned prio, Protocol* response, int len) {
+        if (response->type == REQUEST_ACCEPT) {
+          VLOG(1) << "Server sent Accept for file=" << response->object_id;
+        } else {
+          VLOG(1) << "Server sent Reject for file=" << response->object_id;
+        }
         counter.Increment();
         if (counter.Count() == kGetRequestsTotal) {
           complete_lock.unlock();
@@ -68,7 +72,7 @@ TEST_F(FileClientDstageChainTest, CreateConnect) {
       });
 
   ConnectData connect_data = {
-      {"172.217.10.36", "172.217.10.36"}, {"80", "80"}, response};
+      {"192.168.137.127", "192.168.137.127"}, /*file=*/0, response};
   UniqConstJobPtr<ConnectData> job;
   for (unsigned i = 0; i < kGetRequestsTotal; i++) {
     job = std::make_unique<ConstJob<ConnectData>>(connect_data,
@@ -78,7 +82,7 @@ TEST_F(FileClientDstageChainTest, CreateConnect) {
     _connect_dstage->Dispatch(std::move(job), /*requested_duplication=*/1);
   }
 
-  EXPECT_TRUE(complete_lock.try_lock_for(std::chrono::milliseconds(3000)))
+  EXPECT_TRUE(complete_lock.try_lock_for(std::chrono::milliseconds(10000)))
       << "Did not get all responses. Check internet connection.";
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   EXPECT_EQ(kGetRequestsTotal, counter.Count());
