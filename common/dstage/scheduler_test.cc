@@ -13,7 +13,7 @@ DEFINE_bool(set_thread_priority, false,
 
 namespace {
 using namespace dans;
-using ConstJobJData = const Job<JData>;
+using JobJData = Job<JData>;
 const Priority kMaxPrio = 2;
 auto kGenericData = std::make_shared<JData>(5);
 // const unsigned kGenericDuplication = 0;

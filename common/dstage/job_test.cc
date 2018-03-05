@@ -7,7 +7,7 @@
 
 namespace {
 using namespace dans;
-using ConstJobJData = const Job<JData>;
+using JobJData = Job<JData>;
 JData kGenericData = {5};
 }  // namespace
 
@@ -23,28 +23,27 @@ int main(int argc, char* argv[]) {
 
   JobIdFactory j_fact(0);
 
-  auto original =
-      std::make_unique<ConstJobJData>(kGenericData, j_fact.CreateJobId(),
-                                      /*priority=*/1,
-                                      /*requested_duplication=*/1);
+  auto original = std::make_unique<JobJData>(kGenericData, j_fact.CreateJobId(),
+                                             /*priority=*/1,
+                                             /*requested_duplication=*/1);
 
   auto same_as_original =
-      std::make_unique<ConstJobJData>(kGenericData, original->job_id,
-                                      /*priority=*/2,
-                                      /*requested_duplication=*/2);
+      std::make_unique<JobJData>(kGenericData, original->job_id,
+                                 /*priority=*/2,
+                                 /*requested_duplication=*/2);
 
   auto different =
-      std::make_unique<ConstJobJData>(kGenericData, j_fact.CreateJobId(),
-                                      /*priority=*/3,
-                                      /*requested_duplication=*/3);
+      std::make_unique<JobJData>(kGenericData, j_fact.CreateJobId(),
+                                 /*priority=*/3,
+                                 /*requested_duplication=*/3);
 
   CHECK(*original == *same_as_original);
   CHECK(*original != *different);
 
-  UniqConstJobPtr<JData> decoy_a =
-      std::make_unique<ConstJobJData>(kGenericData, j_fact.CreateJobId(),
-                                      /*priority=*/1,
-                                      /*requested_duplication=*/1);
+  UniqJobPtr<JData> decoy_a =
+      std::make_unique<JobJData>(kGenericData, j_fact.CreateJobId(),
+                                 /*priority=*/1,
+                                 /*requested_duplication=*/1);
 
   LOG(INFO) << "PASS";
   return 0;

@@ -17,7 +17,7 @@ namespace dans {
 ConnectDispatcher::ConnectDispatcher(Priority max_priority)
     : Dispatcher<ConnectData, ConnectDataInternal>(max_priority) {}
 
-void ConnectDispatcher::DuplicateAndEnqueue(UniqConstJobPtr<ConnectData> job_in,
+void ConnectDispatcher::DuplicateAndEnqueue(UniqJobPtr<ConnectData> job_in,
                                             Priority max_prio,
                                             unsigned duplication) {
   VLOG(4) << __PRETTY_FUNCTION__ << " max_prio=" << max_prio
@@ -78,10 +78,10 @@ void ConnectScheduler::StartScheduling(Priority prio) {
       if (_destructing) return;
     }
 
-    // Convert the UniqConstJobPtr to SharedConstJobPtr to allow capture in
+    // Convert the UniqJobPtr to SharedJobPtr to allow capture in
     // closure. Note that uniq_ptr's are are hard/impossible to capture using
     // std::bind as they do not have a copy constructor.
-    SharedConstJobPtr<ConnectDataInternal> job = _multi_q_p->Dequeue(prio);
+    SharedJobPtr<ConnectDataInternal> job = _multi_q_p->Dequeue(prio);
     if (job == nullptr) continue;
     VLOG(1) << "Connect Handler Scheduler got job_id=" << job->job_id
             << ", ip=" << job->job_data.ip;
@@ -104,15 +104,14 @@ void ConnectScheduler::StartScheduling(Priority prio) {
 }
 
 void ConnectScheduler::ConnectCallback(
-    SharedConstJobPtr<ConnectDataInternal> old_job, int soc,
-    ReadyFor ready_for) {
+    SharedJobPtr<ConnectDataInternal> old_job, int soc, ReadyFor ready_for) {
   VLOG(4) << __PRETTY_FUNCTION__ << " soc=" << soc;
   CHECK(ready_for.out) << "Failed to create TCP connection for socket=" << soc;
   CHECK(!ready_for.in) << "Failed to create TCP connection for socket=" << soc;
 
   // Pass on job if it is not complete.
   if (!old_job->job_data.purge_state->IsPurged()) {
-    auto request_job = std::make_unique<ConstJob<RequestData>>(
+    auto request_job = std::make_unique<Job<RequestData>>(
         RequestData{soc, old_job->job_data.object_id, old_job->job_data.done,
                     old_job->job_data.purge_state},
         old_job->job_id, old_job->priority, old_job->duplication);

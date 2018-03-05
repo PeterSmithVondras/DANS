@@ -47,15 +47,6 @@ struct Job {
 };
 
 template <typename T>
-using ConstJob = Job<T>;
-
-template <typename T>
-using UniqConstJobPtr = std::unique_ptr<Job<T>>;
-
-template <typename T>
-using SharedConstJobPtr = std::shared_ptr<Job<T>>;
-
-template <typename T>
 using UniqJobPtr = std::unique_ptr<Job<T>>;
 
 template <typename T>

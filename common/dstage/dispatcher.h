@@ -15,7 +15,7 @@ class Dispatcher : public BaseDispatcher<T_INPUT, T_INTERNAL> {
   // Introduces an ApplicationRequest to a DStage. base_prio is the incoming
   // Priority of the ApplicationRequest. The Dispatcher will make
   // duplication_level duplicates of the request for the Scheduler's use.
-  void Dispatch(UniqConstJobPtr<T_INPUT> job_p,
+  void Dispatch(UniqJobPtr<T_INPUT> job_p,
                 unsigned requested_duplication) override;
 
   void LinkMultiQ(BaseMultiQueue<T_INTERNAL>* multi_q_p) override;
@@ -25,7 +25,7 @@ class Dispatcher : public BaseDispatcher<T_INPUT, T_INTERNAL> {
   const Priority _max_priority;
   BaseMultiQueue<T_INTERNAL>* _multi_q_p;
 
-  virtual void DuplicateAndEnqueue(UniqConstJobPtr<T_INPUT> job_in,
+  virtual void DuplicateAndEnqueue(UniqJobPtr<T_INPUT> job_in,
                                    Priority max_prio, unsigned duplication) = 0;
 };
 }  // namespace dans

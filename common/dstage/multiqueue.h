@@ -21,11 +21,11 @@ class MultiQueue : public BaseMultiQueue<T> {
 
   // Adds a job_id to all priority queues referenced in prio_list.
   // This function is thread safe.
-  void Enqueue(UniqConstJobPtr<T> job_p);
+  void Enqueue(UniqJobPtr<T> job_p);
 
   // Thread safe and blocking dequeue function will dequeue from the queue
   // associated to "prio."
-  UniqConstJobPtr<T> Dequeue(Priority prio);
+  UniqJobPtr<T> Dequeue(Priority prio);
 
   unsigned Purge(JobId job_id);
 
@@ -56,9 +56,9 @@ class MultiQueue : public BaseMultiQueue<T> {
 
   // locks the job map meta data
   std::mutex _value_map_mutex;
-  std::unordered_map<JobId,
-                     std::list<std::pair<UniqConstJobPtr<T>,
-                                         typename std::list<JobId>::iterator>>>
+  std::unordered_map<
+      JobId,
+      std::list<std::pair<UniqJobPtr<T>, typename std::list<JobId>::iterator>>>
       _value_mapper;
 };
 

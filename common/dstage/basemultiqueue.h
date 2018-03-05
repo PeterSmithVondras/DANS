@@ -15,11 +15,11 @@ class BaseMultiQueue {
 
   // Adds a job_id to all priority queues referenced in prio_list.
   // This function is thread safe.
-  virtual void Enqueue(UniqConstJobPtr<T> job_p) = 0;
+  virtual void Enqueue(UniqJobPtr<T> job_p) = 0;
 
   // Thread safe and blocking dequeue function will dequeue from the queue
   // associated to "prio."
-  virtual UniqConstJobPtr<T> Dequeue(Priority prio) = 0;
+  virtual UniqJobPtr<T> Dequeue(Priority prio) = 0;
 
   virtual unsigned Purge(JobId job_id) = 0;
 

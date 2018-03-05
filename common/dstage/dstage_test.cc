@@ -14,7 +14,7 @@ DEFINE_bool(set_thread_priority, false,
 namespace {
 
 using namespace dans;
-using ConstJobJData = const Job<JData>;
+using JobJData = Job<JData>;
 const Priority kMaxPrio = 2;
 JData kGenericData = {5};
 const unsigned kGenericDuplication = 0;
@@ -25,15 +25,15 @@ class TestDispatcher : public Dispatcher<JData, int> {
       : Dispatcher<JData, int>(max_priority) {}
 
  protected:
-  void DuplicateAndEnqueue(UniqConstJobPtr<JData> job_in, Priority max_prio,
+  void DuplicateAndEnqueue(UniqJobPtr<JData> job_in, Priority max_prio,
                            unsigned duplication) override {
     VLOG(4) << __PRETTY_FUNCTION__ << " max_prio=" << max_prio
             << ", duplication= " << duplication;
 
     for (Priority prio = job_in->priority; prio <= max_prio; prio++) {
-      auto duplicate_job_p = std::make_unique<const Job<int>>(
-          static_cast<int>(job_in->job_data.foo), job_in->job_id, prio,
-          duplication);
+      auto duplicate_job_p =
+          std::make_unique<Job<int>>(static_cast<int>(job_in->job_data.foo),
+                                     job_in->job_id, prio, duplication);
       _multi_q_p->Enqueue(std::move(duplicate_job_p));
     }
   }
@@ -52,23 +52,22 @@ TEST(DStageTest, MainTest) {
   JobIdFactory j_fact(0);
   unsigned purged;
 
-  auto job =
-      std::make_unique<ConstJobJData>(kGenericData, j_fact.CreateJobId(),
-                                      /*priority=*/0, kGenericDuplication);
+  auto job = std::make_unique<JobJData>(kGenericData, j_fact.CreateJobId(),
+                                        /*priority=*/0, kGenericDuplication);
   JobId job_id = job->job_id;
   base_dstage->Dispatch(std::move(job), /*requested_duplication=*/2);
   purged = base_dstage->Purge(job_id);
   EXPECT_EQ(purged, kMaxPrio + 1);
 
-  job = std::make_unique<ConstJobJData>(kGenericData, j_fact.CreateJobId(),
-                                        /*priority=*/1, kGenericDuplication);
+  job = std::make_unique<JobJData>(kGenericData, j_fact.CreateJobId(),
+                                   /*priority=*/1, kGenericDuplication);
   job_id = job->job_id;
   base_dstage->Dispatch(std::move(job), /*requested_duplication=*/0);
   purged = base_dstage->Purge(job_id);
   EXPECT_EQ(purged, 1);
 
-  job = std::make_unique<ConstJobJData>(kGenericData, j_fact.CreateJobId(),
-                                        /*priority=*/2, kGenericDuplication);
+  job = std::make_unique<JobJData>(kGenericData, j_fact.CreateJobId(),
+                                   /*priority=*/2, kGenericDuplication);
   job_id = job->job_id;
   base_dstage->Dispatch(std::move(job), /*requested_duplication=*/5);
   purged = base_dstage->Purge(job_id);

@@ -36,7 +36,7 @@ MultiQueue<T>::~MultiQueue() {
 }
 
 template <typename T>
-void MultiQueue<T>::Enqueue(UniqConstJobPtr<T> job_p) {
+void MultiQueue<T>::Enqueue(UniqJobPtr<T> job_p) {
   VLOG(4) << __PRETTY_FUNCTION__
           << ((job_p == nullptr) ? " job_p=nullptr," : " job_id=")
           << ((job_p == nullptr) ? ' ' : job_p->job_id)
@@ -49,7 +49,7 @@ void MultiQueue<T>::Enqueue(UniqConstJobPtr<T> job_p) {
   Priority prio = job_p->priority;
   JobId job_id = job_p->job_id;
   // Adding value to the queue and saving the iterator.
-  std::list<std::pair<UniqConstJobPtr<T>, typename std::list<JobId>::iterator>>
+  std::list<std::pair<UniqJobPtr<T>, typename std::list<JobId>::iterator>>
       duplicate_list;
   {
     CHECK_LE(prio, _max_prio);
@@ -84,7 +84,7 @@ void MultiQueue<T>::Enqueue(UniqConstJobPtr<T> job_p) {
 }
 
 template <typename T>
-UniqConstJobPtr<T> MultiQueue<T>::Dequeue(Priority prio) {
+UniqJobPtr<T> MultiQueue<T>::Dequeue(Priority prio) {
   VLOG(4) << __PRETTY_FUNCTION__ << " prio=" << prio;
   CHECK_LE(prio, _max_prio);
 
@@ -136,7 +136,7 @@ UniqConstJobPtr<T> MultiQueue<T>::Dequeue(Priority prio) {
   CHECK(search != _value_mapper.end());
   auto duplicate_list_iter = search->second.begin();
 
-  UniqConstJobPtr<T> job_p;
+  UniqJobPtr<T> job_p;
   bool found = false;
   while (duplicate_list_iter != search->second.end()) {
     if (duplicate_list_iter->first->priority == prio) {
@@ -171,7 +171,7 @@ unsigned MultiQueue<T>::Purge(JobId job_id) {
 
   auto duplicate_list_iter = search->second.begin();
   while (duplicate_list_iter != search->second.end()) {
-    UniqConstJobPtr<T> job_p = std::move(duplicate_list_iter->first);
+    UniqJobPtr<T> job_p = std::move(duplicate_list_iter->first);
     _priority_qs[job_p->priority].erase(duplicate_list_iter->second);
     purged++;
 

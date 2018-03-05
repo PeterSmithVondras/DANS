@@ -22,8 +22,8 @@ class ConnectDispatcher : public Dispatcher<ConnectData, ConnectDataInternal> {
   ConnectDispatcher(Priority max_priority);
 
  protected:
-  void DuplicateAndEnqueue(UniqConstJobPtr<ConnectData> job_in,
-                           Priority max_prio, unsigned duplication) override;
+  void DuplicateAndEnqueue(UniqJobPtr<ConnectData> job_in, Priority max_prio,
+                           unsigned duplication) override;
 };
 
 class ConnectScheduler : public Scheduler<ConnectDataInternal> {
@@ -45,7 +45,7 @@ class ConnectScheduler : public Scheduler<ConnectDataInternal> {
   std::shared_timed_mutex _destructing_lock;
   bool _destructing;
 
-  void ConnectCallback(SharedConstJobPtr<ConnectDataInternal> old_job, int soc,
+  void ConnectCallback(SharedJobPtr<ConnectDataInternal> old_job, int soc,
                        CommunicationHandlerInterface::ReadyFor ready_for);
 };
 

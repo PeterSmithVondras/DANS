@@ -58,32 +58,26 @@ TEST_F(FileClientDstageChainTest, CreateConnect) {
   Counter counter(0);
   std::timed_mutex complete_lock;
   complete_lock.lock();
-  auto response =
-      std::make_shared<std::function<void(unsigned, Protocol*, int)>>(
-          [&counter, &complete_lock](unsigned prio, Protocol* response,
-                                     int len) {
-            if (response->type == REQUEST_ACCEPT) {
-              LOG(INFO) << "Server sent Accept for file="
-                        << response->object_id;
-            } else {
-              LOG(INFO) << "Server sent Reject for file="
-                        << response->object_id;
-            }
-            counter.Increment();
-            if (counter.Count() == kGetRequestsTotal) {
-              complete_lock.unlock();
-            }
-          });
+  auto response = std::make_shared<
+      std::function<void(unsigned, int, std::unique_ptr<std::vector<char>>)>>(
+      [&counter, &complete_lock](unsigned priority, int object_id,
+                                 std::unique_ptr<std::vector<char>> object) {
+        LOG(INFO) << "Received file=" << object_id;
+        counter.Increment();
+        if (counter.Count() == kGetRequestsTotal) {
+          complete_lock.unlock();
+        }
+      });
 
   ConnectData connect_data = {
       {"192.168.137.127", "192.168.137.127"}, /*file=*/0, response};
-  UniqConstJobPtr<ConnectData> job;
+  UniqJobPtr<ConnectData> job;
   for (unsigned i = 0; i < kGetRequestsTotal; i++) {
     connect_data.object_id = static_cast<int>(i);
-    job = std::make_unique<ConstJob<ConnectData>>(connect_data,
-                                                  /*job_id=*/i,
-                                                  /*priority=*/0,
-                                                  /*duplication*/ 0);
+    job = std::make_unique<Job<ConnectData>>(connect_data,
+                                             /*job_id=*/i,
+                                             /*priority=*/0,
+                                             /*duplication*/ 0);
     _connect_dstage->Dispatch(std::move(job), /*requested_duplication=*/1);
     std::this_thread::sleep_for(
         std::chrono::microseconds(1000));  // slow server.... :)

@@ -15,7 +15,7 @@ class BaseDStage {
   // Introduces an ApplicationJob to a DStage. base_prio is the incoming
   // Priority of the ApplicationJob. The Dispatcher will make
   // duplication_level duplicates of the request for the Scheduler's use.
-  virtual void Dispatch(UniqConstJobPtr<T> job_p,
+  virtual void Dispatch(UniqJobPtr<T> job_p,
                         unsigned requested_duplication) = 0;
 
   // Purge will attempt to remove all instances of the Job linked to job_id in

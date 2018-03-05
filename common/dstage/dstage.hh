@@ -28,7 +28,7 @@ DStage<T_INPUT, T_INTERNAL>::DStage(
 }
 
 template <typename T_INPUT, typename T_INTERNAL>
-void DStage<T_INPUT, T_INTERNAL>::Dispatch(UniqConstJobPtr<T_INPUT> job_p,
+void DStage<T_INPUT, T_INTERNAL>::Dispatch(UniqJobPtr<T_INPUT> job_p,
                                            unsigned requested_duplication) {
   VLOG(4) << __PRETTY_FUNCTION__
           << ((job_p == nullptr) ? " job_p=nullptr," : " job_id=")

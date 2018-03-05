@@ -24,7 +24,7 @@ struct Protocol {
   int priority;
   int object_id;
   int start_idx;
-  int size_mb;
+  int size_bytes;
 };
 
 // ***********************************************************************
@@ -33,7 +33,8 @@ struct ConnectData {
   std::vector<std::string> ip_addresses;
   int object_id;
   std::shared_ptr<
-      std::function<void(unsigned priority, Protocol* response, int length)>>
+      std::function<void(unsigned priority, int object_id,
+                         std::unique_ptr<std::vector<char>> object)>>
       done;
 };
 
@@ -41,7 +42,8 @@ struct ConnectDataInternal {
   std::string ip;
   int object_id;
   std::shared_ptr<
-      std::function<void(unsigned priority, Protocol* response, int length)>>
+      std::function<void(unsigned priority, int object_id,
+                         std::unique_ptr<std::vector<char>> object)>>
       done;
   std::shared_ptr<PurgeState> purge_state;
 };
@@ -50,7 +52,8 @@ struct RequestData {
   int soc;
   int object_id;
   std::shared_ptr<
-      std::function<void(unsigned priority, Protocol* response, int length)>>
+      std::function<void(unsigned priority, int object_id,
+                         std::unique_ptr<std::vector<char>> object)>>
       done;
   std::shared_ptr<PurgeState> purge_state;
 };
@@ -58,10 +61,11 @@ struct RequestData {
 struct ResponseData {
   int soc;
   int object_id;
-  int index;
+  unsigned index;
   std::unique_ptr<std::vector<char>> object;
   std::shared_ptr<
-      std::function<void(unsigned priority, Protocol* response, int length)>>
+      std::function<void(unsigned priority, int object_id,
+                         std::unique_ptr<std::vector<char>> object)>>
       done;
   std::shared_ptr<PurgeState> purge_state;
 };

@@ -22,14 +22,16 @@ class ResponseDispatcher : public Dispatcher<ResponseData, ResponseData> {
   ResponseDispatcher(Priority max_priority);
 
  protected:
-  void DuplicateAndEnqueue(UniqConstJobPtr<ResponseData> job_in,
-                           Priority max_prio, unsigned duplication) override;
+  void DuplicateAndEnqueue(UniqJobPtr<ResponseData> job_in, Priority max_prio,
+                           unsigned duplication) override;
 };
 
 class ResponseScheduler : public Scheduler<ResponseData> {
  public:
   ResponseScheduler(std::vector<unsigned> threads_per_prio,
-                    bool set_thread_priority);
+                    bool set_thread_priority,
+                    CommunicationHandlerInterface* comm_interface,
+                    BaseDStage<ResponseData>* response_handler);
   ~ResponseScheduler();
 
   void RegisterOriginDStage(BaseDStage<ConnectData>* origin_dstage);
@@ -38,11 +40,13 @@ class ResponseScheduler : public Scheduler<ResponseData> {
   void StartScheduling(Priority prio) override;
 
  private:
+  CommunicationHandlerInterface* _comm_interface;
+  BaseDStage<ResponseData>* _response_handler;
   bool _destructing;
   std::shared_timed_mutex _destructing_lock;
   BaseDStage<ConnectData>* _origin_dstage;
 
-  void ResponseCallback(SharedConstJobPtr<ResponseData> old_job, int soc,
+  void ResponseCallback(SharedJobPtr<ResponseData> old_job, int soc,
                         CommunicationHandlerInterface::ReadyFor ready_for);
 };
 
@@ -56,8 +60,8 @@ class ResponseDStage : public DStage<ResponseData, ResponseData> {
             std::make_unique<MultiQueue<ResponseData>>(threads_per_prio.size() -
                                                        1),
             std::make_unique<ResponseDispatcher>(threads_per_prio.size() - 1),
-            std::make_unique<ResponseScheduler>(threads_per_prio,
-                                                set_thread_priority)) {}
+            std::make_unique<ResponseScheduler>(
+                threads_per_prio, set_thread_priority, comm_interface, this)) {}
 
   void RegisterOriginDStage(BaseDStage<ConnectData>* origin_dstage) {
     static_cast<ResponseScheduler*>(_scheduler.get())

@@ -14,7 +14,7 @@ class BaseDispatcher {
   // Introduces an ApplicationRequest to a DStage. base_prio is the incoming
   // Priority of the ApplicationRequest. The Dispatcher will make
   // duplication_level duplicates of the request for the Scheduler's use.
-  virtual void Dispatch(UniqConstJobPtr<T_INPUT> job_p,
+  virtual void Dispatch(UniqJobPtr<T_INPUT> job_p,
                         unsigned requested_duplication) = 0;
 
   virtual void LinkMultiQ(BaseMultiQueue<T_INTERNAL>* multi_q_p) = 0;

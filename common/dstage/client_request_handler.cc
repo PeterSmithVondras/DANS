@@ -22,7 +22,7 @@ namespace dans {
 RequestDispatcher::RequestDispatcher(Priority max_priority)
     : Dispatcher<RequestData, RequestData>(max_priority) {}
 
-void RequestDispatcher::DuplicateAndEnqueue(UniqConstJobPtr<RequestData> job_in,
+void RequestDispatcher::DuplicateAndEnqueue(UniqJobPtr<RequestData> job_in,
                                             Priority max_prio,
                                             unsigned duplication) {
   VLOG(4) << __PRETTY_FUNCTION__ << " prio=" << job_in->priority;
@@ -69,7 +69,7 @@ void RequestScheduler::StartScheduling(Priority prio) {
       if (_destructing) return;
     }
 
-    SharedConstJobPtr<RequestData> job = _multi_q_p->Dequeue(prio);
+    SharedJobPtr<RequestData> job = _multi_q_p->Dequeue(prio);
     if (job == nullptr) continue;
     VLOG(1) << "Request Handler Scheduler got job_id=" << job->job_id
             << ", socket=" << job->job_data.soc;
@@ -102,7 +102,7 @@ void RequestScheduler::StartScheduling(Priority prio) {
   }
 }
 
-void RequestScheduler::RequestCallback(SharedConstJobPtr<RequestData> old_job,
+void RequestScheduler::RequestCallback(SharedJobPtr<RequestData> old_job,
                                        int soc, ReadyFor ready_for) {
   VLOG(4) << __PRETTY_FUNCTION__ << " soc=" << old_job->job_data.soc;
   CHECK(ready_for.in) << "Failed to receive response for socket=" << soc;
@@ -116,7 +116,7 @@ void RequestScheduler::RequestCallback(SharedConstJobPtr<RequestData> old_job,
                                   old_job->job_data.done,
                                   old_job->job_data.purge_state};
 
-    auto response_job = std::make_unique<ConstJob<ResponseData>>(
+    auto response_job = std::make_unique<Job<ResponseData>>(
         std::move(response_data), old_job->job_id, old_job->priority,
         old_job->duplication);
     _response_dstage->Dispatch(std::move(response_job),
