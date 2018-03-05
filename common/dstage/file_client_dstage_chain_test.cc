@@ -80,7 +80,7 @@ TEST_F(FileClientDstageChainTest, CreateConnect) {
                                              /*duplication*/ 0);
     _connect_dstage->Dispatch(std::move(job), /*requested_duplication=*/1);
     std::this_thread::sleep_for(
-        std::chrono::microseconds(1000));  // slow server.... :)
+        std::chrono::milliseconds(10));  // slow server.... :)
   }
 
   EXPECT_TRUE(complete_lock.try_lock_for(std::chrono::milliseconds(10000)))
