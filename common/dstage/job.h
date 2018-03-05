@@ -47,13 +47,19 @@ struct Job {
 };
 
 template <typename T>
-using ConstJob = const Job<T>;
+using ConstJob = Job<T>;
 
 template <typename T>
-using UniqConstJobPtr = std::unique_ptr<const Job<T>>;
+using UniqConstJobPtr = std::unique_ptr<Job<T>>;
 
 template <typename T>
-using SharedConstJobPtr = std::shared_ptr<const Job<T>>;
+using SharedConstJobPtr = std::shared_ptr<Job<T>>;
+
+template <typename T>
+using UniqJobPtr = std::unique_ptr<Job<T>>;
+
+template <typename T>
+using SharedJobPtr = std::shared_ptr<Job<T>>;
 
 }  // namespace dans
 

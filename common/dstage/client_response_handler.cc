@@ -111,16 +111,13 @@ void ResponseScheduler::ResponseCallback(
     ResponseData response_data = {soc,
                                   old_job->job_data.object_id,
                                   old_job->job_data.index,
-                                  /*object=*/nullptr,
+                                  std::move(old_job->job_data.object),
                                   old_job->job_data.done,
                                   old_job->job_data.purge_state};
-    // response_data.object = std::move(old_job->job_data.object);
-    auto ptr = std::make_unique<std::vector<char>>();
-    response_data.object = std::move(ptr);
 
-    // auto response_job = std::make_unique<ConstJob<ResponseData>>(
-    //     std::move(old_job->job_data),
-    //     old_job->job_id, old_job->priority, old_job->duplication);
+    auto response_job = std::make_unique<ConstJob<ResponseData>>(
+        std::move(old_job->job_data),
+        old_job->job_id, old_job->priority, old_job->duplication);
     // _response_dstage->Dispatch(std::move(response_job),
     //                           /*requested_dulpication=*/0);
   } else {

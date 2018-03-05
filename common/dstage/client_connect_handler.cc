@@ -35,7 +35,7 @@ void ConnectDispatcher::DuplicateAndEnqueue(UniqConstJobPtr<ConnectData> job_in,
     ConnectDataInternal req_data_internal = {
         job_in->job_data.ip_addresses[i], job_in->job_data.object_id,
         job_in->job_data.done, purge_state};
-    auto duplicate_job_p = std::make_unique<const Job<ConnectDataInternal>>(
+    auto duplicate_job_p = std::make_unique<Job<ConnectDataInternal>>(
         req_data_internal, job_in->job_id, prio, duplication);
     _multi_q_p->Enqueue(std::move(duplicate_job_p));
   }
