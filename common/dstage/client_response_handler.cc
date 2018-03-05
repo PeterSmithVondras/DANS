@@ -59,6 +59,7 @@ void ResponseScheduler::StartScheduling(Priority prio) {
   VLOG(4) << __PRETTY_FUNCTION__ << " prio=" << prio;
   Protocol response_protocol;
   int bytes_read;
+  bool closed;
 
   while (true) {
     {
@@ -82,7 +83,7 @@ void ResponseScheduler::StartScheduling(Priority prio) {
     // Check for issue with socket.
     if (job->job_data.soc < 0) {
       errno = -job->job_data.soc;
-      PLOG(WARNING) << "Dropped socket for job_id=" << job->job_id;
+      LOG(WARNING) << "Dropped socket for job_id=" << job->job_id;
       continue;
     }
 
@@ -92,7 +93,6 @@ void ResponseScheduler::StartScheduling(Priority prio) {
       CHECK_EQ(bytes_read, sizeof(Protocol));
       job->job_data.object =
           std::make_unique<std::vector<char>>(response_protocol.size_bytes);
-      LOG(INFO) << "filesize=" << response_protocol.size_bytes;
       job->job_data.index = response_protocol.start_idx;
       CHECK_NE(response_protocol.size_bytes, 0)
           << "File must be of non-zero index.";
@@ -105,40 +105,47 @@ void ResponseScheduler::StartScheduling(Priority prio) {
       }
     }
 
-    bytes_read = read(job->job_data.soc,
-                      job->job_data.object->data() + job->job_data.index,
-                      job->job_data.object->size() - job->job_data.index);
-
-    if (bytes_read == 0) {
-      LOG(WARNING) << "Server closed socket for job_id=" << job->job_id;
-      close(job->job_data.soc);
-      continue;
-    } else if (bytes_read == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
-      PLOG(WARNING) << "Error reading socket. job_id=" << job->job_id
-                    << ", file=" << job->job_data.object_id;
-      continue;
-    } else if (bytes_read == -1) {
-      PLOG(WARNING);
-      continue;
+    closed = false;
+    while (true) {
+      bytes_read = read(job->job_data.soc,
+                        job->job_data.object->data() + job->job_data.index,
+                        job->job_data.object->size() - job->job_data.index);
+      if (bytes_read == -1) {
+        if (errno != EAGAIN && errno != EWOULDBLOCK) {
+          PLOG(WARNING) << "Error reading socket. job_id=" << job->job_id
+                        << ", file=" << job->job_data.object_id;
+          closed = true;
+        }
+        break;
+      } else if (bytes_read == 0) {
+        VLOG(3) << "Server closed socket for job_id=" << job->job_id;
+        close(job->job_data.soc);
+        closed = true;
+        break;
+      }
+      job->job_data.index += bytes_read;
+      VLOG(3) << "Read " << job->job_data.index << " of "
+              << job->job_data.object->size()
+              << " bytes for file=" << job->job_data.object_id
+              << ", priority=" << job->priority;
     }
 
-    VLOG(1) << "Read " << bytes_read
-            << " bytes of file=" << job->job_data.object_id;
-    job->job_data.index += bytes_read;
-    if (job->job_data.index + 1 == job->job_data.object->size()) {
+    if (job->job_data.index == job->job_data.object->size()) {
       if (job->job_data.purge_state->SetPurged()) {
         VLOG(2) << "Completed job_id=" << job->job_id
                 << ", priority=" << job->priority;
         (*job->job_data.done)(job->priority, job->job_data.object_id,
                               std::move(job->job_data.object));
-        close(job->job_data.soc);
+        if (!closed) close(job->job_data.soc);
         CHECK_NOTNULL(_origin_dstage);
         _origin_dstage->Purge(job->job_id);
       }
       continue;
     }
 
-    VLOG(3) << "Monitoring for read on job_id=" << job->job_id
+    if (closed) continue;
+
+    VLOG(2) << "Monitoring for read on job_id=" << job->job_id
             << ", priority=" << job->priority
             << ", file=" << job->job_data.object_id
             << ", size=" << job->job_data.object->size()
