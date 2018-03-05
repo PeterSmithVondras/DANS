@@ -22,8 +22,8 @@ DEFINE_bool(set_thread_priority, false,
 namespace {
 using namespace dans;
 const unsigned kMaxPrio = 1;
-const unsigned kThreadsPerPrio = 2;
-const unsigned kGetRequestsTotal = 10;
+const unsigned kThreadsPerPrio = 1;
+const unsigned kGetRequestsTotal = 1;
 
 }  // namespace
 
@@ -63,9 +63,11 @@ TEST_F(FileClientDstageChainTest, CreateConnect) {
           [&counter, &complete_lock](unsigned prio, Protocol* response,
                                      int len) {
             if (response->type == REQUEST_ACCEPT) {
-              LOG(INFO) << "Server sent Accept for file=" << response->object_id;
+              LOG(INFO) << "Server sent Accept for file="
+                        << response->object_id;
             } else {
-              LOG(INFO) << "Server sent Reject for file=" << response->object_id;
+              LOG(INFO) << "Server sent Reject for file="
+                        << response->object_id;
             }
             counter.Increment();
             if (counter.Count() == kGetRequestsTotal) {
@@ -83,6 +85,8 @@ TEST_F(FileClientDstageChainTest, CreateConnect) {
                                                   /*priority=*/0,
                                                   /*duplication*/ 0);
     _connect_dstage->Dispatch(std::move(job), /*requested_duplication=*/1);
+    std::this_thread::sleep_for(
+        std::chrono::microseconds(1000));  // slow server.... :)
   }
 
   EXPECT_TRUE(complete_lock.try_lock_for(std::chrono::milliseconds(10000)))

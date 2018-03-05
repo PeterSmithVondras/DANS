@@ -35,7 +35,7 @@ struct Job {
       : job_id(job_id),
         priority(priority),
         duplication(duplication),
-        job_data(job_data) {}
+        job_data(std::move(job_data)) {}
 
   bool operator==(const Job& rhs) const { return job_id == rhs.job_id; }
   bool operator!=(const Job& rhs) const { return !operator==(rhs); }

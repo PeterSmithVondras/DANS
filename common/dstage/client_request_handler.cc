@@ -32,7 +32,7 @@ void RequestDispatcher::DuplicateAndEnqueue(UniqConstJobPtr<RequestData> job_in,
 RequestScheduler::RequestScheduler(
     std::vector<unsigned> threads_per_prio, bool set_thread_priority,
     CommunicationHandlerInterface* comm_interface,
-    BaseDStage<RequestData>* response_dstage)
+    BaseDStage<ResponseData>* response_dstage)
     : Scheduler<RequestData>(threads_per_prio, set_thread_priority),
       _comm_interface(comm_interface),
       _response_dstage(response_dstage),
@@ -109,10 +109,16 @@ void RequestScheduler::RequestCallback(SharedConstJobPtr<RequestData> old_job,
 
   // Pass on job if it is not complete.
   if (!old_job->job_data.purge_state->IsPurged()) {
-    auto response_job = std::make_unique<ConstJob<RequestData>>(
-        RequestData{soc, old_job->job_data.object_id, old_job->job_data.done,
-                    old_job->job_data.purge_state},
-        old_job->job_id, old_job->priority, old_job->duplication);
+    ResponseData response_data = {soc,
+                                  old_job->job_data.object_id,
+                                  /*index=*/0,
+                                  /*object=*/nullptr,
+                                  old_job->job_data.done,
+                                  old_job->job_data.purge_state};
+
+    auto response_job = std::make_unique<ConstJob<ResponseData>>(
+        std::move(response_data), old_job->job_id, old_job->priority,
+        old_job->duplication);
     _response_dstage->Dispatch(std::move(response_job),
                                /*requested_dulpication=*/0);
   } else {

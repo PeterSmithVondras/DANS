@@ -17,7 +17,16 @@
 
 namespace dans {
 
-class ResponseScheduler : public Scheduler<RequestData> {
+class ResponseDispatcher : public Dispatcher<ResponseData, ResponseData> {
+ public:
+  ResponseDispatcher(Priority max_priority);
+
+ protected:
+  void DuplicateAndEnqueue(UniqConstJobPtr<ResponseData> job_in,
+                           Priority max_prio, unsigned duplication) override;
+};
+
+class ResponseScheduler : public Scheduler<ResponseData> {
  public:
   ResponseScheduler(std::vector<unsigned> threads_per_prio,
                     bool set_thread_priority);
@@ -33,20 +42,20 @@ class ResponseScheduler : public Scheduler<RequestData> {
   std::shared_timed_mutex _destructing_lock;
   BaseDStage<ConnectData>* _origin_dstage;
 
-  void ResponseCallback(SharedConstJobPtr<RequestData> old_job, int soc,
+  void ResponseCallback(SharedConstJobPtr<ResponseData> old_job, int soc,
                         CommunicationHandlerInterface::ReadyFor ready_for);
 };
 
-class ResponseDStage : public DStage<RequestData, RequestData> {
+class ResponseDStage : public DStage<ResponseData, ResponseData> {
  public:
   ResponseDStage(std::vector<unsigned> threads_per_prio,
                  bool set_thread_priority,
                  CommunicationHandlerInterface* comm_interface)
-      : DStage<RequestData, RequestData>(
+      : DStage<ResponseData, ResponseData>(
             threads_per_prio.size() - 1,
-            std::make_unique<MultiQueue<RequestData>>(threads_per_prio.size() -
-                                                      1),
-            std::make_unique<RequestDispatcher>(threads_per_prio.size() - 1),
+            std::make_unique<MultiQueue<ResponseData>>(threads_per_prio.size() -
+                                                       1),
+            std::make_unique<ResponseDispatcher>(threads_per_prio.size() - 1),
             std::make_unique<ResponseScheduler>(threads_per_prio,
                                                 set_thread_priority)) {}
 

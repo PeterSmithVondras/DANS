@@ -30,7 +30,7 @@ class RequestScheduler : public Scheduler<RequestData> {
   RequestScheduler(std::vector<unsigned> threads_per_prio,
                    bool set_thread_priority,
                    CommunicationHandlerInterface* comm_interface,
-                   BaseDStage<RequestData>* response_dstage);
+                   BaseDStage<ResponseData>* response_dstage);
   ~RequestScheduler();
 
  protected:
@@ -40,7 +40,7 @@ class RequestScheduler : public Scheduler<RequestData> {
 
  private:
   CommunicationHandlerInterface* _comm_interface;
-  BaseDStage<RequestData>* _response_dstage;
+  BaseDStage<ResponseData>* _response_dstage;
   bool _destructing;
   std::shared_timed_mutex _destructing_lock;
 
@@ -53,7 +53,7 @@ class RequestDStage : public DStage<RequestData, RequestData> {
   RequestDStage(std::vector<unsigned> threads_per_prio,
                 bool set_thread_priority,
                 CommunicationHandlerInterface* comm_interface,
-                BaseDStage<RequestData>* response_dstage)
+                BaseDStage<ResponseData>* response_dstage)
       : DStage<RequestData, RequestData>(
             threads_per_prio.size() - 1,
             std::make_unique<MultiQueue<RequestData>>(threads_per_prio.size() -

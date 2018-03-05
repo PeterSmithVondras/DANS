@@ -55,6 +55,17 @@ struct RequestData {
   std::shared_ptr<PurgeState> purge_state;
 };
 
+struct ResponseData {
+  int soc;
+  int object_id;
+  int index;
+  std::unique_ptr<std::vector<char>> object;
+  std::shared_ptr<
+      std::function<void(unsigned priority, Protocol* response, int length)>>
+      done;
+  std::shared_ptr<PurgeState> purge_state;
+};
+
 }  // namespace dans
 
 #endif  // DANS02_DSTAGE_JOB_TYPES_H

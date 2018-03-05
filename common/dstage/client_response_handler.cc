@@ -14,11 +14,21 @@ using ReadyFor = dans::CommunicationHandlerInterface::ReadyFor;
 
 namespace dans {
 
+ResponseDispatcher::ResponseDispatcher(Priority max_priority)
+    : Dispatcher<ResponseData, ResponseData>(max_priority) {}
+
+void ResponseDispatcher::DuplicateAndEnqueue(
+    UniqConstJobPtr<ResponseData> job_in, Priority max_prio,
+    unsigned duplication) {
+  VLOG(4) << __PRETTY_FUNCTION__ << " prio=" << job_in->priority;
+  _multi_q_p->Enqueue(std::move(job_in));
+}
+
 ResponseScheduler::ResponseScheduler(std::vector<unsigned> threads_per_prio,
                                      bool set_thread_priority)
     // CommunicationHandlerInterface* comm_interface,
-    // BaseDStage<RequestData>* response_dstage)
-    : Scheduler<RequestData>(threads_per_prio, set_thread_priority),
+    // BaseDStage<ResponseData>* response_dstage)
+    : Scheduler<ResponseData>(threads_per_prio, set_thread_priority),
       // _comm_interface(comm_interface),
       // _response_dstage(response_dstage),
       _destructing(false),
@@ -54,7 +64,7 @@ void ResponseScheduler::StartScheduling(Priority prio) {
       if (_destructing) return;
     }
 
-    SharedConstJobPtr<RequestData> job = _multi_q_p->Dequeue(prio);
+    SharedConstJobPtr<ResponseData> job = _multi_q_p->Dequeue(prio);
     if (job == nullptr) continue;
     VLOG(1) << "Response Handler Scheduler got job_id=" << job->job_id
             << ", socket=" << job->job_data.soc;
@@ -91,16 +101,26 @@ void ResponseScheduler::StartScheduling(Priority prio) {
   }
 }
 
-void ResponseScheduler::ResponseCallback(SharedConstJobPtr<RequestData> old_job,
-                                         int soc, ReadyFor ready_for) {
+void ResponseScheduler::ResponseCallback(
+    SharedConstJobPtr<ResponseData> old_job, int soc, ReadyFor ready_for) {
   VLOG(4) << __PRETTY_FUNCTION__ << " soc=" << old_job->job_data.soc;
   CHECK(ready_for.in) << "Failed to receive response for socket=" << soc;
 
   // Pass on job if it is not complete.
   if (!old_job->job_data.purge_state->IsPurged()) {
-    auto response_job = std::make_unique<ConstJob<RequestData>>(
-        RequestData{soc, old_job->job_data.object_id, old_job->job_data.done},
-        old_job->job_id, old_job->priority, old_job->duplication);
+    ResponseData response_data = {soc,
+                                  old_job->job_data.object_id,
+                                  old_job->job_data.index,
+                                  /*object=*/nullptr,
+                                  old_job->job_data.done,
+                                  old_job->job_data.purge_state};
+    // response_data.object = std::move(old_job->job_data.object);
+    auto ptr = std::make_unique<std::vector<char>>();
+    response_data.object = std::move(ptr);
+
+    // auto response_job = std::make_unique<ConstJob<ResponseData>>(
+    //     std::move(old_job->job_data),
+    //     old_job->job_id, old_job->priority, old_job->duplication);
     // _response_dstage->Dispatch(std::move(response_job),
     //                           /*requested_dulpication=*/0);
   } else {
