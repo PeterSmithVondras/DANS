@@ -1,4 +1,5 @@
 #include <chrono>
+#include <fstream>
 #include <functional>
 #include <memory>
 #include <mutex>
@@ -23,7 +24,7 @@ namespace {
 using namespace dans;
 const unsigned kMaxPrio = 1;
 const unsigned kThreadsPerPrio = 1;
-const unsigned kGetRequestsTotal = 1;
+const unsigned kGetRequestsTotal = 2;
 
 }  // namespace
 
@@ -58,11 +59,15 @@ TEST_F(FileClientDstageChainTest, CreateConnect) {
   Counter counter(0);
   std::timed_mutex complete_lock;
   complete_lock.lock();
+  std::vector<std::unique_ptr<std::vector<char>>> files(kGetRequestsTotal);
   auto response = std::make_shared<
       std::function<void(unsigned, int, std::unique_ptr<std::vector<char>>)>>(
-      [&counter, &complete_lock](unsigned priority, int object_id,
-                                 std::unique_ptr<std::vector<char>> object) {
+      [&counter, &complete_lock, &files](
+          unsigned priority, int object_id,
+          std::unique_ptr<std::vector<char>> object) {
         LOG(INFO) << "Received file=" << object_id;
+        files[object_id] = std::move(object);
+
         counter.Increment();
         if (counter.Count() == kGetRequestsTotal) {
           complete_lock.unlock();
@@ -87,9 +92,19 @@ TEST_F(FileClientDstageChainTest, CreateConnect) {
       << "Did not get all responses. Check internet connection.";
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   EXPECT_EQ(kGetRequestsTotal, counter.Count());
+
+  // Write files to disk.
+  std::string t_str = "T";
+  int i = 0;
+  for (const auto &object : files) {
+    std::ofstream output_file(t_str + std::to_string(i));
+    for (const auto &e : *object) output_file << e;
+    output_file.close();
+    i++;
+  }
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   testing::InitGoogleTest(&argc, argv);
   // Parse all command line flags. This MUST go before InitGoogleLogging.
   gflags::ParseCommandLineFlags(&argc, &argv, true);
