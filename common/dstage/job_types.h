@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "common/dstage/synchronization.h"
+#include "glog/logging.h"
 
 namespace dans {
 
@@ -36,7 +37,10 @@ class Connection {
   Connection(const Connection&) = delete;
 
   Connection(int socket) : _socket(socket) {}
-  ~Connection() { close(_socket); }
+  ~Connection() {
+    VLOG(3) << "Closed socket=" << _socket;
+    close(_socket);
+  }
 
   int Socket() { return _socket; }
 
@@ -64,8 +68,8 @@ struct ConnectDataInternal {
 };
 
 struct RequestData {
-  int soc;
-  // std::unique_ptr<Connection> connection;
+  // int soc;
+  std::unique_ptr<Connection> connection;
   int object_id;
   std::shared_ptr<
       std::function<void(unsigned priority, int object_id,
@@ -75,8 +79,8 @@ struct RequestData {
 };
 
 struct ResponseData {
-  int soc;
-  // std::unique_ptr<Connection> connection;
+  // int soc;
+  std::unique_ptr<Connection> connection;
   int object_id;
   unsigned index;
   std::unique_ptr<std::vector<char>> object;

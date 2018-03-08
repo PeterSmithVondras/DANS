@@ -72,44 +72,40 @@ void RequestScheduler::StartScheduling(Priority prio) {
     SharedJobPtr<RequestData> job = _multi_q_p->Dequeue(prio);
     if (job == nullptr) continue;
     VLOG(1) << "Request Handler Scheduler got job_id=" << job->job_id
-            << ", socket=" << job->job_data.soc;
+            << ", socket=" << job->job_data.connection->Socket();
 
     // Check if job has been purged
     if (job->job_data.purge_state->IsPurged()) {
       VLOG(2) << "Purged job_id=" << job->job_id
               << ", Priority=" << job->priority;
-      _comm_interface->Close(job->job_data.soc);
-      continue;
-    }
-
-    if (job->job_data.soc < 0) {
-      errno = -job->job_data.soc;
-      PLOG(WARNING) << "Dropped socket for job_id=" << job->job_id;
       continue;
     }
 
     request = {REQUEST_GETFILE, static_cast<int>(job->priority),
                job->job_data.object_id, kIndex, kSizeMB};
-    int ret = send(job->job_data.soc, &request, sizeof(Protocol), /*flags=*/0);
+    int ret = send(job->job_data.connection->Socket(), &request,
+                   sizeof(Protocol), /*flags=*/0);
     CHECK_EQ(ret, static_cast<int>(sizeof(Protocol)))
-        << "Failed to send: socket=" << job->job_data.soc;
+        << "Failed to send: socket=" << job->job_data.connection->Socket();
 
     CallBack2 response(std::bind(&dans::RequestScheduler::RequestCallback, this,
                                  job, std::placeholders::_1,
                                  std::placeholders::_2));
-    _comm_interface->Monitor(job->job_data.soc,
+    _comm_interface->Monitor(job->job_data.connection->Socket(),
                              ReadyFor{/*in=*/true, /*out=*/false}, response);
   }
 }
 
 void RequestScheduler::RequestCallback(SharedJobPtr<RequestData> old_job,
                                        int soc, ReadyFor ready_for) {
-  VLOG(4) << __PRETTY_FUNCTION__ << " soc=" << old_job->job_data.soc;
-  CHECK(ready_for.in) << "Failed to receive response for socket=" << soc;
+  VLOG(4) << __PRETTY_FUNCTION__
+          << " soc=" << old_job->job_data.connection->Socket();
+  CHECK(ready_for.in) << "Failed to receive response for socket="
+                      << old_job->job_data.connection->Socket();
 
   // Pass on job if it is not complete.
-  if (!old_job->job_data.purge_state->IsPurged()) {
-    ResponseData response_data = {soc,
+  if (!old_job->job_data.purge_state->IsPurged() && soc >= 0) {
+    ResponseData response_data = {std::move(old_job->job_data.connection),
                                   old_job->job_data.object_id,
                                   /*index=*/0,
                                   /*object=*/nullptr,
@@ -121,10 +117,12 @@ void RequestScheduler::RequestCallback(SharedJobPtr<RequestData> old_job,
         old_job->duplication);
     _response_dstage->Dispatch(std::move(response_job),
                                /*requested_dulpication=*/0);
+  } else if(soc < 0) {
+    errno = -soc;
+    PLOG(WARNING) << "Dropped socket for job_id=" << old_job->job_id;
   } else {
     VLOG(2) << "Purged job_id=" << old_job->job_id
             << ", Priority=" << old_job->priority;
-    _comm_interface->Close(soc);
   }
 }
 

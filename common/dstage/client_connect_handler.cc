@@ -109,18 +109,21 @@ void ConnectScheduler::ConnectCallback(
   CHECK(ready_for.out) << "Failed to create TCP connection for socket=" << soc;
   CHECK(!ready_for.in) << "Failed to create TCP connection for socket=" << soc;
 
+  auto connection = std::make_unique<Connection>(soc);
   // Pass on job if it is not complete.
-  if (!old_job->job_data.purge_state->IsPurged()) {
+  if (!old_job->job_data.purge_state->IsPurged() && soc >= 0) {
     auto request_job = std::make_unique<Job<RequestData>>(
-        RequestData{soc, old_job->job_data.object_id, old_job->job_data.done,
-                    old_job->job_data.purge_state},
+        RequestData{std::move(connection), old_job->job_data.object_id,
+                    old_job->job_data.done, old_job->job_data.purge_state},
         old_job->job_id, old_job->priority, old_job->duplication);
     _request_dstage->Dispatch(std::move(request_job),
                               /*requested_dulpication=*/0);
+  } else if(soc < 0) {
+    errno = -soc;
+    PLOG(WARNING) << "Dropped socket for job_id=" << old_job->job_id;
   } else {
     VLOG(2) << "Purged job_id=" << old_job->job_id
             << ", Priority=" << old_job->priority;
-    _comm_interface->Close(soc);
   }
 }
 

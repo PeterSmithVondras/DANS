@@ -70,26 +70,18 @@ void ResponseScheduler::StartScheduling(Priority prio) {
     SharedJobPtr<ResponseData> job = _multi_q_p->Dequeue(prio);
     if (job == nullptr) continue;
     VLOG(1) << "Response Handler Scheduler got job_id=" << job->job_id
-            << ", socket=" << job->job_data.soc;
+            << ", socket=" << job->job_data.connection->Socket();
 
     // Check if job has been purged
     if (job->job_data.purge_state->IsPurged()) {
       VLOG(2) << "Purged job_id=" << job->job_id
               << ", Priority=" << job->priority;
-      close(job->job_data.soc);
-      continue;
-    }
-
-    // Check for issue with socket.
-    if (job->job_data.soc < 0) {
-      errno = -job->job_data.soc;
-      LOG(WARNING) << "Dropped socket for job_id=" << job->job_id;
       continue;
     }
 
     if (job->job_data.object == nullptr) {
-      bytes_read =
-          read(job->job_data.soc, &response_protocol, sizeof(Protocol));
+      bytes_read = read(job->job_data.connection->Socket(), &response_protocol,
+                        sizeof(Protocol));
       CHECK_EQ(bytes_read, sizeof(Protocol));
       job->job_data.object =
           std::make_unique<std::vector<char>>(response_protocol.size_bytes);
@@ -107,7 +99,7 @@ void ResponseScheduler::StartScheduling(Priority prio) {
 
     closed = false;
     while (true) {
-      bytes_read = read(job->job_data.soc,
+      bytes_read = read(job->job_data.connection->Socket(),
                         job->job_data.object->data() + job->job_data.index,
                         job->job_data.object->size() - job->job_data.index);
       if (bytes_read == -1) {
@@ -119,7 +111,6 @@ void ResponseScheduler::StartScheduling(Priority prio) {
         break;
       } else if (bytes_read == 0) {
         VLOG(3) << "Server closed socket for job_id=" << job->job_id;
-        close(job->job_data.soc);
         closed = true;
         break;
       }
@@ -136,7 +127,6 @@ void ResponseScheduler::StartScheduling(Priority prio) {
                 << ", priority=" << job->priority;
         (*job->job_data.done)(job->priority, job->job_data.object_id,
                               std::move(job->job_data.object));
-        if (!closed) close(job->job_data.soc);
         CHECK_NOTNULL(_origin_dstage);
         _origin_dstage->Purge(job->job_id);
       }
@@ -154,19 +144,21 @@ void ResponseScheduler::StartScheduling(Priority prio) {
     CallBack2 response(std::bind(&dans::ResponseScheduler::ResponseCallback,
                                  this, job, std::placeholders::_1,
                                  std::placeholders::_2));
-    _comm_interface->Monitor(job->job_data.soc,
+    _comm_interface->Monitor(job->job_data.connection->Socket(),
                              ReadyFor{/*in=*/true, /*out=*/false}, response);
   }
 }
 
 void ResponseScheduler::ResponseCallback(SharedJobPtr<ResponseData> old_job,
                                          int soc, ReadyFor ready_for) {
-  VLOG(4) << __PRETTY_FUNCTION__ << " soc=" << old_job->job_data.soc;
-  CHECK(ready_for.in) << "Failed to receive response for socket=" << soc;
+  VLOG(4) << __PRETTY_FUNCTION__
+          << " soc=" << old_job->job_data.connection->Socket();
+  CHECK(ready_for.in) << "Failed to receive response for socket="
+                      << old_job->job_data.connection->Socket();
 
   // Pass on job if it is not complete.
-  if (!old_job->job_data.purge_state->IsPurged()) {
-    ResponseData response_data = {soc,
+  if (!old_job->job_data.purge_state->IsPurged() && soc >= 0) {
+    ResponseData response_data = {std::move(old_job->job_data.connection),
                                   old_job->job_data.object_id,
                                   old_job->job_data.index,
                                   std::move(old_job->job_data.object),
@@ -178,10 +170,12 @@ void ResponseScheduler::ResponseCallback(SharedJobPtr<ResponseData> old_job,
         old_job->duplication);
     _response_handler->Dispatch(std::move(response_job),
                                 /*requested_dulpication=*/0);
+  } else if(soc < 0) {
+    errno = -soc;
+    PLOG(WARNING) << "Dropped socket for job_id=" << old_job->job_id;
   } else {
     VLOG(2) << "Purged job_id=" << old_job->job_id
             << ", Priority=" << old_job->priority;
-    close(old_job->job_data.soc);
   }
 }
 
