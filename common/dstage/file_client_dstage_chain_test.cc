@@ -20,6 +20,8 @@ DEFINE_bool(set_thread_priority, false,
             "Set thread priority with Linux OS, "
             "which requires running with `sudo`.");
 
+DEFINE_bool(save_files, false, "Save files as Tx where x is the file number.");
+
 namespace {
 using namespace dans;
 const unsigned kMaxPrio = 1;
@@ -66,7 +68,9 @@ TEST_F(FileClientDstageChainTest, CreateConnect) {
           unsigned priority, int object_id,
           std::unique_ptr<std::vector<char>> object) {
         LOG(INFO) << "Received file=" << object_id;
-        files[object_id] = std::move(object);
+        if (FLAGS_save_files) {
+          files[object_id] = std::move(object);
+        }
 
         counter.Increment();
         if (counter.Count() == kGetRequestsTotal) {
@@ -94,13 +98,15 @@ TEST_F(FileClientDstageChainTest, CreateConnect) {
   EXPECT_EQ(kGetRequestsTotal, counter.Count());
 
   // Write files to disk.
-  std::string t_str = "T";
-  int i = 0;
-  for (const auto &object : files) {
-    std::ofstream output_file(t_str + std::to_string(i));
-    for (const auto &e : *object) output_file << e;
-    output_file.close();
-    i++;
+  if (FLAGS_save_files) {
+    std::string t_str = "T";
+    int i = 0;
+    for (const auto &object : files) {
+      std::ofstream output_file(t_str + std::to_string(i));
+      for (const auto &e : *object) output_file << e;
+      output_file.close();
+      i++;
+    }
   }
 }
 
