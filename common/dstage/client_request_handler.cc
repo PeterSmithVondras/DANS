@@ -117,7 +117,7 @@ void RequestScheduler::RequestCallback(SharedJobPtr<RequestData> old_job,
         old_job->duplication);
     _response_dstage->Dispatch(std::move(response_job),
                                /*requested_dulpication=*/0);
-  } else if(soc < 0) {
+  } else if (soc < 0) {
     errno = -soc;
     PLOG(WARNING) << "Dropped socket for job_id=" << old_job->job_id;
   } else {

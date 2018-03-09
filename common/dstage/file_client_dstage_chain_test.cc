@@ -19,7 +19,6 @@
 DEFINE_bool(set_thread_priority, false,
             "Set thread priority with Linux OS, "
             "which requires running with `sudo`.");
-
 DEFINE_bool(save_files, false, "Save files as Tx where x is the file number.");
 
 namespace {
@@ -27,7 +26,6 @@ using namespace dans;
 const unsigned kMaxPrio = 1;
 const unsigned kThreadsPerPrio = 1;
 const unsigned kGetRequestsTotal = 1;
-
 }  // namespace
 
 class FileClientDstageChainTest : public testing::Test {
@@ -62,8 +60,7 @@ TEST_F(FileClientDstageChainTest, CreateConnect) {
   std::timed_mutex complete_lock;
   complete_lock.lock();
   std::vector<std::unique_ptr<std::vector<char>>> files(kGetRequestsTotal);
-  auto response = std::make_shared<
-      std::function<void(unsigned, int, std::unique_ptr<std::vector<char>>)>>(
+  auto response = std::make_shared<ClientCallback3>(
       [&counter, &complete_lock, &files](
           unsigned priority, int object_id,
           std::unique_ptr<std::vector<char>> object) {

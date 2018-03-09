@@ -36,58 +36,56 @@ class Connection {
   Connection() = delete;
   Connection(const Connection&) = delete;
 
-  Connection(int socket) : _socket(socket) {}
-  ~Connection() {
-    VLOG(3) << "Closed socket=" << _socket;
-    close(_socket);
-  }
+  Connection(int socket) : _socket(socket), _released(false) {}
+  ~Connection() { Release(); }
 
   int Socket() { return _socket; }
+  void Release() {
+    std::lock_guard<std::mutex> lock(_release_lock);
+    if (!_released) {
+      VLOG(3) << "Closed socket=" << _socket;
+      close(_socket);
+      _released = true;
+    }
+  }
+  bool IsReleased() { return _released; }
 
  private:
   const int _socket;
+  std::mutex _release_lock;
+  bool _released;
 };
+
+using ClientCallback3 =
+    std::function<void(unsigned priority, int object_id,
+                       std::unique_ptr<std::vector<char>> object)>;
 
 struct ConnectData {
   std::vector<std::string> ip_addresses;
   int object_id;
-  std::shared_ptr<
-      std::function<void(unsigned priority, int object_id,
-                         std::unique_ptr<std::vector<char>> object)>>
-      done;
+  std::shared_ptr<ClientCallback3> done;
 };
 
 struct ConnectDataInternal {
   std::string ip;
   int object_id;
-  std::shared_ptr<
-      std::function<void(unsigned priority, int object_id,
-                         std::unique_ptr<std::vector<char>> object)>>
-      done;
+  std::shared_ptr<ClientCallback3> done;
   std::shared_ptr<PurgeState> purge_state;
 };
 
 struct RequestData {
-  // int soc;
-  std::unique_ptr<Connection> connection;
+  std::shared_ptr<Connection> connection;
   int object_id;
-  std::shared_ptr<
-      std::function<void(unsigned priority, int object_id,
-                         std::unique_ptr<std::vector<char>> object)>>
-      done;
+  std::shared_ptr<ClientCallback3> done;
   std::shared_ptr<PurgeState> purge_state;
 };
 
 struct ResponseData {
-  // int soc;
-  std::unique_ptr<Connection> connection;
+  std::shared_ptr<Connection> connection;
   int object_id;
   unsigned index;
   std::unique_ptr<std::vector<char>> object;
-  std::shared_ptr<
-      std::function<void(unsigned priority, int object_id,
-                         std::unique_ptr<std::vector<char>> object)>>
-      done;
+  std::shared_ptr<ClientCallback3> done;
   std::shared_ptr<PurgeState> purge_state;
 };
 
