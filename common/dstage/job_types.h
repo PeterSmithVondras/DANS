@@ -44,7 +44,9 @@ class Connection {
     std::lock_guard<std::mutex> lock(_release_lock);
     if (!_released) {
       VLOG(3) << "Closed socket=" << _socket;
-      close(_socket);
+      if (close(_socket) != 0) {
+        PLOG(WARNING) << "Failed to close socket=" << _socket;
+      }
       _released = true;
     }
   }

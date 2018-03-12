@@ -20,6 +20,7 @@ DEFINE_bool(set_thread_priority, false,
             "Set thread priority with Linux OS, "
             "which requires running with `sudo`.");
 DEFINE_bool(save_files, false, "Save files as Tx where x is the file number.");
+DEFINE_string(server_ip, "192.168.137.127", "ip address of the file server.");
 
 namespace {
 using namespace dans;
@@ -56,6 +57,7 @@ class FileClientDstageChainTest : public testing::Test {
 };
 
 TEST_F(FileClientDstageChainTest, CreateConnect) {
+  std::string ip = FLAGS_server_ip;
   Counter counter(0);
   std::timed_mutex complete_lock;
   complete_lock.lock();
@@ -75,8 +77,7 @@ TEST_F(FileClientDstageChainTest, CreateConnect) {
         }
       });
 
-  ConnectData connect_data = {
-      {"192.168.137.127", "192.168.137.127"}, /*file=*/0, response};
+  ConnectData connect_data = {{ip, ip}, /*file=*/0, response};
   UniqJobPtr<ConnectData> job;
   for (unsigned i = 0; i < kGetRequestsTotal; i++) {
     connect_data.object_id = static_cast<int>(i);

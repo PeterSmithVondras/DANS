@@ -1,3 +1,5 @@
+#include <mutex>
+
 #include "common/thread/thread_utility.h"
 #include "gflags/gflags.h"
 #include "glog/logging.h"
@@ -8,9 +10,11 @@ using threadutility::ThreadUtility;
 }  // namespace
 
 TEST(PriorityThreadTest, CreateThread) {
-  std::thread thread([](int foo) {}, /*foo=*/5);
+  std::mutex state;
+  state.lock();
+  std::thread thread([&state](int foo) { state.lock(); }, /*foo=*/5);
   ThreadUtility::SetPriority(thread, SCHED_RR, 2);
-  EXPECT_EQ(true, true);
+  state.unlock();
   thread.join();
 }
 
