@@ -36,6 +36,10 @@ $ cd DANS
 $ bazel build ...
 ```
 
+### Going Further
+
+Beyond installing DANS and running a simple client, see [documentation](doc) for [Architecture](./doc/architecture.md) and also [Simple Client](./doc/simple_client.md) for a description about how a simple DANS client works.
+
 ## Running the tests
 Every folder is a *package.* Every *package* has a *BUILD* file which lists all targets. Any target of type *cc_test* is a test and may be run either in batch or alone. Below is a test target example:
 
@@ -152,7 +156,7 @@ Large scale deployment, including use in emulab is not covered here at this time
 
 ## Contributing
 
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
+Please read [CONTRIBUTING](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
 
 ## Versioning
 
@@ -166,7 +170,7 @@ See also the list of [contributors](https://github.cs.tufts.edu/peter/DANS/graph
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+This project is licensed under the MIT License - see the [LICENSE](LICENSE.md) file for details
 
 ## Acknowledgments
 
