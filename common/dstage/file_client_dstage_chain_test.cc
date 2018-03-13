@@ -56,7 +56,7 @@ class FileClientDstageChainTest : public testing::Test {
   std::unique_ptr<BaseDStage<ConnectData>> _connect_dstage;
 };
 
-TEST_F(FileClientDstageChainTest, CreateConnect) {
+TEST_F(FileClientDstageChainTest, SimpleClient) {
   std::string ip = FLAGS_server_ip;
   Counter counter(0);
   std::timed_mutex complete_lock;

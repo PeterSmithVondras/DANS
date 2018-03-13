@@ -30,6 +30,8 @@ struct Protocol {
 
 // ***********************************************************************
 
+// Connection class should be broken out into its own header and implementation
+// files.
 class Connection {
  public:
   // Explicitly deleting default and copy constructor.
