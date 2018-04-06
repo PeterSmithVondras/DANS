@@ -41,7 +41,7 @@ void MultiQueue<T>::Enqueue(UniqJobPtr<T> job_p) {
           << ((job_p == nullptr) ? " job_p=nullptr," : " job_id=")
           << ((job_p == nullptr) ? ' ' : job_p->job_id)
           << ((job_p == nullptr) ? ' ' : ',');
-  CHECK_NOTNULL(job_p);
+  CHECK(job_p != nullptr);
 
   // Ensuring that purging is not in effect.
   std::shared_lock<std::shared_timed_mutex> no_pruging(_purge_shared_mutex);

@@ -1,7 +1,9 @@
 # gtest using ubuntu package
 new_local_repository(
      name = "gtest",
-     path = "/usr/src/googletest/googletest",
+     path = "/usr/src/gtest",
+# For googletest apt-get repo whenever you upgrade Ubuntu.
+#     path = "/usr/src/googletest/googletest",    
      build_file = "gtest.BUILD",
 )
 
