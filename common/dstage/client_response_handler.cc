@@ -15,16 +15,6 @@ const int kMBytesToBytes = 1024 * 1024;
 
 namespace dans {
 
-ResponseDispatcher::ResponseDispatcher(Priority max_priority)
-    : Dispatcher<ResponseData, ResponseData>(max_priority) {}
-
-void ResponseDispatcher::DuplicateAndEnqueue(UniqJobPtr<ResponseData> job_in,
-                                             Priority max_prio,
-                                             unsigned duplication) {
-  VLOG(4) << __PRETTY_FUNCTION__ << " prio=" << job_in->priority;
-  _multi_q_p->Enqueue(std::move(job_in));
-}
-
 ResponseScheduler::ResponseScheduler(
     std::vector<unsigned> threads_per_prio, bool set_thread_priority,
     CommunicationHandlerInterface* comm_interface,

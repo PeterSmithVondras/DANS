@@ -134,6 +134,21 @@ cc_test(
 )
 
 cc_library(
+  name = "forwarding_dispatcher",
+  hdrs = [
+    "forwarding_dispatcher.h",
+    "forwarding_dispatcher.hh",
+  ],
+#  srcs = [ "forwarding_dispatcher.hh" ],
+  deps = [
+    ":dstage_base",
+    ":dispatcher",
+    ":dstage",
+    "@glog//:main",
+  ],
+)
+
+cc_library(
   name = "linux_communication_handler",
   hdrs = [
     "linux_communication_handler.h",
@@ -191,6 +206,7 @@ cc_library(
     ":scheduler",
     ":dstage",
     ":linux_communication_handler",
+    ":forwarding_dispatcher",
     "@glog//:main",
     "@gflags//:main",
   ],
@@ -210,6 +226,7 @@ cc_library(
     ":scheduler",
     ":dstage",
     ":linux_communication_handler",
+    ":forwarding_dispatcher",
     ":client_request_handler",
     "@glog//:main",
     "@gflags//:main",

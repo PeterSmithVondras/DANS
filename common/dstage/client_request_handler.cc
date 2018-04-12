@@ -8,7 +8,6 @@
 #include "glog/logging.h"
 
 namespace {
-std::string buf = "GET / HTTP/1.1\n\n";
 const std::string request = "GET / HTTP/1.1\n\n";
 const int kIndex = 0;
 const int kSizeMB = 0;
@@ -18,16 +17,6 @@ using ReadyFor = dans::CommunicationHandlerInterface::ReadyFor;
 }  // namespace
 
 namespace dans {
-
-RequestDispatcher::RequestDispatcher(Priority max_priority)
-    : Dispatcher<RequestData, RequestData>(max_priority) {}
-
-void RequestDispatcher::DuplicateAndEnqueue(UniqJobPtr<RequestData> job_in,
-                                            Priority max_prio,
-                                            unsigned duplication) {
-  VLOG(4) << __PRETTY_FUNCTION__ << " prio=" << job_in->priority;
-  _multi_q_p->Enqueue(std::move(job_in));
-}
 
 RequestScheduler::RequestScheduler(
     std::vector<unsigned> threads_per_prio, bool set_thread_priority,

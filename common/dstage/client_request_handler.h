@@ -9,21 +9,13 @@
 #include "common/dstage/communication_handler_interface.h"
 #include "common/dstage/dispatcher.h"
 #include "common/dstage/dstage.h"
+#include "common/dstage/forwarding_dispatcher.h"
 #include "common/dstage/job.h"
 #include "common/dstage/job_types.h"
 #include "common/dstage/multiqueue.h"
 #include "common/dstage/scheduler.h"
 
 namespace dans {
-
-class RequestDispatcher : public Dispatcher<RequestData, RequestData> {
- public:
-  RequestDispatcher(Priority max_priority);
-
- protected:
-  void DuplicateAndEnqueue(UniqJobPtr<RequestData> job_in, Priority max_prio,
-                           unsigned duplication) override;
-};
 
 class RequestScheduler : public Scheduler<RequestData> {
  public:
@@ -58,10 +50,11 @@ class RequestDStage : public DStage<RequestData, RequestData> {
             threads_per_prio.size() - 1,
             std::make_unique<MultiQueue<RequestData>>(threads_per_prio.size() -
                                                       1),
-            std::make_unique<RequestDispatcher>(threads_per_prio.size() - 1),
+            std::make_unique<ForwardingDispatcher<RequestData>>(threads_per_prio.size() - 1),
             std::make_unique<RequestScheduler>(
                 threads_per_prio, set_thread_priority, comm_interface,
-                response_dstage)) {}
+                response_dstage)) {
+  }
 };
 
 }  // namespace dans

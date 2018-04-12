@@ -6,6 +6,7 @@
 #include <shared_mutex>
 #include <string>
 
+#include "common/dstage/forwarding_dispatcher.h"
 #include "common/dstage/client_request_handler.h"
 #include "common/dstage/communication_handler_interface.h"
 #include "common/dstage/dispatcher.h"
@@ -16,15 +17,6 @@
 #include "common/dstage/scheduler.h"
 
 namespace dans {
-
-class ResponseDispatcher : public Dispatcher<ResponseData, ResponseData> {
- public:
-  ResponseDispatcher(Priority max_priority);
-
- protected:
-  void DuplicateAndEnqueue(UniqJobPtr<ResponseData> job_in, Priority max_prio,
-                           unsigned duplication) override;
-};
 
 class ResponseScheduler : public Scheduler<ResponseData> {
  public:
@@ -59,7 +51,7 @@ class ResponseDStage : public DStage<ResponseData, ResponseData> {
             threads_per_prio.size() - 1,
             std::make_unique<MultiQueue<ResponseData>>(threads_per_prio.size() -
                                                        1),
-            std::make_unique<ResponseDispatcher>(threads_per_prio.size() - 1),
+            std::make_unique<ForwardingDispatcher<ResponseData>>(threads_per_prio.size() - 1),
             std::make_unique<ResponseScheduler>(
                 threads_per_prio, set_thread_priority, comm_interface, this)) {}
 
