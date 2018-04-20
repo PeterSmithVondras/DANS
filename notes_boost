@@ -1,0 +1,5 @@
+
+sudo apt-get install libboost-all-dev
+
+whereis boost
+locate boost | fgrep .so

@@ -8,6 +8,9 @@ cc_library(
     "basescheduler.h",
     "basedstage.h",
   ],
+  deps = [
+    ":synchronization",
+  ]
 )
 
 cc_test(
@@ -90,6 +93,38 @@ cc_library(
   ],
 )
 
+cc_binary(
+  name = "dans_proxy",
+  srcs = ["dans_proxy.cc"],
+  deps = [
+    ":proxy_dstage",
+    ":linux_communication_handler",
+    "@boost//:main",
+    "@glog//:main",
+    "@gflags//:main",
+  ],
+)
+
+cc_library(
+  name = "proxy_dstage",
+  hdrs = [
+    "proxy_dstage.h",
+  ],
+  srcs = [ "proxy_dstage.cc" ],
+  deps = [
+    ":dstage_base",
+    ":multiqueue",
+    ":dispatcher",
+    ":scheduler",
+    ":dstage",
+    ":linux_communication_handler",
+    ":forwarding_dispatcher",
+    ":synchronization",
+    "@glog//:main",
+    "@gflags//:main",
+  ],
+)
+
 cc_test(
   name = "scheduler_test",
   size = "small",
@@ -155,6 +190,7 @@ cc_library(
     "communication_handler_interface.h",
   ],
   srcs = [ "linux_communication_handler.cc" ],
+  linkopts = [ "-lpthread" ],
   deps = [
     "@glog//:main",
     "@gflags//:main",
@@ -256,7 +292,6 @@ cc_library(
   ],
   srcs = [ "synchronization.cc" ],
   deps = [
-    ":dstage_base",
     "@glog//:main",
   ],
 )

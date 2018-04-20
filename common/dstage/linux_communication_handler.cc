@@ -19,6 +19,7 @@ namespace {
 int kFlags = 0;
 int kMaxEvents = 64;
 int kTimeoutInMilliseconds = 100;
+int kMaxConnectionsWaiting = 100;
 }  // namespace
 
 namespace dans {
@@ -45,6 +46,19 @@ LinuxCommunicationHandler::~LinuxCommunicationHandler() {
       << "Failure to close epoll file descriptor";
 }
 
+void LinuxCommunicationHandler::PrintEpollEvents(uint32_t events) {
+  VLOG(1) << "Events: EPOLLIN=" << (EPOLLIN & events)
+          << " EPOLLOUT=" << (EPOLLOUT & events)
+          << " EPOLLRDHUP=" << (EPOLLRDHUP & events)
+          << " EPOLLPRI=" << (EPOLLPRI & events)
+          << " EPOLLERR=" << (EPOLLERR & events)
+          << " EPOLLHUP=" << (EPOLLHUP & events)
+          << " EPOLLET=" << (EPOLLET & events)
+          << " EPOLLONESHOT=" << (EPOLLONESHOT & events)
+          << " EPOLLWAKEUP=" << (EPOLLWAKEUP & events)
+          << " EPOLLEXCLUSIVE=" << (EPOLLEXCLUSIVE & events);
+}
+
 int LinuxCommunicationHandler::CreateSocket() {
   VLOG(4) << __PRETTY_FUNCTION__;
   int soc = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
@@ -52,9 +66,79 @@ int LinuxCommunicationHandler::CreateSocket() {
   return soc;
 }
 
-void LinuxCommunicationHandler::Connect(const std::string& ip,
-                                        const std::string& port,
-                                        CallBack2 done) {
+void LinuxCommunicationHandler::AddServerSocket(int option, int soc,
+                                                CallBack1 done) {
+  struct epoll_event event;
+  // Need to wait on socket for ability to accept.
+  event.events = EPOLLIN | EPOLLONESHOT;
+
+  // Setting user data in the event structure to be a callback with relevant
+  // data.
+  event.data.ptr = new DynamicallyAllocatedCallback(
+      std::bind(&LinuxCommunicationHandler::ServeSocketReady, this, soc, done,
+                std::placeholders::_1));
+  int ret = epoll_ctl(_epoll_fd, option, soc, &event);
+  PLOG_IF(WARNING, ret != 0)
+      << "Failed to add socket to epoll set: socket=" << soc;
+}
+
+void LinuxCommunicationHandler::Serve(unsigned short port, CallBack1 done) {
+  VLOG(4) << __PRETTY_FUNCTION__;
+  int soc = CreateSocket();
+  VLOG(1) << "Created socket for listening: socket=" << soc << " port=" << port;
+
+  int yes = 1;
+  PLOG_IF(ERROR,
+          setsockopt(soc, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) == -1)
+      << "Failed to set listen socket options.";
+
+  sockaddr_in addr;
+  addr.sin_family = AF_INET;
+  addr.sin_port = htons(port);
+  addr.sin_addr.s_addr = INADDR_ANY;
+
+  PLOG_IF(ERROR, bind(soc, reinterpret_cast<struct sockaddr*>(&addr),
+                      sizeof(sockaddr_in)) == -1)
+      << "Failed to bind listen socket.";
+
+  PLOG_IF(ERROR, listen(soc, kMaxConnectionsWaiting) == -1)
+      << "Failed to listen to port=" << port << " on socket=" << soc;
+
+  AddServerSocket(EPOLL_CTL_ADD, soc, done);
+}
+
+void LinuxCommunicationHandler::ServeSocketReady(int soc, CallBack1 done,
+                                                 uint32_t events) {
+  VLOG(4) << __PRETTY_FUNCTION__ << " soc=" << soc;
+  VLOG(1) << "Server socket=" << soc << " handling new connections.";
+
+  // Must re-add server socket to epoll
+  AddServerSocket(EPOLL_CTL_MOD, soc, done);
+
+  sockaddr_in client_addr;
+  socklen_t len = sizeof(sockaddr_in);
+  int client_soc;
+  // Must get all pending connections.
+  while (true) {
+    client_soc = accept(soc, reinterpret_cast<sockaddr*>(&client_addr), &len);
+    if (client_soc == -1) {
+      if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
+        // connection already closed or interrupted
+        break;
+      } else {
+        PLOG(ERROR) << "Failed to accept client connection.";
+      }
+    } else {
+      // New connection is successful.
+      VLOG(2) << "Server socket=" << soc
+              << " accepted new connection socket=" << client_soc;
+      done(client_soc);
+    }
+  }
+}
+
+std::function<void()> LinuxCommunicationHandler::Connect(
+    const std::string& ip, const std::string& port, CallBack2 done) {
   VLOG(4) << __PRETTY_FUNCTION__;
   int soc = CreateSocket();
   VLOG(1) << "Created socket for connect: socket=" << soc;
@@ -69,11 +153,11 @@ void LinuxCommunicationHandler::Connect(const std::string& ip,
       connect(soc, reinterpret_cast<sockaddr*>(&addr), sizeof(sockaddr_in));
   if ((ret != 0) && (errno != EINPROGRESS)) {
     PLOG(WARNING) << "Failed to connect socket with initial call to connect().";
-    done(-errno, ReadyFor{/*in=*/false, /*out=*/false});
-    return;
+    done(soc, ReadyFor{/*in=*/false, /*out=*/false});
+    return []() {};
   } else if (ret == 0) {
     done(soc, {/*in=*/false, /*out=*/false});
-    return;
+    return []() {};
   }
 
   struct epoll_event event;
@@ -82,12 +166,14 @@ void LinuxCommunicationHandler::Connect(const std::string& ip,
 
   // Setting user data in the event structure to be a callback with relevant
   // data.
-  event.data.ptr = new DynamicallyAllocatedCallback(
-      std::bind(&LinuxCommunicationHandler::ConnectionReady, this, soc, done,
+  auto cb_p = new DynamicallyAllocatedCallback(
+      std::bind(&LinuxCommunicationHandler::MonitorSocketReady, this, soc, done,
                 std::placeholders::_1));
+  event.data.ptr = cb_p;
   ret = epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, soc, &event);
   PLOG_IF(WARNING, ret != 0)
-      << "Failed to add socket to epoll set: socket=" << soc;
+      << "Failed to add socket to epoll set during connect: socket=" << soc;
+  return Deleter([cb_p]() { delete cb_p; });
 }
 
 void LinuxCommunicationHandler::MonitorAllSockets() {
@@ -122,49 +208,55 @@ void LinuxCommunicationHandler::MonitorAllSockets() {
   }
 }
 
-void LinuxCommunicationHandler::ConnectionReady(int soc, CallBack2 done,
-                                                uint32_t events) {
+std::function<void()> LinuxCommunicationHandler::Monitor(int soc,
+                                                         ReadyFor ready_for,
+                                                         CallBack2 done) {
   VLOG(4) << __PRETTY_FUNCTION__ << " soc=" << soc;
-  // connection established
-  // check pending error if ever
-  int err = CheckForSocketErrors(soc);
-  if (err < 0) {
-    done(err, ReadyFor{/*in=*/false, /*out=*/false});
-  } else if (events & EPOLLOUT) {
-    VLOG(1) << "TCP connection established for socket=" << soc;
-    ReadyFor ready{/*in=*/false, /*out=*/true};
-    if (events & EPOLLIN) {
-      ready.in = true;
-    }
-    done(soc, ready);
-  } else if (events & EPOLLIN) {
-    done(soc, ReadyFor{/*in=*/true, /*out=*/false});
-  } else {
-    LOG(WARNING) << "Connection socket error unknown: socket=" << soc;
-    done(-EBADFD, {/*in=*/false, /*out=*/false});
-  }
+  uint32_t events = 0;
+  if (ready_for.in) events |= EPOLLIN;
+  if (ready_for.out) events |= EPOLLOUT;
+  return MonitorFor(EPOLL_CTL_MOD, soc, events, done);
 }
 
-void LinuxCommunicationHandler::Monitor(int soc, ReadyFor ready_for,
-                                        CallBack2 done) {
+std::function<void()> LinuxCommunicationHandler::MonitorNew(int soc,
+                                                            ReadyFor ready_for,
+                                                            CallBack2 done) {
+  VLOG(4) << __PRETTY_FUNCTION__ << " soc=" << soc;
+  uint32_t events = 0;
+  if (ready_for.in) events |= EPOLLIN;
+  if (ready_for.out) events |= EPOLLOUT;
+  return MonitorFor(EPOLL_CTL_ADD, soc, events, done);
+}
+
+std::function<void()> LinuxCommunicationHandler::MonitorFor(int option, int soc,
+                                                            uint32_t events,
+                                                            CallBack2 done) {
   VLOG(4) << __PRETTY_FUNCTION__ << " soc=" << soc;
   CHECK_GE(soc, 0);
-  if (!ready_for.in && !ready_for.out) {
-    LOG(WARNING) << "Request to monitor nothing for socket=" << soc;
-    done(soc, ready_for);
-    return;
-  }
-  epoll_event event;
-  event.events = EPOLLONESHOT;
-  if (ready_for.in) event.events |= EPOLLIN;
-  if (ready_for.out) event.events |= EPOLLOUT;
 
-  event.data.ptr = new DynamicallyAllocatedCallback(
+  epoll_event event;
+  event.events = EPOLLERR | EPOLLRDHUP | EPOLLHUP | EPOLLONESHOT | events;
+
+  auto cb_p = new DynamicallyAllocatedCallback(
       std::bind(&LinuxCommunicationHandler::MonitorSocketReady, this, soc, done,
                 std::placeholders::_1));
-  int ret = epoll_ctl(_epoll_fd, EPOLL_CTL_MOD, soc, &event);
-  PLOG_IF(ERROR, ret != 0) << "Failed to add socket to epoll set: socket="
-                           << soc;
+  event.data.ptr = cb_p;
+  int ret = epoll_ctl(_epoll_fd, option, soc, &event);
+  PLOG_IF(ERROR, ret != 0)
+      << "Failed to re-add socket to epoll set during Monitor: socket=" << soc;
+
+  return Deleter([cb_p, soc]() {
+    try {
+      delete cb_p;
+      VLOG(2) << "Deleted LinuxCommunicationHandler callback successfully for "
+                 "socket="
+              << soc;
+    } catch (...) {
+      LOG(WARNING)
+          << "Caught LinuxCommunicationHandler Deleter exception for socket="
+          << soc;
+    }
+  });
 }
 
 int LinuxCommunicationHandler::CheckForSocketErrors(int soc) {
@@ -175,18 +267,14 @@ int LinuxCommunicationHandler::CheckForSocketErrors(int soc) {
   int soc_opt = getsockopt(soc, SOL_SOCKET, SO_ERROR, &err, &len);
   if (soc_opt != 0) {
     PLOG(WARNING) << "Failed to get sock options: socket=" << soc;
-    close(soc);
-    PLOG_IF(WARNING, close(soc) != 0) << "Failed to close socket=" << soc;
-    soc = -errno;
   } else {
     if (err != 0) {
-      PLOG(WARNING) << "Error in socket connect.";
-      close(soc);
-      PLOG_IF(WARNING, close(soc) != 0) << "Failed to close socket=" << soc;
-      soc = -errno;
+      errno = err;
+      PLOG(WARNING) << "Error in socket connect: socket=" << soc;
+      err = errno;
     }
   }
-  return soc;
+  return err;
 }
 
 void LinuxCommunicationHandler::MonitorSocketReady(int soc, CallBack2 done,
@@ -196,11 +284,12 @@ void LinuxCommunicationHandler::MonitorSocketReady(int soc, CallBack2 done,
   // connection established
   // check pending error if ever
   int err = CheckForSocketErrors(soc);
-  if (err < 0) {
-    done(err, {/*in=*/false, /*out=*/false});
+  if (err != 0) {
+    errno = err;
+    done(soc, {/*in=*/false, /*out=*/false, events, err});
   } else {
     // Custom for this function.
-    ReadyFor ready{/*in=*/false, /*out=*/false};
+    ReadyFor ready{/*in=*/false, /*out=*/false, events, err};
     if (events & EPOLLIN) ready.in = true;
     if (events & EPOLLOUT) ready.out = true;
     done(soc, ready);

@@ -143,8 +143,12 @@ void ResponseScheduler::ResponseCallback(SharedJobPtr<ResponseData> old_job,
                                          int soc, ReadyFor ready_for) {
   VLOG(4) << __PRETTY_FUNCTION__
           << " soc=" << old_job->job_data.connection->Socket();
-  CHECK(ready_for.in) << "Failed to receive response for socket="
-                      << old_job->job_data.connection->Socket();
+  if (ready_for.err != 0) {
+    PLOG(WARNING) << "Removing jobid=" << old_job->job_id
+                  << " prio=" << old_job->priority << " socket=" << soc;
+    return;
+  }
+  CHECK(ready_for.in);
 
   // Pass on job if it is not complete.
   if (!old_job->job_data.purge_state->IsPurged() && soc >= 0) {

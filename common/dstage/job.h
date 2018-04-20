@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include "common/dstage/priority.h"
+#include "common/dstage/synchronization.h"
 
 namespace dans {
 // This is an example of a specific data type for a specific dstage.
@@ -19,12 +20,12 @@ class JobIdFactory {
  public:
   JobIdFactory(unsigned seed) : _last_id(seed) {}
   JobId CreateJobId() {
-    _last_id++;
-    return _last_id;
+    _last_id.Increment();
+    return _last_id.Count();
   }
 
  private:
-  JobId _last_id;
+  Counter _last_id;
 };
 
 template <typename T>

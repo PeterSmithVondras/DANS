@@ -29,9 +29,12 @@ new_local_repository(
      build_file = "glog.BUILD",
 )
 
-
-
-
+# boost using ubuntu package libboost-all-dev
+new_local_repository(
+     name = "boost",
+     path = "/usr",
+     build_file = "boost.BUILD",
+)
 
 
 

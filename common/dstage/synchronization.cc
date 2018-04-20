@@ -1,8 +1,12 @@
+#include <sys/socket.h>
+
 #include "common/dstage/synchronization.h"
 
 #include "glog/logging.h"
 
 namespace dans {
+
+/****************************  PurgeState  ****************************/
 
 PurgeState::PurgeState() : _purged(false) {}
 
@@ -19,6 +23,35 @@ bool PurgeState::SetPurged() {
   return set;
 }
 
+/*****************************  Connection  ****************************/
+Connection::Connection(int socket) : _socket(socket), _closed(false) {}
+Connection::~Connection() { Close(); }
+
+int Connection::Socket() { return _socket; }
+
+void Connection::Shutdown() {
+  std::lock_guard<std::mutex> lock(_close_lock);
+  if (!_closed) {
+    VLOG(3) << "Shutdown socket=" << _socket;
+    if (shutdown(_socket, SHUT_RDWR) != 0) {
+      PLOG(WARNING) << "Failed to shutdown socket=" << _socket;
+    }
+  }
+}
+
+void Connection::Close() {
+  std::lock_guard<std::mutex> lock(_close_lock);
+  if (!_closed) {
+    VLOG(2) << "Closed socket=" << _socket;
+    if (close(_socket) != 0) {
+      PLOG(WARNING) << "Failed to close socket=" << _socket;
+    }
+    _closed = true;
+  }
+}
+bool Connection::IsClosed() { return _closed; }
+
+/*****************************  Counter  ******************************/
 Counter::Counter(int initial_value) : _count(initial_value) {}
 
 void Counter::Increment() {

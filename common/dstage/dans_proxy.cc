@@ -1,0 +1,96 @@
+#include <chrono>
+#include <functional>
+
+#include "boost/asio.hpp"
+#include "boost/thread/executors/basic_thread_pool.hpp"
+#include "boost/thread/executors/executor_adaptor.hpp"
+#include "boost/thread/executors/serial_executor.hpp"
+#include "common/dstage/linux_communication_handler.h"
+#include "common/dstage/proxy_dstage.h"
+#include "gflags/gflags.h"
+#include "glog/logging.h"
+
+DEFINE_string(server_ip, "192.168.137.127", "ip address of the file server.");
+DEFINE_uint64(primary_prio_port_in, 5010,
+              "Port to listen for primary priority work.");
+DEFINE_uint64(secondary_prio_port_in, 5011,
+              "Port to listen for secondary priority work.");
+DEFINE_uint64(primary_prio_port_out, 5012,
+              "Port to send primary priority work to.");
+DEFINE_uint64(secondary_prio_port_out, 5013,
+              "Port to send secondary priority work to.");
+DEFINE_bool(set_thread_priority, false,
+            "Set thread priority with Linux OS, "
+            "which requires running with `sudo`.");
+
+namespace {
+const unsigned kMaxPrio = 1;
+const unsigned kThreadsPerPrio = 1;
+const unsigned kGetRequestsTotal = 2;
+const unsigned kPurgeThreadPoolThreads = 2;
+const unsigned kHighPriority = 0;
+const unsigned kLowPriority = 1;
+}  // namespace
+
+void ReceivedConnection(
+    unsigned priority, dans::LinuxCommunicationHandler* comm_handler_p,
+    dans::DStageProxy* proxy_p, dans::JobIdFactory* jid_factory_p,
+    boost::executors::executor_adaptor<boost::executors::serial_executor>*
+        exec_p,
+    int soc) {
+  VLOG(0) << "Received connection on socket=" << soc << " prio=" << priority;
+
+  // Create a unique JobId.
+  dans::JobId jid = jid_factory_p->CreateJobId();
+  // Monitor socket for failures and Purge if it is triggered.
+  std::function<void()> del = comm_handler_p->MonitorNew(
+      soc, {false, false},
+      [proxy_p, exec_p, jid, priority](
+          int soc, dans::CommunicationHandlerInterface::ReadyFor ready_for) {
+        PLOG_IF(WARNING, ready_for.err != 0) << "Server socket error";
+        dans::LinuxCommunicationHandler::PrintEpollEvents(ready_for.events);
+
+        exec_p->submit([proxy_p, jid]() { proxy_p->Purge(jid); });
+      });
+
+  // Create job and dispatch it.
+  dans::ClientConnection cli_connection = {
+      std::make_unique<dans::Connection>(soc), del};
+  auto job = std::make_unique<dans::Job<dans::ClientConnection>>(
+      std::move(cli_connection), jid, priority,
+      /*duplication*/ 0);
+
+  proxy_p->Dispatch(std::move(job), /*requested_duplication=*/0);
+}
+
+int main(int argc, char** argv) {
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
+  // Initialize Google's logging library.
+  google::InitGoogleLogging(argv[0]);
+  // Provides a failure signal handler.
+  google::InstallFailureSignalHandler();
+
+  dans::LinuxCommunicationHandler comm_handler;
+  dans::DStageProxy proxy(std::vector<unsigned>(kMaxPrio + 1, kThreadsPerPrio),
+                          FLAGS_set_thread_priority, &comm_handler);
+  dans::JobIdFactory jid_factory(0);
+
+  // Creating threadpool for purging as Purge is a blocking call.
+  boost::executors::executor_adaptor<boost::executors::basic_thread_pool> pool(
+      kPurgeThreadPoolThreads);
+  boost::executors::executor_adaptor<boost::executors::serial_executor> exec(
+      pool);
+  exec.submit([]() { VLOG(0) << "WINNER!"; });
+
+  // Start monitoring primary and secondary ports.
+  comm_handler.Serve(FLAGS_primary_prio_port_in,
+                     dans::LinuxCommunicationHandler::CallBack1(std::bind(
+                         &ReceivedConnection, kHighPriority, &comm_handler,
+                         &proxy, &jid_factory, &exec, std::placeholders::_1)));
+  comm_handler.Serve(FLAGS_secondary_prio_port_in,
+                     dans::LinuxCommunicationHandler::CallBack1(std::bind(
+                         &ReceivedConnection, kLowPriority, &comm_handler,
+                         &proxy, &jid_factory, &exec, std::placeholders::_1)));
+
+  std::this_thread::sleep_for(std::chrono::seconds(30));  // slow server.... :)
+}

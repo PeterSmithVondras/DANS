@@ -18,16 +18,22 @@ class LinuxCommunicationHandler : public CommunicationHandlerInterface {
   ~LinuxCommunicationHandler() override;
 
   int CreateSocket() override;
-  void Connect(const std::string& ip, const std::string& port,
-               CallBack2 done) override;
-  void Monitor(int soc, ReadyFor ready_for, CallBack2 done) override;
+  void Serve(unsigned short port, CallBack1 done) override;
+  Deleter Connect(const std::string& ip, const std::string& port,
+                  CallBack2 done) override;
+  Deleter Monitor(int soc, ReadyFor ready_for, CallBack2 done) override;
+  Deleter MonitorNew(int soc, ReadyFor ready_for, CallBack2 done) override;
   void Close(int soc) override;
+
+  static void PrintEpollEvents(uint32_t events);
 
  private:
   using DynamicallyAllocatedCallback = std::function<void(uint32_t)>;
   void MonitorAllSockets();
+  Deleter MonitorFor(int option, int soc, uint32_t events, CallBack2 done);
   void MonitorSocketReady(int soc, CallBack2 done, uint32_t events);
-  void ConnectionReady(int soc, CallBack2 done, uint32_t events);
+  void ServeSocketReady(int soc, CallBack1 done, uint32_t events);
+  void AddServerSocket(int option, int soc, CallBack1 done);
   int CheckForSocketErrors(int soc);
 
   int _epoll_fd;

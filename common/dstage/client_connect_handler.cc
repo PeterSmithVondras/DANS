@@ -106,8 +106,13 @@ void ConnectScheduler::StartScheduling(Priority prio) {
 void ConnectScheduler::ConnectCallback(
     SharedJobPtr<ConnectDataInternal> old_job, int soc, ReadyFor ready_for) {
   VLOG(4) << __PRETTY_FUNCTION__ << " soc=" << soc;
-  CHECK(ready_for.out) << "Failed to create TCP connection for socket=" << soc;
-  CHECK(!ready_for.in) << "Failed to create TCP connection for socket=" << soc;
+  if (ready_for.err != 0) {
+    PLOG(WARNING) << "Failed to create TCP connection for jobid="
+                  << old_job->job_id << " prio=" << old_job->priority
+                  << " socket=" << soc;
+    return;
+  }
+  CHECK(ready_for.out);
 
   auto connection = std::make_shared<Connection>(soc);
   // Pass on job if it is not complete.

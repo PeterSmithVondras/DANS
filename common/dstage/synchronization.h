@@ -25,6 +25,28 @@ class PurgeState {
   bool _purged;
 };
 
+// Connection class should be broken out into its own header and implementation
+// files.
+class Connection {
+ public:
+  // Explicitly deleting default and copy constructor.
+  Connection() = delete;
+  Connection(const Connection&) = delete;
+  Connection(int socket);
+  ~Connection();
+
+  int Socket();
+  // Shutdown read and write to a socket which will trigger epoll.
+  void Shutdown();
+  void Close();
+  bool IsClosed();
+
+ private:
+  const int _socket;
+  std::mutex _close_lock;
+  bool _closed;
+};
+
 // Thread safe counter.
 class Counter {
  public:

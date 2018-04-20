@@ -30,36 +30,6 @@ struct Protocol {
 
 // ***********************************************************************
 
-// Connection class should be broken out into its own header and implementation
-// files.
-class Connection {
- public:
-  // Explicitly deleting default and copy constructor.
-  Connection() = delete;
-  Connection(const Connection&) = delete;
-
-  Connection(int socket) : _socket(socket), _released(false) {}
-  ~Connection() { Release(); }
-
-  int Socket() { return _socket; }
-  void Release() {
-    std::lock_guard<std::mutex> lock(_release_lock);
-    if (!_released) {
-      VLOG(3) << "Closed socket=" << _socket;
-      if (close(_socket) != 0) {
-        PLOG(WARNING) << "Failed to close socket=" << _socket;
-      }
-      _released = true;
-    }
-  }
-  bool IsReleased() { return _released; }
-
- private:
-  const int _socket;
-  std::mutex _release_lock;
-  bool _released;
-};
-
 using ClientCallback3 =
     std::function<void(unsigned priority, int object_id,
                        std::unique_ptr<std::vector<char>> object)>;
