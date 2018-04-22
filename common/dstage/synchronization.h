@@ -38,6 +38,7 @@ class Connection {
   int Socket();
   // Shutdown read and write to a socket which will trigger epoll.
   void Shutdown();
+  void SetShutdown();
   void Close();
   bool IsClosed();
 
@@ -45,6 +46,7 @@ class Connection {
   const int _socket;
   std::mutex _close_lock;
   bool _closed;
+  bool _shutdown;
 };
 
 // Thread safe counter.

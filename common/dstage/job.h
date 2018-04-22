@@ -39,6 +39,13 @@ struct Job {
   bool operator==(const Job& rhs) const { return job_id == rhs.job_id; }
   bool operator!=(const Job& rhs) const { return !operator==(rhs); }
 
+  std::string Describe() {
+    std::string description;
+    description = "job_id=" + std::to_string(job_id) +
+                  " prio=" + std::to_string(priority);
+    return description;
+  }
+
   JobId job_id;
   Priority priority;
   unsigned duplication;

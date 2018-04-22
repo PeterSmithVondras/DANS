@@ -1,5 +1,6 @@
 #include <chrono>
 #include <functional>
+#include <csignal>
 
 #include "boost/asio.hpp"
 #include "boost/thread/executors/basic_thread_pool.hpp"
@@ -32,14 +33,17 @@ const unsigned kHighPriority = 0;
 const unsigned kLowPriority = 1;
 }  // namespace
 
+void SigPipeHandler(int signal)
+{
+  LOG(WARNING) << "Received SIGPIPE";
+}
+
 void ReceivedConnection(
     unsigned priority, dans::LinuxCommunicationHandler* comm_handler_p,
     dans::DStageProxy* proxy_p, dans::JobIdFactory* jid_factory_p,
     boost::executors::executor_adaptor<boost::executors::serial_executor>*
         exec_p,
     int soc) {
-  VLOG(0) << "Received connection on socket=" << soc << " prio=" << priority;
-
   // Create a unique JobId.
   dans::JobId jid = jid_factory_p->CreateJobId();
   // Monitor socket for failures and Purge if it is triggered.
@@ -47,18 +51,18 @@ void ReceivedConnection(
       soc, {false, false},
       [proxy_p, exec_p, jid, priority](
           int soc, dans::CommunicationHandlerInterface::ReadyFor ready_for) {
-        PLOG_IF(WARNING, ready_for.err != 0) << "Server socket error";
+        PLOG_IF(WARNING, ready_for.err != 0)
+            << "Application (comm_handler) received server socket error";
         dans::LinuxCommunicationHandler::PrintEpollEvents(ready_for.events);
-
         exec_p->submit([proxy_p, jid]() { proxy_p->Purge(jid); });
       });
 
   // Create job and dispatch it.
-  dans::ClientConnection cli_connection = {
-      std::make_unique<dans::Connection>(soc), del};
-  auto job = std::make_unique<dans::Job<dans::ClientConnection>>(
-      std::move(cli_connection), jid, priority,
-      /*duplication*/ 0);
+  auto client_request = std::make_unique<dans::TcpPipe>(soc, del);
+  auto job = std::make_unique<dans::Job<std::unique_ptr<dans::TcpPipe>>>(
+      std::move(client_request), jid, priority, /*duplication*/ 0);
+  VLOG(2) << "Application received connection and created " << job->Describe()
+          << " " << job->job_data->Describe();
 
   proxy_p->Dispatch(std::move(job), /*requested_duplication=*/0);
 }
@@ -70,6 +74,9 @@ int main(int argc, char** argv) {
   // Provides a failure signal handler.
   google::InstallFailureSignalHandler();
 
+  // Install a signal handler
+  std::signal(SIGPIPE, SigPipeHandler);
+
   dans::LinuxCommunicationHandler comm_handler;
   dans::DStageProxy proxy(std::vector<unsigned>(kMaxPrio + 1, kThreadsPerPrio),
                           FLAGS_set_thread_priority, &comm_handler);
@@ -80,7 +87,6 @@ int main(int argc, char** argv) {
       kPurgeThreadPoolThreads);
   boost::executors::executor_adaptor<boost::executors::serial_executor> exec(
       pool);
-  exec.submit([]() { VLOG(0) << "WINNER!"; });
 
   // Start monitoring primary and secondary ports.
   comm_handler.Serve(FLAGS_primary_prio_port_in,
@@ -92,5 +98,5 @@ int main(int argc, char** argv) {
                          &ReceivedConnection, kLowPriority, &comm_handler,
                          &proxy, &jid_factory, &exec, std::placeholders::_1)));
 
-  std::this_thread::sleep_for(std::chrono::seconds(30));  // slow server.... :)
+  std::this_thread::sleep_for(std::chrono::seconds(10));  // slow server.... :)
 }

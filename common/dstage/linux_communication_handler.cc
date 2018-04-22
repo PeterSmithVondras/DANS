@@ -18,7 +18,7 @@ namespace {
 // Currently have no flags to pass to epoll_create.
 int kFlags = 0;
 int kMaxEvents = 64;
-int kTimeoutInMilliseconds = 100;
+int kTimeoutInMilliseconds = 500;
 int kMaxConnectionsWaiting = 100;
 }  // namespace
 
@@ -47,7 +47,7 @@ LinuxCommunicationHandler::~LinuxCommunicationHandler() {
 }
 
 void LinuxCommunicationHandler::PrintEpollEvents(uint32_t events) {
-  VLOG(1) << "Events: EPOLLIN=" << (EPOLLIN & events)
+  VLOG(3) << "Events: EPOLLIN=" << (EPOLLIN & events)
           << " EPOLLOUT=" << (EPOLLOUT & events)
           << " EPOLLRDHUP=" << (EPOLLRDHUP & events)
           << " EPOLLPRI=" << (EPOLLPRI & events)
@@ -120,7 +120,7 @@ void LinuxCommunicationHandler::ServeSocketReady(int soc, CallBack1 done,
   int client_soc;
   // Must get all pending connections.
   while (true) {
-    client_soc = accept(soc, reinterpret_cast<sockaddr*>(&client_addr), &len);
+    client_soc = accept4(soc, reinterpret_cast<sockaddr*>(&client_addr), &len, SOCK_NONBLOCK);
     if (client_soc == -1) {
       if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
         // connection already closed or interrupted
@@ -270,8 +270,6 @@ int LinuxCommunicationHandler::CheckForSocketErrors(int soc) {
   } else {
     if (err != 0) {
       errno = err;
-      PLOG(WARNING) << "Error in socket connect: socket=" << soc;
-      err = errno;
     }
   }
   return err;
