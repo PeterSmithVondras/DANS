@@ -36,6 +36,10 @@ LinuxCommunicationHandler::LinuxCommunicationHandler()
 
 LinuxCommunicationHandler::~LinuxCommunicationHandler() {
   VLOG(4) << __PRETTY_FUNCTION__;
+  for (const auto& server : _servers) {
+    server->Shutdown();
+  }
+
   {
     std::unique_lock<std::shared_timed_mutex> lock(_destructing_lock);
     _destructing = true;
@@ -85,6 +89,7 @@ void LinuxCommunicationHandler::AddServerSocket(int option, int soc,
 void LinuxCommunicationHandler::Serve(unsigned short port, CallBack1 done) {
   VLOG(4) << __PRETTY_FUNCTION__;
   int soc = CreateSocket();
+  _servers.push_back(std::make_unique<Connection>(soc));
   VLOG(1) << "Created socket for listening: socket=" << soc << " port=" << port;
 
   int yes = 1;
@@ -110,8 +115,12 @@ void LinuxCommunicationHandler::Serve(unsigned short port, CallBack1 done) {
 void LinuxCommunicationHandler::ServeSocketReady(int soc, CallBack1 done,
                                                  uint32_t events) {
   VLOG(4) << __PRETTY_FUNCTION__ << " soc=" << soc;
-  VLOG(1) << "Server socket=" << soc << " handling new connections.";
+  if (!(events & EPOLLIN)) {
+    VLOG(2) << "Server socket=" << soc << " closing.";
+    return;
+  }
 
+  VLOG(1) << "Server socket=" << soc << " handling new connections.";
   // Must re-add server socket to epoll
   AddServerSocket(EPOLL_CTL_MOD, soc, done);
 

@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "common/dstage/communication_handler_interface.h"
+#include "common/dstage/synchronization.h"
 
 namespace dans {
 
@@ -39,6 +40,7 @@ class LinuxCommunicationHandler : public CommunicationHandlerInterface {
   int _epoll_fd;
   std::vector<struct epoll_event> _events;
   std::thread _socket_handler;
+  std::vector<std::unique_ptr<Connection>> _servers;
   // Guards the destruction state.
   std::shared_timed_mutex _destructing_lock;
   // Signals the destruction phase to all threads.

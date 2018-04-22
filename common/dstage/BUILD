@@ -192,6 +192,7 @@ cc_library(
   srcs = [ "linux_communication_handler.cc" ],
   linkopts = [ "-lpthread" ],
   deps = [
+    ":synchronization",
     "@glog//:main",
     "@gflags//:main",
   ],
