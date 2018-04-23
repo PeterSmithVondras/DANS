@@ -195,13 +195,10 @@ void ProxyScheduler::StartScheduling(Priority prio) {
     // Convert the UniqJobPtr to SharedJobPtr to allow capture in
     // closure. Note that uniq_ptr's are are hard/impossible to capture using
     // std::bind as they do not have a copy constructor.
-    UniqJobPtr<std::unique_ptr<TcpPipe>> job_in = _multi_q_p->Dequeue(prio);
-    if (job_in == nullptr) continue;
-    Job<std::unique_ptr<TcpPipe>>* job = job_in.release();
+    SharedJobPtr<std::unique_ptr<TcpPipe>> job = _multi_q_p->Dequeue(prio);
+    if (job == nullptr) continue;
     VLOG(1) << "Proxy scheduling " << job->Describe() << " "
             << job->job_data->Describe();
-
-    job->job_data->counter.Increment();
 
     // Clear resources of input.
     std::function<void()> del = job->job_data->in->deleter;
@@ -229,8 +226,8 @@ void ProxyScheduler::StartScheduling(Priority prio) {
 }
 
 // Called when the server is connected
-void ProxyScheduler::ConnectCallbackWrapper(Job<std::unique_ptr<TcpPipe>>* job,
-                                            int soc, ReadyFor ready_for) {
+void ProxyScheduler::ConnectCallbackWrapper(
+    SharedJobPtr<std::unique_ptr<TcpPipe>> job, int soc, ReadyFor ready_for) {
   VLOG(2) << __PRETTY_FUNCTION__ << " " << job->Describe() << " "
           << job->job_data->Describe() << " for server";
   // Send to _worker_exec for execution.
@@ -240,7 +237,7 @@ void ProxyScheduler::ConnectCallbackWrapper(Job<std::unique_ptr<TcpPipe>>* job,
 }
 
 // Called when the server is connected
-void ProxyScheduler::ConnectCallback(Job<std::unique_ptr<TcpPipe>>* job,
+void ProxyScheduler::ConnectCallback(SharedJobPtr<std::unique_ptr<TcpPipe>> job,
                                      int soc, ReadyFor ready_for) {
   VLOG(2) << __PRETTY_FUNCTION__ << " " << job->Describe() << " "
           << job->job_data->Describe() << " for server";
@@ -252,21 +249,11 @@ void ProxyScheduler::ConnectCallback(Job<std::unique_ptr<TcpPipe>>* job,
     PLOG(WARNING) << "Failed to create TCP connection for server "
                   << job->Describe() << " " << job->job_data->Describe();
     job->job_data->ShutdownOther(soc);
-    int count = job->job_data->counter.Decrement();
-    VLOG(5) << "Decrementing counter to " << count;
-    if (count == 0) {
-      delete job;
-    }
     return;
   } else if (!ready_for.out) {
     VLOG(2) << "Failed to create TCP connection for server " << job->Describe()
             << " " << job->job_data->Describe();
     job->job_data->ShutdownOther(soc);
-    int count = job->job_data->counter.Decrement();
-    VLOG(5) << "Decrementing counter to " << count;
-    if (count == 0) {
-      delete job;
-    }
     return;
   }
 
@@ -287,8 +274,8 @@ void ProxyScheduler::ConnectCallback(Job<std::unique_ptr<TcpPipe>>* job,
   del();
 }
 
-void ProxyScheduler::MonitorCallbackWrapper(Job<std::unique_ptr<TcpPipe>>* job,
-                                            int soc, ReadyFor ready_for) {
+void ProxyScheduler::MonitorCallbackWrapper(
+    SharedJobPtr<std::unique_ptr<TcpPipe>> job, int soc, ReadyFor ready_for) {
   VLOG(2) << __PRETTY_FUNCTION__ << " " << job->Describe() << " "
           << job->job_data->Describe() << " for " << job->job_data->Which(soc);
   // Send to _worker_exec for execution.
@@ -297,7 +284,7 @@ void ProxyScheduler::MonitorCallbackWrapper(Job<std::unique_ptr<TcpPipe>>* job,
                        job->job_id});
 }
 
-void ProxyScheduler::MonitorCallback(Job<std::unique_ptr<TcpPipe>>* job,
+void ProxyScheduler::MonitorCallback(SharedJobPtr<std::unique_ptr<TcpPipe>> job,
                                      int soc, ReadyFor ready_for) {
   VLOG(2) << __PRETTY_FUNCTION__ << " " << job->Describe() << " "
           << job->job_data->Describe() << " for " << job->job_data->Which(soc);
@@ -306,22 +293,12 @@ void ProxyScheduler::MonitorCallback(Job<std::unique_ptr<TcpPipe>>* job,
     VLOG(2) << job->Describe() << " " << job->job_data->Describe()
             << " complete";
     job->job_data->ShutdownOther(soc);
-    int count = job->job_data->counter.Decrement();
-    VLOG(5) << "Decrementing counter to " << count;
-    if (count == 0) {
-      delete job;
-    }
     return;
   } else if (!ready_for.in) {
     VLOG(2) << job->Describe() << " " << job->job_data->Describe() << " for "
             << job->job_data->Which(soc)
             << " was not ready for input when triggered.";
     job->job_data->ShutdownOther(soc);
-    int count = job->job_data->counter.Decrement();
-    VLOG(5) << "Decrementing counter to " << count;
-    if (count == 0) {
-      delete job;
-    }
     return;
   }
 
@@ -336,30 +313,15 @@ void ProxyScheduler::MonitorCallback(Job<std::unique_ptr<TcpPipe>>* job,
                     << job->job_data->Which(soc) << " while "
                     << job->job_data->Describe();
       job->job_data->ShutdownOther(soc);
-      int count = job->job_data->counter.Decrement();
-      VLOG(5) << "Decrementing counter to " << count;
-      if (count == 0) {
-        delete job;
-      }
     } else {
       PLOG(WARNING) << job->Describe() << " Error sending to "
                     << job->job_data->Which(job->job_data->OtherSocket(soc))
                     << " while " << job->job_data->Describe();
-      int count = job->job_data->counter.Decrement();
-      VLOG(5) << "Decrementing counter to " << count;
-      if (count == 0) {
-        delete job;
-      }
     }
   } else if (bytes_piped == 0) {
     VLOG(2) << job->Describe() << " " << job->job_data->Which(soc)
             << " closed connection on " << job->job_data->Describe();
     job->job_data->ShutdownOther(soc);
-    int count = job->job_data->counter.Decrement();
-    VLOG(5) << "Decrementing counter to " << count;
-    if (count == 0) {
-      delete job;
-    }
   } else {
     bytes_piped = bytes_piped == -TcpPipe::TRY_LATER ? 0 : bytes_piped;
     VLOG(3) << job->Describe() << " piped " << bytes_piped << " bytes from "

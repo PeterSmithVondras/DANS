@@ -30,10 +30,10 @@ class TcpPipe {
 
   TcpPipe() = delete;
   TcpPipe(int soc, std::function<void()> deleter)
-      : in(std::make_unique<HalfPipe>(soc, deleter)), counter(1) {}
-  TcpPipe(std::unique_ptr<HalfPipe> in) : in(std::move(in)), counter(1) {}
+      : in(std::make_unique<HalfPipe>(soc, deleter)) {}
+  TcpPipe(std::unique_ptr<HalfPipe> in) : in(std::move(in)) {}
   TcpPipe(std::unique_ptr<HalfPipe> in, std::unique_ptr<HalfPipe> out)
-      : in(std::move(in)), out(std::move(out)), counter(2) {}
+      : in(std::move(in)), out(std::move(out)) {}
 
   std::string Describe();
   std::string Which(int soc);
@@ -48,7 +48,6 @@ class TcpPipe {
   // std::shared_ptr<PurgeState> purge_state;
   std::unique_ptr<HalfPipe> in;
   std::unique_ptr<HalfPipe> out;
-  Counter counter;
 };
 
 class ProxyScheduler : public Scheduler<std::unique_ptr<TcpPipe>> {
@@ -62,19 +61,18 @@ class ProxyScheduler : public Scheduler<std::unique_ptr<TcpPipe>> {
   void StartScheduling(Priority prio) override;
 
  private:
-  void ConnectCallback(Job<std::unique_ptr<TcpPipe>>* job, int soc,
+  void ConnectCallback(SharedJobPtr<std::unique_ptr<TcpPipe>> job, int soc,
                        CommunicationHandlerInterface::ReadyFor ready_for);
   void ConnectCallbackWrapper(
-      Job<std::unique_ptr<TcpPipe>>* job, int soc,
+      SharedJobPtr<std::unique_ptr<TcpPipe>> job, int soc,
       CommunicationHandlerInterface::ReadyFor ready_for);
-  void MonitorCallback(Job<std::unique_ptr<TcpPipe>>* job, int soc,
+  void MonitorCallback(SharedJobPtr<std::unique_ptr<TcpPipe>> job, int soc,
                        CommunicationHandlerInterface::ReadyFor ready_for);
   void MonitorCallbackWrapper(
-      Job<std::unique_ptr<TcpPipe>>* job, int soc,
+      SharedJobPtr<std::unique_ptr<TcpPipe>> job, int soc,
       CommunicationHandlerInterface::ReadyFor ready_for);
 
   CommunicationHandlerInterface* _comm_interface;
-  // BaseDStage<ResponseData>* _response_dstage;
   bool _destructing;
   std::shared_timed_mutex _destructing_lock;
 
