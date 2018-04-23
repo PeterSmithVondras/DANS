@@ -1,3 +1,13 @@
+cc_binary(
+  name = "test",
+  srcs = [ "test.cc" ],
+  deps = [
+    "@glog//:main",
+    "@gflags//:main",
+    "@gtest//:main",
+  ],
+)
+
 cc_library(
   name = "dstage_base",
   hdrs = [

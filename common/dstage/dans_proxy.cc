@@ -23,6 +23,8 @@ DEFINE_uint64(secondary_prio_port_out, 5013,
 DEFINE_bool(set_thread_priority, false,
             "Set thread priority with Linux OS, "
             "which requires running with `sudo`.");
+DEFINE_int64(run_time, 10,
+            "Length of time to run this process. Use -1 for infinite.");
 
 namespace {
 const unsigned kMaxPrio = 1;
@@ -98,5 +100,15 @@ int main(int argc, char** argv) {
                          &ReceivedConnection, kLowPriority, &comm_handler,
                          &proxy, &jid_factory, &exec, std::placeholders::_1)));
 
-  std::this_thread::sleep_for(std::chrono::seconds(10));  // slow server.... :)
+  if (FLAGS_run_time == -1) {
+    std::this_thread::sleep_for(std::chrono::hours(std::numeric_limits<int>::max()));
+  } else {
+    std::this_thread::sleep_for(std::chrono::seconds(60));
+  }
 }
+
+
+
+
+
+

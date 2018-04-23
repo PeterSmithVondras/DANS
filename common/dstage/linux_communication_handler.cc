@@ -40,6 +40,9 @@ LinuxCommunicationHandler::~LinuxCommunicationHandler() {
     server->Shutdown();
   }
 
+  // Let the server sockets free memory.
+  sleep(1);
+
   {
     std::unique_lock<std::shared_timed_mutex> lock(_destructing_lock);
     _destructing = true;
@@ -74,7 +77,7 @@ void LinuxCommunicationHandler::AddServerSocket(int option, int soc,
                                                 CallBack1 done) {
   struct epoll_event event;
   // Need to wait on socket for ability to accept.
-  event.events = EPOLLIN | EPOLLONESHOT;
+  event.events = EPOLLERR | EPOLLRDHUP | EPOLLHUP | EPOLLONESHOT | EPOLLIN;
 
   // Setting user data in the event structure to be a callback with relevant
   // data.
@@ -171,7 +174,7 @@ std::function<void()> LinuxCommunicationHandler::Connect(
 
   struct epoll_event event;
   // Need to wait on socket for ability to connect.
-  event.events = EPOLLIN | EPOLLOUT | EPOLLONESHOT;
+  event.events = EPOLLERR | EPOLLRDHUP | EPOLLHUP | EPOLLIN | EPOLLOUT | EPOLLONESHOT;
 
   // Setting user data in the event structure to be a callback with relevant
   // data.
@@ -182,7 +185,13 @@ std::function<void()> LinuxCommunicationHandler::Connect(
   ret = epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, soc, &event);
   PLOG_IF(WARNING, ret != 0)
       << "Failed to add socket to epoll set during connect: socket=" << soc;
-  return Deleter([cb_p]() { delete cb_p; });
+
+  return Deleter([cb_p, soc]() {
+    delete cb_p;
+    VLOG(2) << "Deleted LinuxCommunicationHandler callback successfully for "
+               "socket="
+            << soc;
+  });
 }
 
 void LinuxCommunicationHandler::MonitorAllSockets() {
@@ -255,16 +264,10 @@ std::function<void()> LinuxCommunicationHandler::MonitorFor(int option, int soc,
       << "Failed to re-add socket to epoll set during Monitor: socket=" << soc;
 
   return Deleter([cb_p, soc]() {
-    try {
-      delete cb_p;
-      VLOG(2) << "Deleted LinuxCommunicationHandler callback successfully for "
-                 "socket="
-              << soc;
-    } catch (...) {
-      LOG(WARNING)
-          << "Caught LinuxCommunicationHandler Deleter exception for socket="
-          << soc;
-    }
+    delete cb_p;
+    VLOG(2) << "Deleted LinuxCommunicationHandler callback successfully for "
+               "socket="
+            << soc;
   });
 }
 
