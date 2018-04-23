@@ -53,8 +53,9 @@ class Connection {
 class Counter {
  public:
   Counter(int initial_value);
-  void Increment();
-  void Decrement();
+  // Returns new value of Count
+  int Increment();
+  int Decrement();
   int Count();
 
  private:

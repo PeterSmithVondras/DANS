@@ -1,11 +1,8 @@
 #include <chrono>
-#include <functional>
 #include <csignal>
+#include <functional>
 
-#include "boost/asio.hpp"
-#include "boost/thread/executors/basic_thread_pool.hpp"
-#include "boost/thread/executors/executor_adaptor.hpp"
-#include "boost/thread/executors/serial_executor.hpp"
+#include "common/dstage/executor.h"
 #include "common/dstage/linux_communication_handler.h"
 #include "common/dstage/proxy_dstage.h"
 #include "gflags/gflags.h"
@@ -24,7 +21,7 @@ DEFINE_bool(set_thread_priority, false,
             "Set thread priority with Linux OS, "
             "which requires running with `sudo`.");
 DEFINE_int64(run_time, 10,
-            "Length of time to run this process. Use -1 for infinite.");
+             "Length of time to run this process. Use -1 for infinite.");
 
 namespace {
 const unsigned kMaxPrio = 1;
@@ -35,17 +32,13 @@ const unsigned kHighPriority = 0;
 const unsigned kLowPriority = 1;
 }  // namespace
 
-void SigPipeHandler(int signal)
-{
-  LOG(WARNING) << "Received SIGPIPE";
-}
+void SigPipeHandler(int signal) { LOG(ERROR) << "Received SIGPIPE"; }
 
-void ReceivedConnection(
-    unsigned priority, dans::LinuxCommunicationHandler* comm_handler_p,
-    dans::DStageProxy* proxy_p, dans::JobIdFactory* jid_factory_p,
-    boost::executors::executor_adaptor<boost::executors::serial_executor>*
-        exec_p,
-    int soc) {
+void ReceivedConnection(unsigned priority,
+                        dans::LinuxCommunicationHandler* comm_handler_p,
+                        dans::DStageProxy* proxy_p,
+                        dans::JobIdFactory* jid_factory_p,
+                        dans::Executor* exec_p, int soc) {
   // Create a unique JobId.
   dans::JobId jid = jid_factory_p->CreateJobId();
   // Monitor socket for failures and Purge if it is triggered.
@@ -56,7 +49,7 @@ void ReceivedConnection(
         PLOG_IF(WARNING, ready_for.err != 0)
             << "Application (comm_handler) received server socket error";
         dans::LinuxCommunicationHandler::PrintEpollEvents(ready_for.events);
-        exec_p->submit([proxy_p, jid]() { proxy_p->Purge(jid); });
+        exec_p->Submit({[proxy_p, jid]() { proxy_p->Purge(jid); }, jid});
       });
 
   // Create job and dispatch it.
@@ -85,10 +78,7 @@ int main(int argc, char** argv) {
   dans::JobIdFactory jid_factory(0);
 
   // Creating threadpool for purging as Purge is a blocking call.
-  boost::executors::executor_adaptor<boost::executors::basic_thread_pool> pool(
-      kPurgeThreadPoolThreads);
-  boost::executors::executor_adaptor<boost::executors::serial_executor> exec(
-      pool);
+  dans::Executor exec(kPurgeThreadPoolThreads);
 
   // Start monitoring primary and secondary ports.
   comm_handler.Serve(FLAGS_primary_prio_port_in,
@@ -100,15 +90,11 @@ int main(int argc, char** argv) {
                          &ReceivedConnection, kLowPriority, &comm_handler,
                          &proxy, &jid_factory, &exec, std::placeholders::_1)));
 
-  if (FLAGS_run_time == -1) {
-    std::this_thread::sleep_for(std::chrono::hours(std::numeric_limits<int>::max()));
-  } else {
-    std::this_thread::sleep_for(std::chrono::seconds(60));
+  std::mutex wait_forever;
+  wait_forever.lock();
+  if (FLAGS_run_time >= 0) {
+    wait_forever.unlock();
   }
+  wait_forever.lock();
+  std::this_thread::sleep_for(std::chrono::seconds(FLAGS_run_time));
 }
-
-
-
-
-
-

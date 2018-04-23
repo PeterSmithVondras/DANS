@@ -132,7 +132,8 @@ void LinuxCommunicationHandler::ServeSocketReady(int soc, CallBack1 done,
   int client_soc;
   // Must get all pending connections.
   while (true) {
-    client_soc = accept4(soc, reinterpret_cast<sockaddr*>(&client_addr), &len, SOCK_NONBLOCK);
+    client_soc = accept4(soc, reinterpret_cast<sockaddr*>(&client_addr), &len,
+                         SOCK_NONBLOCK);
     if (client_soc == -1) {
       if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
         // connection already closed or interrupted
@@ -174,7 +175,8 @@ std::function<void()> LinuxCommunicationHandler::Connect(
 
   struct epoll_event event;
   // Need to wait on socket for ability to connect.
-  event.events = EPOLLERR | EPOLLRDHUP | EPOLLHUP | EPOLLIN | EPOLLOUT | EPOLLONESHOT;
+  event.events =
+      EPOLLERR | EPOLLRDHUP | EPOLLHUP | EPOLLIN | EPOLLOUT | EPOLLONESHOT;
 
   // Setting user data in the event structure to be a callback with relevant
   // data.

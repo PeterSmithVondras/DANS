@@ -7,6 +7,7 @@
 #include "common/dstage/communication_handler_interface.h"
 #include "common/dstage/dispatcher.h"
 #include "common/dstage/dstage.h"
+#include "common/dstage/executor.h"
 #include "common/dstage/forwarding_dispatcher.h"
 #include "common/dstage/job.h"
 #include "common/dstage/multiqueue.h"
@@ -63,13 +64,21 @@ class ProxyScheduler : public Scheduler<std::unique_ptr<TcpPipe>> {
  private:
   void ConnectCallback(Job<std::unique_ptr<TcpPipe>>* job, int soc,
                        CommunicationHandlerInterface::ReadyFor ready_for);
+  void ConnectCallbackWrapper(
+      Job<std::unique_ptr<TcpPipe>>* job, int soc,
+      CommunicationHandlerInterface::ReadyFor ready_for);
   void MonitorCallback(Job<std::unique_ptr<TcpPipe>>* job, int soc,
                        CommunicationHandlerInterface::ReadyFor ready_for);
+  void MonitorCallbackWrapper(
+      Job<std::unique_ptr<TcpPipe>>* job, int soc,
+      CommunicationHandlerInterface::ReadyFor ready_for);
 
   CommunicationHandlerInterface* _comm_interface;
   // BaseDStage<ResponseData>* _response_dstage;
   bool _destructing;
   std::shared_timed_mutex _destructing_lock;
+
+  dans::Executor _worker_exec;
 };
 
 class DStageProxy

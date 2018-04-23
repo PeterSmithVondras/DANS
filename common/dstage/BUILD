@@ -2,9 +2,28 @@ cc_binary(
   name = "test",
   srcs = [ "test.cc" ],
   deps = [
+    ":executor",
     "@glog//:main",
     "@gflags//:main",
     "@gtest//:main",
+  ],
+)
+
+cc_library(
+  name = "executor",
+  hdrs = [
+    "executor.h",
+  ],
+  srcs = [ "executor.cc" ],
+  deps = [
+    ":dstage_base",
+    ":multiqueue",
+    ":dispatcher",
+    ":scheduler",
+    ":dstage",
+    ":forwarding_dispatcher",
+    "@glog//:main",
+    "@gflags//:main",
   ],
 )
 
@@ -109,7 +128,7 @@ cc_binary(
   deps = [
     ":proxy_dstage",
     ":linux_communication_handler",
-    "@boost//:main",
+    ":executor",
     "@glog//:main",
     "@gflags//:main",
   ],
@@ -130,6 +149,7 @@ cc_library(
     ":linux_communication_handler",
     ":forwarding_dispatcher",
     ":synchronization",
+    ":executor",
     "@glog//:main",
     "@gflags//:main",
   ],

@@ -12,6 +12,7 @@ const std::string kLowPrioPort = "5012";
 const std::string kHighPrioPort = "5013";
 const std::string ip = "192.168.137.127";
 const int kBufSize = 4096;
+const int kWorkerThreadpoolSize = 2;
 }  // namespace
 
 namespace dans {
@@ -126,7 +127,8 @@ int TcpPipe::Pipe(int read_soc) {
         }
       } else if (bytes_read == 0) {
         // Reading socket connection closed by peer.
-        // TODO: This might be a lie because we could have already sent some bytes but we want to signal socket closed.
+        // TODO: This might be a lie because we could have already sent some
+        // bytes but we want to signal socket closed.
         return 0;
       } else {
         // Bytes were read so we should send them.
@@ -142,7 +144,8 @@ int TcpPipe::Pipe(int read_soc) {
     // Send the bytes_read
     bytes_sent_this_round = 0;
     while (true) {
-      bytes_sent = send(send_soc, buf + bytes_sent_this_round, bytes_read, /*flags=*/0);
+      bytes_sent =
+          send(send_soc, buf + bytes_sent_this_round, bytes_read, /*flags=*/0);
       if (bytes_sent == -1 && errno != EAGAIN) {
         return -SEND_FAIL;
       } else {
@@ -163,7 +166,8 @@ ProxyScheduler::ProxyScheduler(std::vector<unsigned> threads_per_prio,
     : Scheduler<std::unique_ptr<TcpPipe>>(threads_per_prio,
                                           set_thread_priority),
       _comm_interface(comm_interface),
-      _destructing(false) {
+      _destructing(false),
+      _worker_exec(kWorkerThreadpoolSize) {
   VLOG(4) << __PRETTY_FUNCTION__;
 }
 
@@ -203,8 +207,8 @@ void ProxyScheduler::StartScheduling(Priority prio) {
     std::function<void()> del = job->job_data->in->deleter;
 
     // Send server connection to connect.
-    CallBack2 connected(std::bind(&dans::ProxyScheduler::ConnectCallback, this,
-                                  job, std::placeholders::_1,
+    CallBack2 connected(std::bind(&dans::ProxyScheduler::ConnectCallbackWrapper,
+                                  this, job, std::placeholders::_1,
                                   std::placeholders::_2));
 
     job->job_data->out = std::make_unique<HalfPipe>(_comm_interface->Connect(
@@ -212,8 +216,8 @@ void ProxyScheduler::StartScheduling(Priority prio) {
         std::move(connected)));
 
     // Send client connection to monitor
-    CallBack2 monitored(std::bind(&dans::ProxyScheduler::MonitorCallback, this,
-                                  job, std::placeholders::_1,
+    CallBack2 monitored(std::bind(&dans::ProxyScheduler::MonitorCallbackWrapper,
+                                  this, job, std::placeholders::_1,
                                   std::placeholders::_2));
 
     job->job_data->in->deleter =
@@ -222,6 +226,17 @@ void ProxyScheduler::StartScheduling(Priority prio) {
 
     del();
   }
+}
+
+// Called when the server is connected
+void ProxyScheduler::ConnectCallbackWrapper(Job<std::unique_ptr<TcpPipe>>* job,
+                                            int soc, ReadyFor ready_for) {
+  VLOG(2) << __PRETTY_FUNCTION__ << " " << job->Describe() << " "
+          << job->job_data->Describe() << " for server";
+  // Send to _worker_exec for execution.
+  _worker_exec.Submit({std::bind(&dans::ProxyScheduler::ConnectCallback, this,
+                                 job, soc, ready_for),
+                       job->job_id});
 }
 
 // Called when the server is connected
@@ -237,9 +252,9 @@ void ProxyScheduler::ConnectCallback(Job<std::unique_ptr<TcpPipe>>* job,
     PLOG(WARNING) << "Failed to create TCP connection for server "
                   << job->Describe() << " " << job->job_data->Describe();
     job->job_data->ShutdownOther(soc);
-    job->job_data->counter.Decrement();
-    VLOG(5) << "Decrementing counter to " << job->job_data->counter.Count();
-    if (job->job_data->counter.Count() == 0) {
+    int count = job->job_data->counter.Decrement();
+    VLOG(5) << "Decrementing counter to " << count;
+    if (count == 0) {
       delete job;
     }
     return;
@@ -247,9 +262,9 @@ void ProxyScheduler::ConnectCallback(Job<std::unique_ptr<TcpPipe>>* job,
     VLOG(2) << "Failed to create TCP connection for server " << job->Describe()
             << " " << job->job_data->Describe();
     job->job_data->ShutdownOther(soc);
-    job->job_data->counter.Decrement();
-    VLOG(5) << "Decrementing counter to " << job->job_data->counter.Count();
-    if (job->job_data->counter.Count() == 0) {
+    int count = job->job_data->counter.Decrement();
+    VLOG(5) << "Decrementing counter to " << count;
+    if (count == 0) {
       delete job;
     }
     return;
@@ -259,8 +274,8 @@ void ProxyScheduler::ConnectCallback(Job<std::unique_ptr<TcpPipe>>* job,
           << " " << job->job_data->Describe();
   // Save outdated resources deleter of client callback.
   std::function<void()> del = job->job_data->in->deleter;
-  CallBack2 monitored(std::bind(&dans::ProxyScheduler::MonitorCallback, this,
-                                job, std::placeholders::_1,
+  CallBack2 monitored(std::bind(&dans::ProxyScheduler::MonitorCallbackWrapper,
+                                this, job, std::placeholders::_1,
                                 std::placeholders::_2));
   // Send client connection to monitor
   job->job_data->in->deleter = _comm_interface->Monitor(
@@ -272,17 +287,28 @@ void ProxyScheduler::ConnectCallback(Job<std::unique_ptr<TcpPipe>>* job,
   del();
 }
 
+void ProxyScheduler::MonitorCallbackWrapper(Job<std::unique_ptr<TcpPipe>>* job,
+                                            int soc, ReadyFor ready_for) {
+  VLOG(2) << __PRETTY_FUNCTION__ << " " << job->Describe() << " "
+          << job->job_data->Describe() << " for " << job->job_data->Which(soc);
+  // Send to _worker_exec for execution.
+  _worker_exec.Submit({std::bind(&dans::ProxyScheduler::MonitorCallback, this,
+                                 job, soc, ready_for),
+                       job->job_id});
+}
+
 void ProxyScheduler::MonitorCallback(Job<std::unique_ptr<TcpPipe>>* job,
                                      int soc, ReadyFor ready_for) {
   VLOG(2) << __PRETTY_FUNCTION__ << " " << job->Describe() << " "
           << job->job_data->Describe() << " for " << job->job_data->Which(soc);
 
   if (ready_for.err != 0) {
-    VLOG(2) << job->Describe() << " " << job->job_data->Describe() << " complete";
+    VLOG(2) << job->Describe() << " " << job->job_data->Describe()
+            << " complete";
     job->job_data->ShutdownOther(soc);
-    job->job_data->counter.Decrement();
-    VLOG(5) << "Decrementing counter to " << job->job_data->counter.Count();
-    if (job->job_data->counter.Count() == 0) {
+    int count = job->job_data->counter.Decrement();
+    VLOG(5) << "Decrementing counter to " << count;
+    if (count == 0) {
       delete job;
     }
     return;
@@ -291,9 +317,9 @@ void ProxyScheduler::MonitorCallback(Job<std::unique_ptr<TcpPipe>>* job,
             << job->job_data->Which(soc)
             << " was not ready for input when triggered.";
     job->job_data->ShutdownOther(soc);
-    job->job_data->counter.Decrement();
-    VLOG(5) << "Decrementing counter to " << job->job_data->counter.Count();
-    if (job->job_data->counter.Count() == 0) {
+    int count = job->job_data->counter.Decrement();
+    VLOG(5) << "Decrementing counter to " << count;
+    if (count == 0) {
       delete job;
     }
     return;
@@ -310,18 +336,18 @@ void ProxyScheduler::MonitorCallback(Job<std::unique_ptr<TcpPipe>>* job,
                     << job->job_data->Which(soc) << " while "
                     << job->job_data->Describe();
       job->job_data->ShutdownOther(soc);
-      job->job_data->counter.Decrement();
-      VLOG(5) << "Decrementing counter to " << job->job_data->counter.Count();
-      if (job->job_data->counter.Count() == 0) {
+      int count = job->job_data->counter.Decrement();
+      VLOG(5) << "Decrementing counter to " << count;
+      if (count == 0) {
         delete job;
       }
     } else {
       PLOG(WARNING) << job->Describe() << " Error sending to "
-                    << job->job_data->Which(job->job_data->OtherSocket(soc)) << " while "
-                    << job->job_data->Describe();
-      job->job_data->counter.Decrement();
-      VLOG(5) << "Decrementing counter to " << job->job_data->counter.Count();
-      if (job->job_data->counter.Count() == 0) {
+                    << job->job_data->Which(job->job_data->OtherSocket(soc))
+                    << " while " << job->job_data->Describe();
+      int count = job->job_data->counter.Decrement();
+      VLOG(5) << "Decrementing counter to " << count;
+      if (count == 0) {
         delete job;
       }
     }
@@ -329,9 +355,9 @@ void ProxyScheduler::MonitorCallback(Job<std::unique_ptr<TcpPipe>>* job,
     VLOG(2) << job->Describe() << " " << job->job_data->Which(soc)
             << " closed connection on " << job->job_data->Describe();
     job->job_data->ShutdownOther(soc);
-    job->job_data->counter.Decrement();
-    VLOG(5) << "Decrementing counter to " << job->job_data->counter.Count();
-    if (job->job_data->counter.Count() == 0) {
+    int count = job->job_data->counter.Decrement();
+    VLOG(5) << "Decrementing counter to " << count;
+    if (count == 0) {
       delete job;
     }
   } else {
@@ -339,15 +365,12 @@ void ProxyScheduler::MonitorCallback(Job<std::unique_ptr<TcpPipe>>* job,
     VLOG(3) << job->Describe() << " piped " << bytes_piped << " bytes from "
             << job->job_data->Which(soc) << " on " << job->job_data->Describe();
     // Sent some bytes
-    CallBack2 monitored(std::bind(&dans::ProxyScheduler::MonitorCallback, this,
-                                  job, std::placeholders::_1,
+    CallBack2 monitored(std::bind(&dans::ProxyScheduler::MonitorCallbackWrapper,
+                                  this, job, std::placeholders::_1,
                                   std::placeholders::_2));
-    // Send client connection to monitor
-    job->job_data->in->deleter = _comm_interface->Monitor(
-        job->job_data->in->connection->Socket(), {true, false}, monitored);
-    // Send server connection to monitor
-    job->job_data->out->deleter = _comm_interface->Monitor(
-        job->job_data->out->connection->Socket(), {true, false}, monitored);
+    // Register event monitoring again.
+    job->job_data->in->deleter =
+        _comm_interface->Monitor(soc, {true, false}, std::move(monitored));
   }
 }
 

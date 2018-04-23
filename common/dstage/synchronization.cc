@@ -24,7 +24,8 @@ bool PurgeState::SetPurged() {
 }
 
 /*****************************  Connection  ****************************/
-Connection::Connection(int socket) : _socket(socket), _closed(false), _shutdown(false) {}
+Connection::Connection(int socket)
+    : _socket(socket), _closed(false), _shutdown(false) {}
 Connection::~Connection() { Close(); }
 
 int Connection::Socket() { return _socket; }
@@ -60,14 +61,16 @@ bool Connection::IsClosed() { return _closed; }
 /*****************************  Counter  ******************************/
 Counter::Counter(int initial_value) : _count(initial_value) {}
 
-void Counter::Increment() {
+int Counter::Increment() {
   std::unique_lock<std::shared_timed_mutex> lock(_state_shared_mutex);
   _count++;
+  return _count;
 }
 
-void Counter::Decrement() {
+int Counter::Decrement() {
   std::unique_lock<std::shared_timed_mutex> lock(_state_shared_mutex);
   _count--;
+  return _count;
 }
 
 int Counter::Count() {
