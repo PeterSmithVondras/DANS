@@ -8,15 +8,10 @@
 #include "gflags/gflags.h"
 #include "glog/logging.h"
 
-DEFINE_string(server_ip, "192.168.137.127", "ip address of the file server.");
 DEFINE_uint64(primary_prio_port_in, 5010,
               "Port to listen for primary priority work.");
 DEFINE_uint64(secondary_prio_port_in, 5011,
               "Port to listen for secondary priority work.");
-DEFINE_uint64(primary_prio_port_out, 5012,
-              "Port to send primary priority work to.");
-DEFINE_uint64(secondary_prio_port_out, 5013,
-              "Port to send secondary priority work to.");
 DEFINE_bool(set_thread_priority, false,
             "Set thread priority with Linux OS, "
             "which requires running with `sudo`.");

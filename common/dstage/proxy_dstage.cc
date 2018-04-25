@@ -5,12 +5,15 @@
 #include "common/dstage/proxy_dstage.h"
 #include "glog/logging.h"
 
+DEFINE_string(server_ip, "192.168.137.127", "ip address of the file server.");
+DEFINE_string(primary_prio_port_out, "5012",
+              "Port to send primary priority work to.");
+DEFINE_string(secondary_prio_port_out, "5013",
+              "Port to send secondary priority work to.");
+
 namespace {
 using CallBack2 = dans::CommunicationHandlerInterface::CallBack2;
 using ReadyFor = dans::CommunicationHandlerInterface::ReadyFor;
-const std::string kLowPrioPort = "5013";
-const std::string kHighPrioPort = "5012";
-const std::string ip = "192.168.137.127";
 const int kBufSize = 4096;
 const int kWorkerThreadpoolSize = 2;
 }  // namespace
@@ -209,7 +212,9 @@ void ProxyScheduler::StartScheduling(Priority prio) {
                                   std::placeholders::_2));
 
     job->job_data->out = std::make_unique<HalfPipe>(_comm_interface->Connect(
-        ip, job->priority == 0 ? kHighPrioPort : kLowPrioPort,
+        FLAGS_server_ip,
+        job->priority == 0 ? FLAGS_secondary_prio_port_out
+                           : FLAGS_primary_prio_port_out,
         std::move(connected)));
 
     // Send client connection to monitor
