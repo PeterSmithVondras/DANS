@@ -26,13 +26,16 @@ bool PurgeState::SetPurged() {
 /*****************************  Connection  ****************************/
 Connection::Connection(int socket)
     : _socket(socket), _closed(false), _shutdown(false) {}
-Connection::~Connection() { Close(); }
+Connection::~Connection() {
+  Shutdown();
+  Close();
+}
 
 int Connection::Socket() { return _socket; }
 
 void Connection::Shutdown() {
   std::lock_guard<std::mutex> lock(_close_lock);
-  if (!_closed && !_shutdown) {
+  if (!_shutdown) {
     VLOG(3) << "Shutdown socket=" << _socket;
     if (shutdown(_socket, SHUT_RDWR) != 0) {
       PLOG(WARNING) << "Failed to shutdown socket=" << _socket;

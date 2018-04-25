@@ -38,6 +38,8 @@ class MultiQueue : public BaseMultiQueue<T> {
   // Returns a nullptr to the next in line for the Priority `prio` queue.
   void ReleaseQueues();
 
+  unsigned MaxPriority();
+
  protected:
   const unsigned _max_prio;
   bool _released;

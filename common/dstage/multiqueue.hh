@@ -206,6 +206,11 @@ void MultiQueue<T>::ReleaseQueues() {
   }
 }
 
+template <typename T>
+unsigned MultiQueue<T>::MaxPriority() {
+  return _max_prio;
+}
+
 }  // namespace dans
 
 #endif  // DANS02_MULTIQUEUE_CC_IMPL__

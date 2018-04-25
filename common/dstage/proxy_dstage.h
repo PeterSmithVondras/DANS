@@ -13,6 +13,7 @@
 #include "common/dstage/multiqueue.h"
 #include "common/dstage/scheduler.h"
 #include "common/dstage/synchronization.h"
+#include "common/dstage/throttler.h"
 
 namespace dans {
 

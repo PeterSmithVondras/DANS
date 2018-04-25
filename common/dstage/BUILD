@@ -10,6 +10,19 @@ cc_binary(
 )
 
 cc_library(
+  name = "throttler",
+  hdrs = [
+    "throttler.h",
+  ],
+  srcs = [ "throttler.cc" ],
+  deps = [
+    ":dstage_base",
+    ":multiqueue",
+    "@glog//:main",
+  ],
+)
+
+cc_library(
   name = "executor",
   hdrs = [
     "executor.h",
@@ -149,6 +162,7 @@ cc_library(
     ":linux_communication_handler",
     ":forwarding_dispatcher",
     ":synchronization",
+    ":throttler",
     ":executor",
     "@glog//:main",
     "@gflags//:main",
