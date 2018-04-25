@@ -8,8 +8,8 @@
 namespace {
 using CallBack2 = dans::CommunicationHandlerInterface::CallBack2;
 using ReadyFor = dans::CommunicationHandlerInterface::ReadyFor;
-const std::string kLowPrioPort = "5012";
-const std::string kHighPrioPort = "5013";
+const std::string kLowPrioPort = "5013";
+const std::string kHighPrioPort = "5012";
 const std::string ip = "192.168.137.127";
 const int kBufSize = 4096;
 const int kWorkerThreadpoolSize = 2;
