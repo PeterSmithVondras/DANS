@@ -220,7 +220,7 @@ void ProxyScheduler::StartScheduling(Priority prio) {
 
     job->job_data->out = std::make_unique<HalfPipe>(_comm_interface->Connect(
         _server_ip,
-        job->priority == 0 ? _secondary_prio_port_out : _primary_prio_port_out,
+        job->priority == 0 ? _primary_prio_port_out : _secondary_prio_port_out,
         std::move(connected)));
 
     // Send client connection to monitor
