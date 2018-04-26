@@ -63,7 +63,7 @@ void LinuxCommunicationHandler::PrintEpollEvents(uint32_t events) {
           << " EPOLLET=" << (EPOLLET & events)
           << " EPOLLONESHOT=" << (EPOLLONESHOT & events)
           << " EPOLLWAKEUP=" << (EPOLLWAKEUP & events);
-          // << " EPOLLEXCLUSIVE=" << (EPOLLEXCLUSIVE & events);
+  // << " EPOLLEXCLUSIVE=" << (EPOLLEXCLUSIVE & events);
 }
 
 int LinuxCommunicationHandler::CreateSocket() {

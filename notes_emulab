@@ -1,0 +1,17 @@
+
+What to do on emulab:
+use image: DANS_UBUNTU16
+You must have some storage on the machine that you set up. In the attached ns file, it is mounted to /mnt/extra
+When you ssh into the machine you would like to run on in emulab do the following:
+Change to root to access your block storage: $ sudo su root
+Change where bazel does its caching $ bazel --output_user_root=/mnt/extra
+Move to local storage: $ cd /mnt/extra
+Clone the repo or cp it from your user space: $ git clone https://github.cs.tufts.edu/peter/DANS.git
+compile with bazel and run as laid out in the readme.
+
+
+
+sudo apt-get install libncurses5-dev libncursesw5-dev
+./server -s 10.1.1.3 -i 1
+
+sudo apt-get install python-pip and then numpy

@@ -10,12 +10,12 @@ DEFINE_string(primary_prio_port_out, "5012",
               "Port to send primary priority work to.");
 DEFINE_string(secondary_prio_port_out, "5013",
               "Port to send secondary priority work to.");
+DEFINE_uint64(worker_threads, 2, "Number of threads to process pipes.");
 
 namespace {
 using CallBack2 = dans::CommunicationHandlerInterface::CallBack2;
 using ReadyFor = dans::CommunicationHandlerInterface::ReadyFor;
 const int kBufSize = 4096;
-const int kWorkerThreadpoolSize = 2;
 }  // namespace
 
 namespace dans {
@@ -163,6 +163,10 @@ int TcpPipe::Pipe(int read_soc) {
   }
 }
 
+const std::string _primary_prio_port_out;
+const std::string _secondary_prio_port_out;
+const std::string _server_ip;
+
 ProxyScheduler::ProxyScheduler(std::vector<unsigned> threads_per_prio,
                                bool set_thread_priority,
                                CommunicationHandlerInterface* comm_interface)
@@ -170,7 +174,10 @@ ProxyScheduler::ProxyScheduler(std::vector<unsigned> threads_per_prio,
                                           set_thread_priority),
       _comm_interface(comm_interface),
       _destructing(false),
-      _worker_exec(kWorkerThreadpoolSize) {
+      _worker_exec(FLAGS_worker_threads),
+      _primary_prio_port_out(FLAGS_primary_prio_port_out),
+      _secondary_prio_port_out(FLAGS_secondary_prio_port_out),
+      _server_ip(FLAGS_server_ip) {
   VLOG(4) << __PRETTY_FUNCTION__;
 }
 
@@ -212,9 +219,8 @@ void ProxyScheduler::StartScheduling(Priority prio) {
                                   std::placeholders::_2));
 
     job->job_data->out = std::make_unique<HalfPipe>(_comm_interface->Connect(
-        FLAGS_server_ip,
-        job->priority == 0 ? FLAGS_secondary_prio_port_out
-                           : FLAGS_primary_prio_port_out,
+        _server_ip,
+        job->priority == 0 ? _secondary_prio_port_out : _primary_prio_port_out,
         std::move(connected)));
 
     // Send client connection to monitor

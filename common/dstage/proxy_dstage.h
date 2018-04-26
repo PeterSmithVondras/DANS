@@ -78,6 +78,9 @@ class ProxyScheduler : public Scheduler<std::unique_ptr<TcpPipe>> {
   std::shared_timed_mutex _destructing_lock;
 
   dans::Executor _worker_exec;
+  const std::string _primary_prio_port_out;
+  const std::string _secondary_prio_port_out;
+  const std::string _server_ip;
 };
 
 class DStageProxy

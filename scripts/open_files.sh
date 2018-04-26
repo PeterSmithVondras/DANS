@@ -25,7 +25,8 @@ do
 		CLIENT_FILES="$(lsof -p ${CLIENT_PID} | grep -c "")"
 	fi
 
-	echo "OPEN FILES ------> Server:${SERVER_FILES} Proxy:${PROXY_FILES} Client:${CLIENT_FILES}"
+	echo "OPEN FILES ------>"\
+		 "Server:${SERVER_FILES} Proxy:${PROXY_FILES} Client:${CLIENT_FILES}"
 	sleep 1
 
 done
