@@ -85,8 +85,8 @@ void LinuxCommunicationHandler::AddServerSocket(int option, int soc,
       std::bind(&LinuxCommunicationHandler::ServeSocketReady, this, soc, done,
                 std::placeholders::_1));
   int ret = epoll_ctl(_epoll_fd, option, soc, &event);
-  PLOG_IF(WARNING, ret != 0)
-      << "Failed to add socket to epoll set: socket=" << soc;
+  PLOG_IF(ERROR, ret != 0)
+      << "SERVING ERROR: Failed to add socket to epoll set socket=" << soc;
 }
 
 void LinuxCommunicationHandler::Serve(unsigned short port, CallBack1 done) {

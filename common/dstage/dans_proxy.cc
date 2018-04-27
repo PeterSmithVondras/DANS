@@ -27,7 +27,7 @@ const unsigned kHighPriority = 0;
 const unsigned kLowPriority = 1;
 }  // namespace
 
-void SigPipeHandler(int signal) { LOG(ERROR) << "Received SIGPIPE"; }
+void SigPipeHandler(int signal) { LOG(INFO) << "Received SIGPIPE - Ignoring."; }
 
 void ReceivedConnection(unsigned priority,
                         dans::LinuxCommunicationHandler* comm_handler_p,

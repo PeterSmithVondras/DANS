@@ -36,12 +36,49 @@ MultiQueue<T>::~MultiQueue() {
 }
 
 template <typename T>
+std::string MultiQueue<T>::DescribeQ(Priority prio) {
+  std::ostringstream description;
+  description << "Prio=" << std::to_string(prio) << "(";
+  for (auto const& id: _priority_qs[prio]) {
+    description << std::to_string(id) << "<-";
+  }
+  description << ")";
+  return description.str();
+}
+
+template <typename T>
+std::string MultiQueue<T>::DescribeMapper() {
+  std::ostringstream description;
+  description << "Mapper={";
+  for (auto const& entry: _value_mapper) {
+    description << std::to_string(entry.first) << "(";
+    for (auto const& item: entry.second) {
+      description << std::to_string(item.first->priority) << ",";
+    }
+    description << ") ";
+  }
+  description << "}";
+  return description.str();
+}
+
+template <typename T>
+std::string MultiQueue<T>::Describe() {
+  std::ostringstream description;
+  for (Priority i = 0; i < _priority_qs.size(); i++) {
+    description << DescribeQ(i) << " ";
+  }
+  description << "while " << DescribeMapper();
+
+  return description.str();
+}
+
+template <typename T>
 void MultiQueue<T>::Enqueue(UniqJobPtr<T> job_p) {
   VLOG(4) << __PRETTY_FUNCTION__
           << ((job_p == nullptr) ? " job_p=nullptr," : " job_id=")
           << ((job_p == nullptr) ? ' ' : job_p->job_id)
           << ((job_p == nullptr) ? ' ' : ',');
-  CHECK(job_p != nullptr);
+  CHECK(job_p != nullptr) << Describe();
 
   // Ensuring that purging is not in effect.
   std::shared_lock<std::shared_timed_mutex> no_pruging(_purge_shared_mutex);
@@ -52,7 +89,7 @@ void MultiQueue<T>::Enqueue(UniqJobPtr<T> job_p) {
   std::list<std::pair<UniqJobPtr<T>, typename std::list<JobId>::iterator>>
       duplicate_list;
   {
-    CHECK_LE(prio, _max_prio);
+    CHECK_LE(prio, _max_prio) << Describe();
 
     // Locking this priority queue
     std::lock_guard<std::mutex> lock_pq(_pq_mutexes[prio]);
@@ -86,7 +123,7 @@ void MultiQueue<T>::Enqueue(UniqJobPtr<T> job_p) {
 template <typename T>
 UniqJobPtr<T> MultiQueue<T>::Dequeue(Priority prio) {
   VLOG(4) << __PRETTY_FUNCTION__ << " prio=" << prio;
-  CHECK_LE(prio, _max_prio);
+  CHECK_LE(prio, _max_prio) << Describe();
 
   // This lock is not being acquired right now as we do not want to block
   // purging for no reason.
@@ -117,10 +154,14 @@ UniqJobPtr<T> MultiQueue<T>::Dequeue(Priority prio) {
 
   // Getting the value from the queue.
   JobId job_id;
+  // Locking value map as our iterator could be invalidated if there is an
+  // insert.
+  std::lock_guard<std::mutex> lock_vm(_value_map_mutex);
 
   {
     // Locking this priority queue
     std::lock_guard<std::mutex> lock_pq(_pq_mutexes[prio]);
+    VLOG(3) << "DEQUEUE_prio=" << prio << ": " << Describe();
     job_id = *_priority_qs[prio].begin();
     _priority_qs[prio].pop_front();
 
@@ -129,11 +170,8 @@ UniqJobPtr<T> MultiQueue<T>::Dequeue(Priority prio) {
     if (!_priority_qs[prio].empty()) _not_empty_mutexes[prio].unlock();
   }
 
-  // Locking value map as our iterator could be invalidated if there is an
-  // insert.
-  std::lock_guard<std::mutex> lock_pq(_value_map_mutex);
   auto search = _value_mapper.find(job_id);
-  CHECK(search != _value_mapper.end());
+  CHECK(search != _value_mapper.end()) << Describe();
   auto duplicate_list_iter = search->second.begin();
 
   UniqJobPtr<T> job_p;
@@ -149,7 +187,7 @@ UniqJobPtr<T> MultiQueue<T>::Dequeue(Priority prio) {
     duplicate_list_iter++;
   }
   // We should always find what we removed from the queue.
-  CHECK(found);
+  CHECK(found) << Describe();
 
   // Removing entry from _value_mapper if it is now empty.
   if (search->second.empty()) _value_mapper.erase(search);
@@ -185,7 +223,7 @@ unsigned MultiQueue<T>::Purge(JobId job_id) {
 
 template <typename T>
 unsigned MultiQueue<T>::Size(Priority prio) {
-  CHECK_LE(prio, _max_prio);
+  CHECK_LE(prio, _max_prio) << Describe();
   return _priority_qs[prio].size();
 }
 

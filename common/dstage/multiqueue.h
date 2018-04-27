@@ -40,7 +40,12 @@ class MultiQueue : public BaseMultiQueue<T> {
 
   unsigned MaxPriority();
 
+  std::string DescribeQ(Priority prio);
+  std::string DescribeMapper();
+  std::string Describe();
+
  protected:
+
   const unsigned _max_prio;
   bool _released;
 
