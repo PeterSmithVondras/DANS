@@ -262,8 +262,10 @@ std::function<void()> LinuxCommunicationHandler::MonitorFor(int option, int soc,
                 std::placeholders::_1));
   event.data.ptr = cb_p;
   int ret = epoll_ctl(_epoll_fd, option, soc, &event);
-  PLOG_IF(ERROR, ret != 0)
-      << "Failed to re-add socket to epoll set during Monitor: socket=" << soc;
+  PLOG_IF(ERROR, ret != 0) << "Failed to "
+                           << (option == EPOLL_CTL_ADD ? "add" : "reintroduce")
+                           << " socket to epoll set during MonitorFor: socket="
+                           << soc;
 
   return Deleter([cb_p, soc]() {
     delete cb_p;
