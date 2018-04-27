@@ -2,7 +2,7 @@ cc_binary(
   name = "test",
   srcs = [ "test.cc" ],
   deps = [
-    ":executor",
+    "//common/util:callback",
     "@glog//:main",
     "@gflags//:main",
     "@gtest//:main",
