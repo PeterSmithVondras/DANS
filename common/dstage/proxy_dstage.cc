@@ -206,7 +206,10 @@ void ProxyScheduler::StartScheduling(Priority prio) {
     // closure. Note that uniq_ptr's are are hard/impossible to capture using
     // std::bind as they do not have a copy constructor.
     SharedJobPtr<std::unique_ptr<TcpPipe>> job = _multi_q_p->Dequeue(prio);
-    if (job == nullptr) continue;
+    if (job == nullptr) {
+      VLOG(4) << "Scheduler prio=" << prio << " dequeued nullptr as job.";
+      continue;
+    }
     VLOG(1) << "Proxy scheduling " << job->Describe() << " "
             << job->job_data->Describe();
 

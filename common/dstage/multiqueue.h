@@ -45,7 +45,6 @@ class MultiQueue : public BaseMultiQueue<T> {
   std::string Describe();
 
  protected:
-
   const unsigned _max_prio;
   bool _released;
 

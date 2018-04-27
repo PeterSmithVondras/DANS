@@ -38,8 +38,8 @@ MultiQueue<T>::~MultiQueue() {
 template <typename T>
 std::string MultiQueue<T>::DescribeQ(Priority prio) {
   std::ostringstream description;
-  description << "Prio=" << std::to_string(prio) << "(";
-  for (auto const& id: _priority_qs[prio]) {
+  description << "prio=" << std::to_string(prio) << "(";
+  for (auto const& id : _priority_qs[prio]) {
     description << std::to_string(id) << "<-";
   }
   description << ")";
@@ -49,10 +49,10 @@ std::string MultiQueue<T>::DescribeQ(Priority prio) {
 template <typename T>
 std::string MultiQueue<T>::DescribeMapper() {
   std::ostringstream description;
-  description << "Mapper={";
-  for (auto const& entry: _value_mapper) {
+  description << "mapper={";
+  for (auto const& entry : _value_mapper) {
     description << std::to_string(entry.first) << "(";
-    for (auto const& item: entry.second) {
+    for (auto const& item : entry.second) {
       description << std::to_string(item.first->priority) << ",";
     }
     description << ") ";
@@ -88,6 +88,7 @@ void MultiQueue<T>::Enqueue(UniqJobPtr<T> job_p) {
   // Adding value to the queue and saving the iterator.
   std::list<std::pair<UniqJobPtr<T>, typename std::list<JobId>::iterator>>
       duplicate_list;
+  std::unique_lock<std::mutex> lock_vm(_value_map_mutex, std::defer_lock);
   {
     CHECK_LE(prio, _max_prio) << Describe();
 
@@ -98,11 +99,13 @@ void MultiQueue<T>::Enqueue(UniqJobPtr<T> job_p) {
     const auto iter =
         _priority_qs[prio].insert(_priority_qs[prio].end(), job_id);
     duplicate_list.push_back({std::move(job_p), iter});
+    // If one of the queues was empty but is not now, unlock the state mutex.
+    if (_priority_qs[prio].size() == 1) _not_empty_mutexes[prio].unlock();
+    // Locking the value map as insert can cause iterator invalidation.
+    lock_vm.lock();
   }
 
   {
-    // Locking this value map as insert can cause iterator invalidation.
-    std::lock_guard<std::mutex> lock_pq(_value_map_mutex);
     auto search = _value_mapper.find(job_id);
     if (search == _value_mapper.end()) {
       _value_mapper.insert(std::make_pair(job_id, std::move(duplicate_list)));
@@ -114,10 +117,6 @@ void MultiQueue<T>::Enqueue(UniqJobPtr<T> job_p) {
                             std::make_move_iterator(duplicate_list.end()));
     }
   }
-
-  // If one of the queues was empty but is not now, unlock the state mutex.
-  std::lock_guard<std::mutex> lock_pq(_pq_mutexes[prio]);
-  if (_priority_qs[prio].size() == 1) _not_empty_mutexes[prio].unlock();
 }
 
 template <typename T>
@@ -156,7 +155,7 @@ UniqJobPtr<T> MultiQueue<T>::Dequeue(Priority prio) {
   JobId job_id;
   // Locking value map as our iterator could be invalidated if there is an
   // insert.
-  std::lock_guard<std::mutex> lock_vm(_value_map_mutex);
+  std::unique_lock<std::mutex> lock_vm(_value_map_mutex, std::defer_lock);
 
   {
     // Locking this priority queue
@@ -168,6 +167,7 @@ UniqJobPtr<T> MultiQueue<T>::Dequeue(Priority prio) {
     // If the Q is not empty we know that it is safe to unblock at least one
     // more dequeue.
     if (!_priority_qs[prio].empty()) _not_empty_mutexes[prio].unlock();
+    lock_vm.lock();
   }
 
   auto search = _value_mapper.find(job_id);
