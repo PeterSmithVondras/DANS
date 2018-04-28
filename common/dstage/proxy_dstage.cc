@@ -214,7 +214,7 @@ void ProxyScheduler::StartScheduling(Priority prio) {
             << job->job_data->Describe();
 
     // Clear resources of input.
-    std::function<void()> del = job->job_data->in->deleter;
+    DynamicallyAllocatedCallback* del = job->job_data->in->deleter;
 
     // Send server connection to connect.
     CallBack2 connected(std::bind(&dans::ProxyScheduler::ConnectCallbackWrapper,
@@ -235,7 +235,7 @@ void ProxyScheduler::StartScheduling(Priority prio) {
         _comm_interface->Monitor(job->job_data->in->connection->Socket(),
                                  {false, false}, std::move(monitored));
 
-    del();
+    if (del != nullptr) delete del;
   }
 }
 
@@ -274,7 +274,7 @@ void ProxyScheduler::ConnectCallback(SharedJobPtr<std::unique_ptr<TcpPipe>> job,
   VLOG(2) << "Proxy created TCP pipe for client-server " << job->Describe()
           << " " << job->job_data->Describe();
   // Save outdated resources deleter of client callback.
-  std::function<void()> del = job->job_data->in->deleter;
+  DynamicallyAllocatedCallback* del = job->job_data->in->deleter;
   CallBack2 monitored(std::bind(&dans::ProxyScheduler::MonitorCallbackWrapper,
                                 this, job, std::placeholders::_1,
                                 std::placeholders::_2));
@@ -285,7 +285,7 @@ void ProxyScheduler::ConnectCallback(SharedJobPtr<std::unique_ptr<TcpPipe>> job,
   job->job_data->out->deleter = _comm_interface->Monitor(
       job->job_data->out->connection->Socket(), {true, false}, monitored);
   // Clear outdated resources of client callback.
-  del();
+  if (del != nullptr) delete del;
 }
 
 void ProxyScheduler::MonitorCallbackWrapper(

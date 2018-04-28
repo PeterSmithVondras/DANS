@@ -21,19 +21,29 @@ class LinuxCommunicationHandler : public CommunicationHandlerInterface {
 
   int CreateSocket() override;
   void Serve(unsigned short port, CallBack1 done) override;
-  Deleter Connect(const std::string& ip, const std::string& port,
-                  CallBack2 done) override;
-  Deleter Monitor(int soc, ReadyFor ready_for, CallBack2 done) override;
-  Deleter MonitorNew(int soc, ReadyFor ready_for, CallBack2 done) override;
+  DynamicallyAllocatedCallback* Connect(const std::string& ip,
+                                        const std::string& port,
+                                        CallBack2 done) override;
+  DynamicallyAllocatedCallback* Monitor(int soc, ReadyFor ready_for,
+                                        CallBack2 done) override;
+  DynamicallyAllocatedCallback* MonitorNew(int soc, ReadyFor ready_for,
+                                           CallBack2 done) override;
+
+  UniqCbp Connect2(const std::string& ip, const std::string& port,
+                   CallBack2 done, CallbackDeleteOption delete_option) override;
+  UniqCbp Monitor2(int soc, ReadyFor ready_for, CallBack2 done,
+                   CallbackDeleteOption delete_option) override;
+  UniqCbp MonitorNew2(int soc, ReadyFor ready_for, CallBack2 done,
+                      CallbackDeleteOption delete_option) override;
+
   void Close(int soc) override;
 
   static void PrintEpollEvents(uint32_t events);
 
  private:
-  // using DynamicallyAllocatedCallback = std::function<void(uint32_t)>;
-  using DynamicallyAllocatedCallback = util::callback::Callback<uint32_t>;
   void MonitorAllSockets();
-  Deleter MonitorFor(int option, int soc, uint32_t events, CallBack2 done);
+  UniqCbp MonitorFor(int option, int soc, uint32_t events, CallBack2 done,
+                     CallbackDeleteOption delete_option);
   void MonitorSocketReady(int soc, CallBack2 done, uint32_t events);
   void ServeSocketReady(int soc, CallBack1 done, uint32_t events);
   void AddServerSocket(int option, int soc, CallBack1 done);

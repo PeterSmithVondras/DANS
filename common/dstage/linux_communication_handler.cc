@@ -15,7 +15,6 @@
 #include "glog/logging.h"
 
 namespace {
-using util::callback::CallbackDeleteOption;
 // Currently have no flags to pass to epoll_create.
 int kFlags = 0;
 int kMaxEvents = 64;
@@ -152,8 +151,18 @@ void LinuxCommunicationHandler::ServeSocketReady(int soc, CallBack1 done,
   }
 }
 
-std::function<void()> LinuxCommunicationHandler::Connect(
+DynamicallyAllocatedCallback* LinuxCommunicationHandler::Connect(
     const std::string& ip, const std::string& port, CallBack2 done) {
+  VLOG(4) << __PRETTY_FUNCTION__;
+
+  return Connect2(ip, port, std::move(done),
+                  CallbackDeleteOption::DELETE_AFTER_CALLING)
+      .release();
+}
+
+UniqCbp LinuxCommunicationHandler::Connect2(
+    const std::string& ip, const std::string& port, CallBack2 done,
+    CallbackDeleteOption delete_option) {
   VLOG(4) << __PRETTY_FUNCTION__;
   int soc = CreateSocket();
   VLOG(1) << "Created socket for connect: socket=" << soc;
@@ -169,10 +178,10 @@ std::function<void()> LinuxCommunicationHandler::Connect(
   if ((ret != 0) && (errno != EINPROGRESS)) {
     PLOG(WARNING) << "Failed to connect socket with initial call to connect().";
     done(soc, ReadyFor{/*in=*/false, /*out=*/false});
-    return []() {};
+    return nullptr;
   } else if (ret == 0) {
     done(soc, {/*in=*/false, /*out=*/false});
-    return []() {};
+    return nullptr;
   }
 
   struct epoll_event event;
@@ -182,21 +191,16 @@ std::function<void()> LinuxCommunicationHandler::Connect(
 
   // Setting user data in the event structure to be a callback with relevant
   // data.
-  auto cb_p = new DynamicallyAllocatedCallback(
+  auto cb_p = std::make_unique<DynamicallyAllocatedCallback>(
       std::bind(&LinuxCommunicationHandler::MonitorSocketReady, this, soc, done,
                 std::placeholders::_1),
-      CallbackDeleteOption::DELETE_AFTER_CALLING);
-  event.data.ptr = cb_p;
+      delete_option);
+  event.data.ptr = cb_p.get();
   ret = epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, soc, &event);
   PLOG_IF(WARNING, ret != 0)
       << "Failed to add socket to epoll set during connect: socket=" << soc;
 
-  return Deleter([cb_p, soc]() {
-    delete cb_p;
-    VLOG(2) << "Deleted LinuxCommunicationHandler callback successfully for "
-               "socket="
-            << soc;
-  });
+  return cb_p;
 }
 
 void LinuxCommunicationHandler::MonitorAllSockets() {
@@ -213,7 +217,6 @@ void LinuxCommunicationHandler::MonitorAllSockets() {
       auto cb_p =
           static_cast<DynamicallyAllocatedCallback*>(_events[i].data.ptr);
       (*cb_p)(_events[i].events);
-      // delete cb_p;
     }
 
     // EINTR is sometimes returned epoll_wait under normal conditions.
@@ -231,52 +234,69 @@ void LinuxCommunicationHandler::MonitorAllSockets() {
   }
 }
 
-std::function<void()> LinuxCommunicationHandler::Monitor(int soc,
-                                                         ReadyFor ready_for,
-                                                         CallBack2 done) {
+DynamicallyAllocatedCallback* LinuxCommunicationHandler::Monitor(
+    int soc, ReadyFor ready_for, CallBack2 done) {
   VLOG(4) << __PRETTY_FUNCTION__ << " soc=" << soc;
   uint32_t events = 0;
   if (ready_for.in) events |= EPOLLIN;
   if (ready_for.out) events |= EPOLLOUT;
-  return MonitorFor(EPOLL_CTL_MOD, soc, events, done);
+  return MonitorFor(EPOLL_CTL_MOD, soc, events, done,
+                    CallbackDeleteOption::DELETE_AFTER_CALLING)
+      .release();
 }
 
-std::function<void()> LinuxCommunicationHandler::MonitorNew(int soc,
-                                                            ReadyFor ready_for,
-                                                            CallBack2 done) {
+UniqCbp LinuxCommunicationHandler::Monitor2(
+    int soc, ReadyFor ready_for, CallBack2 done,
+    CallbackDeleteOption delete_option) {
   VLOG(4) << __PRETTY_FUNCTION__ << " soc=" << soc;
   uint32_t events = 0;
   if (ready_for.in) events |= EPOLLIN;
   if (ready_for.out) events |= EPOLLOUT;
-  return MonitorFor(EPOLL_CTL_ADD, soc, events, done);
+  return MonitorFor(EPOLL_CTL_MOD, soc, events, done, delete_option);
 }
 
-std::function<void()> LinuxCommunicationHandler::MonitorFor(int option, int soc,
-                                                            uint32_t events,
-                                                            CallBack2 done) {
+DynamicallyAllocatedCallback* LinuxCommunicationHandler::MonitorNew(
+    int soc, ReadyFor ready_for, CallBack2 done) {
+  VLOG(4) << __PRETTY_FUNCTION__ << " soc=" << soc;
+  uint32_t events = 0;
+  if (ready_for.in) events |= EPOLLIN;
+  if (ready_for.out) events |= EPOLLOUT;
+  return MonitorFor(EPOLL_CTL_ADD, soc, events, std::move(done),
+                    CallbackDeleteOption::DELETE_AFTER_CALLING)
+      .release();
+}
+
+UniqCbp LinuxCommunicationHandler::MonitorNew2(
+    int soc, ReadyFor ready_for, CallBack2 done,
+    CallbackDeleteOption delete_option) {
+  VLOG(4) << __PRETTY_FUNCTION__ << " soc=" << soc;
+  uint32_t events = 0;
+  if (ready_for.in) events |= EPOLLIN;
+  if (ready_for.out) events |= EPOLLOUT;
+  return MonitorFor(EPOLL_CTL_ADD, soc, events, std::move(done), delete_option);
+}
+
+UniqCbp LinuxCommunicationHandler::MonitorFor(
+    int option, int soc, uint32_t events, CallBack2 done,
+    CallbackDeleteOption delete_option) {
   VLOG(4) << __PRETTY_FUNCTION__ << " soc=" << soc;
   CHECK_GE(soc, 0);
 
   epoll_event event;
   event.events = EPOLLERR | EPOLLRDHUP | EPOLLHUP | EPOLLONESHOT | events;
 
-  auto cb_p = new DynamicallyAllocatedCallback(
+  auto cb_p = std::make_unique<DynamicallyAllocatedCallback>(
       std::bind(&LinuxCommunicationHandler::MonitorSocketReady, this, soc, done,
                 std::placeholders::_1),
-      CallbackDeleteOption::DELETE_AFTER_CALLING);
-  event.data.ptr = cb_p;
+      delete_option);
+  event.data.ptr = cb_p.get();
   int ret = epoll_ctl(_epoll_fd, option, soc, &event);
   PLOG_IF(ERROR, ret != 0) << "Failed to "
                            << (option == EPOLL_CTL_ADD ? "add" : "reintroduce")
                            << " socket to epoll set during MonitorFor: socket="
                            << soc;
 
-  return Deleter([cb_p, soc]() {
-    delete cb_p;
-    VLOG(2) << "Deleted LinuxCommunicationHandler callback successfully for "
-               "socket="
-            << soc;
-  });
+  return cb_p;
 }
 
 int LinuxCommunicationHandler::CheckForSocketErrors(int soc) {

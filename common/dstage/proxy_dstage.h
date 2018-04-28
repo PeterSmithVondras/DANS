@@ -14,15 +14,16 @@
 #include "common/dstage/scheduler.h"
 #include "common/dstage/synchronization.h"
 #include "common/dstage/throttler.h"
+#include "common/util/callback.h"
 
 namespace dans {
 
 struct HalfPipe {
-  HalfPipe(std::function<void()> deleter) : deleter(deleter) {}
-  HalfPipe(int soc, std::function<void()> deleter)
+  HalfPipe(DynamicallyAllocatedCallback* deleter) : deleter(deleter) {}
+  HalfPipe(int soc, DynamicallyAllocatedCallback* deleter)
       : connection(std::make_unique<Connection>(soc)), deleter(deleter) {}
   std::unique_ptr<Connection> connection;
-  std::function<void()> deleter;
+  DynamicallyAllocatedCallback* deleter;
 };
 
 class TcpPipe {
@@ -30,7 +31,7 @@ class TcpPipe {
   enum PipeResults { READ_FAIL, SEND_FAIL, TRY_LATER };
 
   TcpPipe() = delete;
-  TcpPipe(int soc, std::function<void()> deleter)
+  TcpPipe(int soc, DynamicallyAllocatedCallback* deleter)
       : in(std::make_unique<HalfPipe>(soc, deleter)) {}
   TcpPipe(std::unique_ptr<HalfPipe> in) : in(std::move(in)) {}
   TcpPipe(std::unique_ptr<HalfPipe> in, std::unique_ptr<HalfPipe> out)
@@ -46,7 +47,6 @@ class TcpPipe {
   //    Failure: The negative of the socket which had a failure and sets errno.
   int Pipe(int soc);
 
-  // std::shared_ptr<PurgeState> purge_state;
   std::unique_ptr<HalfPipe> in;
   std::unique_ptr<HalfPipe> out;
 };

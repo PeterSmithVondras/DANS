@@ -5,6 +5,7 @@
 #include "common/dstage/executor.h"
 #include "common/dstage/linux_communication_handler.h"
 #include "common/dstage/proxy_dstage.h"
+#include "common/util/callback.h"
 #include "gflags/gflags.h"
 #include "glog/logging.h"
 
@@ -37,7 +38,7 @@ void ReceivedConnection(unsigned priority,
   // Create a unique JobId.
   dans::JobId jid = jid_factory_p->CreateJobId();
   // Monitor socket for failures and Purge if it is triggered.
-  std::function<void()> del = comm_handler_p->MonitorNew(
+  util::callback::Callback<uint32_t>* del = comm_handler_p->MonitorNew(
       soc, {false, false},
       [proxy_p, exec_p, jid, priority](
           int soc, dans::CommunicationHandlerInterface::ReadyFor ready_for) {

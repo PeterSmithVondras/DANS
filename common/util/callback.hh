@@ -20,7 +20,9 @@ Callback<Ts...>::Callback(std::function<void(Ts...)>&& cb)
     : _cb(std::move(cb)), _delete_after_run(false) {}
 
 template <typename... Ts>
-Callback<Ts...>::~Callback() {}
+Callback<Ts...>::~Callback() {
+  lock.lock();
+}
 
 template <typename... Ts>
 void Callback<Ts...>::operator()(Ts... args) {
@@ -29,9 +31,10 @@ void Callback<Ts...>::operator()(Ts... args) {
 
 template <typename... Ts>
 void Callback<Ts...>::Run(Ts... args) {
+  lock.lock();
   _cb(std::move(args)...);
+  lock.unlock();
   if (_delete_after_run) {
-    VLOG(0) << "deleting this";
     delete this;
   }
 }
