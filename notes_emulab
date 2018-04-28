@@ -30,6 +30,8 @@ tmux new -s dans
 cd /users/pvondras/RANS/server
 ./server -s 10.1.1.3 -i 1
 
+./bazel-bin/common/dstage/dans_proxy --logtostderr=false --colorlogtostderr=true --run_time=20 --v=3 --server_ip="10.1.1.3"
+
 
 Run on client:
 sudo apt-get install libncurses5-dev libncursesw5-dev
