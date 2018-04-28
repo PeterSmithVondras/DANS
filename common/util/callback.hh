@@ -5,12 +5,15 @@
 #include "glog/logging.h"
 
 namespace util {
+namespace callback {
 
 template <typename... Ts>
-Callback<Ts...>::Callback(std::function<void(Ts...)>&& cb, DeleteOption option)
+Callback<Ts...>::Callback(std::function<void(Ts...)>&& cb,
+                          CallbackDeleteOption option)
     : _cb(std::move(cb)),
-      _delete_after_run(option == DeleteOption::DELETE_AFTER_CALLING ? true
-                                                                     : false) {}
+      _delete_after_run(
+          option == CallbackDeleteOption::DELETE_AFTER_CALLING ? true : false) {
+}
 
 template <typename... Ts>
 Callback<Ts...>::Callback(std::function<void(Ts...)>&& cb)
@@ -33,6 +36,7 @@ void Callback<Ts...>::Run(Ts... args) {
   }
 }
 
+}  // namespace callback
 }  // namespace util
 
 #endif  // DANS02_COMMON_UTIL_CALLBACK_IMPLEMENTATION_HH

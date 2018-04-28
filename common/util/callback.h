@@ -5,6 +5,8 @@
 #include "glog/logging.h"
 
 namespace util {
+namespace callback {
+enum class CallbackDeleteOption { DELETE_AFTER_CALLING, DO_NOTHING };
 
 template <typename... Ts>
 class CallbackBase {
@@ -17,11 +19,9 @@ class CallbackBase {
 template <typename... Ts>
 class Callback : CallbackBase<Ts...> {
  public:
-  enum class DeleteOption { DELETE_AFTER_CALLING, DO_NOTHING };
-
   Callback() = delete;
 
-  Callback(std::function<void(Ts...)>&& cb, DeleteOption option);
+  Callback(std::function<void(Ts...)>&& cb, CallbackDeleteOption option);
 
   // If not indication of whether to delete after run is given, object is not
   // deleted.
@@ -38,6 +38,7 @@ class Callback : CallbackBase<Ts...> {
   const bool _delete_after_run;
 };
 
+}  // namespace callback
 }  // namespace util
 
 #include "common/util/callback.hh"

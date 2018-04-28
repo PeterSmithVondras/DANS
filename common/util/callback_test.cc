@@ -4,7 +4,8 @@
 #include "gtest/gtest.h"
 
 namespace {
-using util::Callback;
+using util::callback::Callback;
+using util::callback::CallbackDeleteOption;
 const int kInitValue = 0;
 const int kEndValue = kInitValue + 5;
 void AddOneToFirstIntPointer(int* number, char a, int b) { (*number)++; }
@@ -14,16 +15,15 @@ TEST(CallbackTest, UniquePtr) {
   int x = kInitValue;
   auto cb = new Callback<std::unique_ptr<int*>>(
       [](std::unique_ptr<int*> number) { **number = kEndValue; },
-      Callback<std::unique_ptr<int*>>::DeleteOption::DELETE_AFTER_CALLING);
+      CallbackDeleteOption::DELETE_AFTER_CALLING);
   cb->Run(std::make_unique<int*>(&x));
   CHECK_EQ(x, kEndValue);
 }
 
 TEST(CallbackTest, lvalue) {
   int x = kInitValue;
-  auto bar =
-      new Callback<int*>([](int* number) { *number = kEndValue; },
-                         Callback<int*>::DeleteOption::DELETE_AFTER_CALLING);
+  auto bar = new Callback<int*>([](int* number) { *number = kEndValue; },
+                                CallbackDeleteOption::DELETE_AFTER_CALLING);
   (*bar)(&x);
   CHECK_EQ(x, kEndValue);
 }

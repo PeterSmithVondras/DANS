@@ -10,6 +10,7 @@
 
 #include "common/dstage/communication_handler_interface.h"
 #include "common/dstage/synchronization.h"
+#include "common/util/callback.h"
 
 namespace dans {
 
@@ -29,7 +30,8 @@ class LinuxCommunicationHandler : public CommunicationHandlerInterface {
   static void PrintEpollEvents(uint32_t events);
 
  private:
-  using DynamicallyAllocatedCallback = std::function<void(uint32_t)>;
+  // using DynamicallyAllocatedCallback = std::function<void(uint32_t)>;
+  using DynamicallyAllocatedCallback = util::callback::Callback<uint32_t>;
   void MonitorAllSockets();
   Deleter MonitorFor(int option, int soc, uint32_t events, CallBack2 done);
   void MonitorSocketReady(int soc, CallBack2 done, uint32_t events);

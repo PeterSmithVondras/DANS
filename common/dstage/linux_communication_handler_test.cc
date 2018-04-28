@@ -28,8 +28,9 @@ class LinuxCommunicationHandlerTest : public testing::Test {
   void ReadCallback(int soc, ReadyFor ready_for) {
     if (ready_for.in) {
       EXPECT_TRUE(ready_for.in);
-      char buf[15];
+      char buf[kReadSize + 1];
       EXPECT_EQ(read(soc, buf, kReadSize), kReadSize);
+      buf[kReadSize] = '\0';
       EXPECT_STREQ(buf, "HTTP/1.1 200 OK");
       VLOG(1) << buf;
       _handler.Close(soc);

@@ -15,6 +15,7 @@
 #include "glog/logging.h"
 
 namespace {
+using util::callback::CallbackDeleteOption;
 // Currently have no flags to pass to epoll_create.
 int kFlags = 0;
 int kMaxEvents = 64;
@@ -83,7 +84,8 @@ void LinuxCommunicationHandler::AddServerSocket(int option, int soc,
   // data.
   event.data.ptr = new DynamicallyAllocatedCallback(
       std::bind(&LinuxCommunicationHandler::ServeSocketReady, this, soc, done,
-                std::placeholders::_1));
+                std::placeholders::_1),
+      CallbackDeleteOption::DELETE_AFTER_CALLING);
   int ret = epoll_ctl(_epoll_fd, option, soc, &event);
   PLOG_IF(ERROR, ret != 0)
       << "SERVING ERROR: Failed to add socket to epoll set socket=" << soc;
@@ -182,7 +184,8 @@ std::function<void()> LinuxCommunicationHandler::Connect(
   // data.
   auto cb_p = new DynamicallyAllocatedCallback(
       std::bind(&LinuxCommunicationHandler::MonitorSocketReady, this, soc, done,
-                std::placeholders::_1));
+                std::placeholders::_1),
+      CallbackDeleteOption::DELETE_AFTER_CALLING);
   event.data.ptr = cb_p;
   ret = epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, soc, &event);
   PLOG_IF(WARNING, ret != 0)
@@ -210,7 +213,7 @@ void LinuxCommunicationHandler::MonitorAllSockets() {
       auto cb_p =
           static_cast<DynamicallyAllocatedCallback*>(_events[i].data.ptr);
       (*cb_p)(_events[i].events);
-      delete cb_p;
+      // delete cb_p;
     }
 
     // EINTR is sometimes returned epoll_wait under normal conditions.
@@ -259,7 +262,8 @@ std::function<void()> LinuxCommunicationHandler::MonitorFor(int option, int soc,
 
   auto cb_p = new DynamicallyAllocatedCallback(
       std::bind(&LinuxCommunicationHandler::MonitorSocketReady, this, soc, done,
-                std::placeholders::_1));
+                std::placeholders::_1),
+      CallbackDeleteOption::DELETE_AFTER_CALLING);
   event.data.ptr = cb_p;
   int ret = epoll_ctl(_epoll_fd, option, soc, &event);
   PLOG_IF(ERROR, ret != 0) << "Failed to "

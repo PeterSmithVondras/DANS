@@ -237,6 +237,7 @@ cc_library(
   linkopts = [ "-lpthread" ],
   deps = [
     ":synchronization",
+    "//common/util:callback",
     "@glog//:main",
     "@gflags//:main",
   ],
