@@ -90,7 +90,8 @@ void MultiQueue<T>::Enqueue(UniqJobPtr<T> job_p) {
       duplicate_list;
   std::unique_lock<std::mutex> lock_vm(_value_map_mutex, std::defer_lock);
   {
-    CHECK_LE(prio, _max_prio) << Describe();
+    CHECK_LE(prio, _max_prio)
+        << "prio=" << prio << "while max_prio=" << _max_prio;
 
     // Locking this priority queue
     std::lock_guard<std::mutex> lock_pq(_pq_mutexes[prio]);
@@ -122,7 +123,8 @@ void MultiQueue<T>::Enqueue(UniqJobPtr<T> job_p) {
 template <typename T>
 UniqJobPtr<T> MultiQueue<T>::Dequeue(Priority prio) {
   VLOG(4) << __PRETTY_FUNCTION__ << " prio=" << prio;
-  CHECK_LE(prio, _max_prio) << Describe();
+  CHECK_LE(prio, _max_prio)
+      << "prio=" << prio << "while max_prio=" << _max_prio;
 
   // This lock is not being acquired right now as we do not want to block
   // purging for no reason.
@@ -160,7 +162,7 @@ UniqJobPtr<T> MultiQueue<T>::Dequeue(Priority prio) {
   {
     // Locking this priority queue
     std::lock_guard<std::mutex> lock_pq(_pq_mutexes[prio]);
-    VLOG(3) << "DEQUEUE_prio=" << prio << ": " << Describe();
+    VLOG(3) << "DEQUEUE_prio=" << prio << ": " << DescribeQ(prio);
     job_id = *_priority_qs[prio].begin();
     _priority_qs[prio].pop_front();
 
@@ -170,8 +172,9 @@ UniqJobPtr<T> MultiQueue<T>::Dequeue(Priority prio) {
     lock_vm.lock();
   }
 
+  VLOG(3) << "DEQUEUE_prio=" << prio << ": " << DescribeMapper();
   auto search = _value_mapper.find(job_id);
-  CHECK(search != _value_mapper.end()) << Describe();
+  CHECK(search != _value_mapper.end()) << DescribeMapper();
   auto duplicate_list_iter = search->second.begin();
 
   UniqJobPtr<T> job_p;
@@ -187,7 +190,7 @@ UniqJobPtr<T> MultiQueue<T>::Dequeue(Priority prio) {
     duplicate_list_iter++;
   }
   // We should always find what we removed from the queue.
-  CHECK(found) << Describe();
+  CHECK(found);
 
   // Removing entry from _value_mapper if it is now empty.
   if (search->second.empty()) _value_mapper.erase(search);
@@ -223,7 +226,8 @@ unsigned MultiQueue<T>::Purge(JobId job_id) {
 
 template <typename T>
 unsigned MultiQueue<T>::Size(Priority prio) {
-  CHECK_LE(prio, _max_prio) << Describe();
+  CHECK_LE(prio, _max_prio)
+      << "prio=" << prio << "while max_prio=" << _max_prio;
   return _priority_qs[prio].size();
 }
 
