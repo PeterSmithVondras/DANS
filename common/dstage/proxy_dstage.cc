@@ -1,5 +1,6 @@
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <chrono>
 
 #include "common/dstage/linux_communication_handler.h"
 #include "common/dstage/proxy_dstage.h"
@@ -11,6 +12,7 @@ DEFINE_string(primary_prio_port_out, "5012",
 DEFINE_string(secondary_prio_port_out, "5013",
               "Port to send secondary priority work to.");
 DEFINE_uint64(worker_threads, 2, "Number of threads to process pipes.");
+DEFINE_uint64(sleep_time, 0, "Number of threads to process pipes.");
 
 namespace {
 using CallBack2 = dans::CommunicationHandlerInterface::CallBack2;
@@ -202,6 +204,10 @@ void ProxyScheduler::StartScheduling(Priority prio) {
       if (_destructing) return;
     }
 
+    if (prio == 0) {
+      std::this_thread::sleep_for(std::chrono::seconds(FLAGS_sleep_time));
+    }
+
     // Convert the UniqJobPtr to SharedJobPtr to allow capture in
     // closure. Note that uniq_ptr's are are hard/impossible to capture using
     // std::bind as they do not have a copy constructor.
@@ -213,32 +219,35 @@ void ProxyScheduler::StartScheduling(Priority prio) {
     VLOG(1) << "Proxy scheduling " << job->Describe() << " "
             << job->job_data->Describe();
 
-    // Clear resources of input.
-    DynamicallyAllocatedCallback* del = job->job_data->in->deleter;
+    // Send client connection to monitor
+    CallBack2 monitored(std::bind(&dans::ProxyScheduler::MonitorCallbackWrapper,
+                                  this, job, std::placeholders::_1,
+                                  std::placeholders::_2));
+
+    job->job_data->second_cb =
+        _comm_interface->Monitor(job->job_data->in->connection->Socket(),
+                                 {false, false}, std::move(monitored));
 
     // Send server connection to connect.
     CallBack2 connected(std::bind(&dans::ProxyScheduler::ConnectCallbackWrapper,
                                   this, job, std::placeholders::_1,
                                   std::placeholders::_2));
 
-    job->job_data->out = std::make_unique<HalfPipe>(_comm_interface->Connect(
+    job->job_data->out = std::make_unique<HalfPipe>();
+    _comm_interface->Connect(
         _server_ip,
         job->priority == 0 ? _primary_prio_port_out : _secondary_prio_port_out,
-        std::move(connected)));
+        std::move(connected));
 
-    // Send client connection to monitor
-    CallBack2 monitored(std::bind(&dans::ProxyScheduler::MonitorCallbackWrapper,
-                                  this, job, std::placeholders::_1,
-                                  std::placeholders::_2));
-
-    job->job_data->in->deleter =
-        _comm_interface->Monitor(job->job_data->in->connection->Socket(),
-                                 {false, false}, std::move(monitored));
-
-    if (del != nullptr) {
+    // Clear resources of input.
+    if (job->job_data->first_cb != nullptr) {
       VLOG(3) << "Deleting callback for " << job->Describe() << " "
               << job->job_data->Describe();
-      delete del;
+      delete job->job_data->first_cb;
+    }
+
+    if (prio == 0) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(FLAGS_sleep_time));
     }
   }
 }
@@ -277,22 +286,20 @@ void ProxyScheduler::ConnectCallback(SharedJobPtr<std::unique_ptr<TcpPipe>> job,
 
   VLOG(2) << "Proxy created TCP pipe for client-server " << job->Describe()
           << " " << job->job_data->Describe();
-  // Save outdated resources deleter of client callback.
-  DynamicallyAllocatedCallback* del = job->job_data->in->deleter;
   CallBack2 monitored(std::bind(&dans::ProxyScheduler::MonitorCallbackWrapper,
                                 this, job, std::placeholders::_1,
                                 std::placeholders::_2));
   // Send client connection to monitor
-  job->job_data->in->deleter = _comm_interface->Monitor(
-      job->job_data->in->connection->Socket(), {true, false}, monitored);
+  _comm_interface->Monitor(job->job_data->in->connection->Socket(),
+                           {true, false}, monitored);
   // Send server connection to monitor
-  job->job_data->out->deleter = _comm_interface->Monitor(
-      job->job_data->out->connection->Socket(), {true, false}, monitored);
+  _comm_interface->Monitor(job->job_data->out->connection->Socket(),
+                           {true, false}, monitored);
   // Clear outdated resources of client callback.
-  if (del != nullptr) {
+  if (job->job_data->second_cb != nullptr) {
     VLOG(3) << "Deleting callback for " << job->Describe() << " "
             << job->job_data->Describe();
-    delete del;
+    delete job->job_data->second_cb;
   }
 }
 
@@ -300,6 +307,7 @@ void ProxyScheduler::MonitorCallbackWrapper(
     SharedJobPtr<std::unique_ptr<TcpPipe>> job, int soc, ReadyFor ready_for) {
   VLOG(2) << __PRETTY_FUNCTION__ << " " << job->Describe() << " "
           << job->job_data->Describe() << " for " << job->job_data->Which(soc);
+  job->job_data->second_cb = nullptr;
   // Send to _worker_exec for execution.
   _worker_exec.Submit({std::bind(&dans::ProxyScheduler::MonitorCallback, this,
                                  job, soc, ready_for),
@@ -353,8 +361,7 @@ void ProxyScheduler::MonitorCallback(SharedJobPtr<std::unique_ptr<TcpPipe>> job,
                                   this, job, std::placeholders::_1,
                                   std::placeholders::_2));
     // Register event monitoring again.
-    job->job_data->in->deleter =
-        _comm_interface->Monitor(soc, {true, false}, std::move(monitored));
+    _comm_interface->Monitor(soc, {true, false}, std::move(monitored));
   }
 }
 

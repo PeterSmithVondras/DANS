@@ -40,7 +40,7 @@ std::string MultiQueue<T>::DescribeQ(Priority prio) {
   std::ostringstream description;
   description << "prio=" << std::to_string(prio) << "(";
   for (auto const& id : _priority_qs[prio]) {
-    description << std::to_string(id) << "<-";
+    description << "j" << std::to_string(id) << "<-";
   }
   description << ")";
   return description.str();
@@ -51,9 +51,9 @@ std::string MultiQueue<T>::DescribeMapper() {
   std::ostringstream description;
   description << "mapper={";
   for (auto const& entry : _value_mapper) {
-    description << std::to_string(entry.first) << "(";
+    description << "j" << std::to_string(entry.first) << "(";
     for (auto const& item : entry.second) {
-      description << std::to_string(item.first->priority) << ",";
+      description << "p" << std::to_string(item.first->priority) << ",";
     }
     description << ") ";
   }

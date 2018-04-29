@@ -37,23 +37,34 @@ void ReceivedConnection(unsigned priority,
                         dans::Executor* exec_p, int soc) {
   // Create a unique JobId.
   dans::JobId jid = jid_factory_p->CreateJobId();
+
+  auto client_request = std::make_unique<dans::TcpPipe>(soc);
+  auto job = std::make_unique<dans::Job<std::unique_ptr<dans::TcpPipe>>>(
+      std::move(client_request), jid, priority, /*duplication*/ 0);
+
+  auto memory_ptr = &(job->job_data->first_cb);
   // Monitor socket for failures and Purge if it is triggered.
-  util::callback::Callback<uint32_t>* del = comm_handler_p->MonitorNew(
+  job->job_data->first_cb = comm_handler_p->MonitorNew(
       soc, {false, false},
-      [proxy_p, exec_p, jid, priority](
+      [proxy_p, exec_p, jid, priority, memory_ptr](
           int soc, dans::CommunicationHandlerInterface::ReadyFor ready_for) {
+        *memory_ptr = nullptr;
         PLOG_IF(WARNING, ready_for.err != 0)
-            << "Application (comm_handler) received server socket error";
+            << "Application (comm_handler) received server socket error - "
+               "Purging job_id="
+            << jid << " prio=" << priority;
+        VLOG(0) << "Application purging job_id=" << jid << " prio=" << priority;
         dans::LinuxCommunicationHandler::PrintEpollEvents(ready_for.events);
         exec_p->Submit({[proxy_p, jid]() { proxy_p->Purge(jid); }, jid});
       });
 
   // Create job and dispatch it.
-  auto client_request = std::make_unique<dans::TcpPipe>(soc, del);
-  auto job = std::make_unique<dans::Job<std::unique_ptr<dans::TcpPipe>>>(
-      std::move(client_request), jid, priority, /*duplication*/ 0);
+  // auto client_request = std::make_unique<dans::TcpPipe>(soc, del);
+  // auto job = std::make_unique<dans::Job<std::unique_ptr<dans::TcpPipe>>>(
+  //     std::move(client_request), jid, priority, /*duplication*/ 0);
   VLOG(2) << "Application received connection and created " << job->Describe()
           << " " << job->job_data->Describe();
+  // job->job_data->first_cb = del;
 
   proxy_p->Dispatch(std::move(job), /*requested_duplication=*/0);
 }

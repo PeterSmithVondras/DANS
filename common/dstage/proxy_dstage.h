@@ -19,11 +19,10 @@
 namespace dans {
 
 struct HalfPipe {
-  HalfPipe(DynamicallyAllocatedCallback* deleter) : deleter(deleter) {}
-  HalfPipe(int soc, DynamicallyAllocatedCallback* deleter)
-      : connection(std::make_unique<Connection>(soc)), deleter(deleter) {}
+  HalfPipe() {}
+  HalfPipe(int soc) : connection(std::make_unique<Connection>(soc)) {}
   std::unique_ptr<Connection> connection;
-  DynamicallyAllocatedCallback* deleter;
+  // DynamicallyAllocatedCallback* deleter;
 };
 
 class TcpPipe {
@@ -31,11 +30,17 @@ class TcpPipe {
   enum PipeResults { READ_FAIL, SEND_FAIL, TRY_LATER };
 
   TcpPipe() = delete;
-  TcpPipe(int soc, DynamicallyAllocatedCallback* deleter)
-      : in(std::make_unique<HalfPipe>(soc, deleter)) {}
-  TcpPipe(std::unique_ptr<HalfPipe> in) : in(std::move(in)) {}
+  TcpPipe(int soc)
+      : in(std::make_unique<HalfPipe>(soc)),
+        first_cb(nullptr),
+        second_cb(nullptr) {}
+  TcpPipe(std::unique_ptr<HalfPipe> in)
+      : in(std::move(in)), first_cb(nullptr), second_cb(nullptr) {}
   TcpPipe(std::unique_ptr<HalfPipe> in, std::unique_ptr<HalfPipe> out)
-      : in(std::move(in)), out(std::move(out)) {}
+      : in(std::move(in)),
+        out(std::move(out)),
+        first_cb(nullptr),
+        second_cb(nullptr) {}
 
   std::string Describe();
   std::string Which(int soc);
@@ -49,6 +54,8 @@ class TcpPipe {
 
   std::unique_ptr<HalfPipe> in;
   std::unique_ptr<HalfPipe> out;
+  DynamicallyAllocatedCallback* first_cb;
+  DynamicallyAllocatedCallback* second_cb;
 };
 
 class ProxyScheduler : public Scheduler<std::unique_ptr<TcpPipe>> {
