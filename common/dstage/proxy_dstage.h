@@ -74,9 +74,16 @@ class ProxyScheduler : public Scheduler<std::unique_ptr<TcpPipe>> {
   void ConnectCallbackWrapper(
       SharedJobPtr<std::unique_ptr<TcpPipe>> job, int soc,
       CommunicationHandlerInterface::ReadyFor ready_for);
+
   void MonitorCallback(SharedJobPtr<std::unique_ptr<TcpPipe>> job, int soc,
                        CommunicationHandlerInterface::ReadyFor ready_for);
   void MonitorCallbackWrapper(
+      SharedJobPtr<std::unique_ptr<TcpPipe>> job, int soc,
+      CommunicationHandlerInterface::ReadyFor ready_for);
+
+  void CliClosedCallback(SharedJobPtr<std::unique_ptr<TcpPipe>> job, int soc,
+                         CommunicationHandlerInterface::ReadyFor ready_for);
+  void CliClosedCallbackWrapper(
       SharedJobPtr<std::unique_ptr<TcpPipe>> job, int soc,
       CommunicationHandlerInterface::ReadyFor ready_for);
 
