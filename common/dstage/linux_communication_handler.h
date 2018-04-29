@@ -17,6 +17,7 @@ namespace dans {
 class LinuxCommunicationHandler : public CommunicationHandlerInterface {
  public:
   LinuxCommunicationHandler();
+  LinuxCommunicationHandler(unsigned number_of_workers);
   ~LinuxCommunicationHandler() override;
 
   int CreateSocket() override;
@@ -51,7 +52,8 @@ class LinuxCommunicationHandler : public CommunicationHandlerInterface {
 
   int _epoll_fd;
   std::vector<struct epoll_event> _events;
-  std::thread _socket_handler;
+  // std::thread _socket_handler;
+  std::vector<std::thread> _socket_handlers;
   std::vector<std::unique_ptr<Connection>> _servers;
   // Guards the destruction state.
   std::shared_timed_mutex _destructing_lock;

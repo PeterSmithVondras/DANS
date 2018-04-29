@@ -25,13 +25,18 @@ int kMaxConnectionsWaiting = 100;
 namespace dans {
 
 LinuxCommunicationHandler::LinuxCommunicationHandler()
+    : LinuxCommunicationHandler(1) {}
+
+LinuxCommunicationHandler::LinuxCommunicationHandler(unsigned number_of_workers)
     : _events(kMaxEvents), _destructing(false) {
   VLOG(4) << __PRETTY_FUNCTION__;
   _epoll_fd = epoll_create1(kFlags);
   PLOG_IF(ERROR, _epoll_fd < 0)
       << "LinuxCommunicationHandler failed to create epoll filedescriptor.";
-  _socket_handler =
-      std::thread(&LinuxCommunicationHandler::MonitorAllSockets, this);
+  for (unsigned i = 0; i < number_of_workers; i++) {
+    _socket_handlers.push_back(
+        std::thread(&LinuxCommunicationHandler::MonitorAllSockets, this));
+  }
 }
 
 LinuxCommunicationHandler::~LinuxCommunicationHandler() {
@@ -47,7 +52,10 @@ LinuxCommunicationHandler::~LinuxCommunicationHandler() {
     std::unique_lock<std::shared_timed_mutex> lock(_destructing_lock);
     _destructing = true;
   }
-  _socket_handler.join();
+
+  for (auto& handler : _socket_handlers) {
+    handler.join();
+  }
 
   PLOG_IF(ERROR, close(_epoll_fd) != 0)
       << "Failure to close epoll file descriptor";
