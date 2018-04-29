@@ -279,12 +279,7 @@ void ProxyScheduler::ConnectCallback(SharedJobPtr<std::unique_ptr<TcpPipe>> job,
   // Adding connection of the server.
   job->job_data->out->connection = std::make_unique<Connection>(soc);
 
-  if (ready_for.err != 0) {
-    PLOG(WARNING) << "Failed to create TCP connection for server "
-                  << job->Describe() << " " << job->job_data->Describe();
-    job->job_data->ShutdownOther(soc);
-    return;
-  } else if (!ready_for.out) {
+  if (!ready_for.out || ready_for.err != 0) {
     VLOG(2) << "Failed to create TCP connection for server " << job->Describe()
             << " " << job->job_data->Describe();
     job->job_data->ShutdownOther(soc);

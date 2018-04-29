@@ -28,8 +28,6 @@ const unsigned kHighPriority = 0;
 const unsigned kLowPriority = 1;
 }  // namespace
 
-void SigPipeHandler(int signal) { LOG(INFO) << "Received SIGPIPE - Ignoring."; }
-
 void ReceivedConnection(unsigned priority,
                         dans::LinuxCommunicationHandler* comm_handler_p,
                         dans::DStageProxy* proxy_p,
@@ -49,10 +47,6 @@ void ReceivedConnection(unsigned priority,
       [proxy_p, exec_p, jid, priority, memory_ptr](
           int soc, dans::CommunicationHandlerInterface::ReadyFor ready_for) {
         *memory_ptr = nullptr;
-        PLOG_IF(WARNING, ready_for.err != 0)
-            << "Application (comm_handler) received server socket error - "
-               "Purging job_id="
-            << jid << " prio=" << priority;
         VLOG(0) << "Application purging job_id=" << jid << " prio=" << priority;
         dans::LinuxCommunicationHandler::PrintEpollEvents(ready_for.events);
         exec_p->Submit({[proxy_p, jid]() { proxy_p->Purge(jid); }, jid});
@@ -75,9 +69,6 @@ int main(int argc, char** argv) {
   google::InitGoogleLogging(argv[0]);
   // Provides a failure signal handler.
   google::InstallFailureSignalHandler();
-
-  // Install a signal handler
-  std::signal(SIGPIPE, SigPipeHandler);
 
   dans::LinuxCommunicationHandler comm_handler;
   dans::DStageProxy proxy(std::vector<unsigned>(kMaxPrio + 1, kThreadsPerPrio),

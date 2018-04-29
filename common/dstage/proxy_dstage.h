@@ -1,6 +1,7 @@
 #ifndef DANS02_PROXY_DSTAGE_H
 #define DANS02_PROXY_DSTAGE_H
 
+#include <csignal>
 #include <functional>
 #include <mutex>
 
@@ -22,7 +23,6 @@ struct HalfPipe {
   HalfPipe() {}
   HalfPipe(int soc) : connection(std::make_unique<Connection>(soc)) {}
   std::unique_ptr<Connection> connection;
-  // DynamicallyAllocatedCallback* deleter;
 };
 
 class TcpPipe {
@@ -109,7 +109,10 @@ class DStageProxy
             std::make_unique<ForwardingDispatcher<std::unique_ptr<TcpPipe>>>(
                 threads_per_prio.size() - 1),
             std::make_unique<ProxyScheduler>(
-                threads_per_prio, set_thread_priority, comm_interface)) {}
+                threads_per_prio, set_thread_priority, comm_interface)) {
+    // Ignore SIGPIPE as this will happen often and is expected.
+    std::signal(SIGPIPE, SIG_IGN);
+  }
 };
 
 }  // namespace dans
