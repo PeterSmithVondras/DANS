@@ -3,6 +3,8 @@ cc_binary(
   srcs = [ "test.cc" ],
   deps = [
     "//common/util:callback",
+    "//common/dstage:multiqueue",
+    "//common/dstage:throttler",
     "@glog//:main",
     "@gflags//:main",
     "@gtest//:main",
@@ -13,11 +15,12 @@ cc_library(
   name = "throttler",
   hdrs = [
     "throttler.h",
+    "throttler.hh"
   ],
-  srcs = [ "throttler.cc" ],
   deps = [
     ":dstage_base",
     ":multiqueue",
+    ":synchronization",
     "@glog//:main",
   ],
 )

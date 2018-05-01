@@ -31,6 +31,8 @@ class BaseMultiQueue {
 
   // Returns a nullptr to the next in line for the Priority `prio` queue.
   virtual void ReleaseQueues() = 0;
+
+  virtual unsigned MaxPriority() = 0;
 };
 
 }  // namespace dans

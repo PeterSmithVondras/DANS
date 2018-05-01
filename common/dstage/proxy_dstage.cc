@@ -199,6 +199,14 @@ ProxyScheduler::~ProxyScheduler() {
   }
 }
 
+void ProxyScheduler::LinkMultiQ(
+    BaseMultiQueue<std::unique_ptr<TcpPipe>>* multi_q_p) {
+  VLOG(4) << __PRETTY_FUNCTION__;
+  CHECK_NOTNULL(multi_q_p);
+  _throttler = std::make_unique<Throttler<std::unique_ptr<TcpPipe>>>(multi_q_p);
+  Scheduler<std::unique_ptr<TcpPipe>>::LinkMultiQ(multi_q_p);
+}
+
 void ProxyScheduler::StartScheduling(Priority prio) {
   VLOG(4) << __PRETTY_FUNCTION__ << " prio=" << prio;
   while (true) {
@@ -214,13 +222,16 @@ void ProxyScheduler::StartScheduling(Priority prio) {
     // Convert the UniqJobPtr to SharedJobPtr to allow capture in
     // closure. Note that uniq_ptr's are are hard/impossible to capture using
     // std::bind as they do not have a copy constructor.
-    SharedJobPtr<std::unique_ptr<TcpPipe>> job = _multi_q_p->Dequeue(prio);
+
+    SharedThrottleJobPtr<std::unique_ptr<TcpPipe>> job =
+        _throttler->Dequeue(prio);
+    // SharedJobPtr<std::unique_ptr<TcpPipe>> job = _multi_q_p->Dequeue(prio);
     if (job == nullptr) {
       VLOG(4) << "Scheduler prio=" << prio << " dequeued nullptr as job.";
       continue;
     }
-    VLOG(1) << "Proxy scheduling " << job->Describe() << " "
-            << job->job_data->Describe();
+    VLOG(1) << _throttler->Describe() << "Proxy scheduling " << job->Describe()
+            << " " << job->job_data->Describe();
 
     // Send client connection to monitor
     CallBack2 cli_closed(
@@ -252,16 +263,13 @@ void ProxyScheduler::StartScheduling(Priority prio) {
       VLOG(3) << "Chose not to delete first callback for " << job->Describe()
               << " " << job->job_data->Describe();
     }
-
-    if (prio == 0) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(FLAGS_sleep_time));
-    }
   }
 }
 
 // Called when the server is connected
 void ProxyScheduler::ConnectCallbackWrapper(
-    SharedJobPtr<std::unique_ptr<TcpPipe>> job, int soc, ReadyFor ready_for) {
+    SharedThrottleJobPtr<std::unique_ptr<TcpPipe>> job, int soc,
+    ReadyFor ready_for) {
   VLOG(2) << __PRETTY_FUNCTION__ << " " << job->Describe() << " "
           << job->job_data->Describe() << " for server";
   // Send to _worker_exec for execution.
@@ -271,8 +279,9 @@ void ProxyScheduler::ConnectCallbackWrapper(
 }
 
 // Called when the server is connected
-void ProxyScheduler::ConnectCallback(SharedJobPtr<std::unique_ptr<TcpPipe>> job,
-                                     int soc, ReadyFor ready_for) {
+void ProxyScheduler::ConnectCallback(
+    SharedThrottleJobPtr<std::unique_ptr<TcpPipe>> job, int soc,
+    ReadyFor ready_for) {
   VLOG(2) << __PRETTY_FUNCTION__ << " " << job->Describe() << " "
           << job->job_data->Describe() << " for server";
 
@@ -312,7 +321,8 @@ void ProxyScheduler::ConnectCallback(SharedJobPtr<std::unique_ptr<TcpPipe>> job,
 }
 
 void ProxyScheduler::MonitorCallbackWrapper(
-    SharedJobPtr<std::unique_ptr<TcpPipe>> job, int soc, ReadyFor ready_for) {
+    SharedThrottleJobPtr<std::unique_ptr<TcpPipe>> job, int soc,
+    ReadyFor ready_for) {
   VLOG(2) << __PRETTY_FUNCTION__ << " " << job->Describe() << " "
           << job->job_data->Describe() << " for " << job->job_data->Which(soc);
   // Send to _worker_exec for execution.
@@ -321,8 +331,9 @@ void ProxyScheduler::MonitorCallbackWrapper(
                        job->job_id});
 }
 
-void ProxyScheduler::MonitorCallback(SharedJobPtr<std::unique_ptr<TcpPipe>> job,
-                                     int soc, ReadyFor ready_for) {
+void ProxyScheduler::MonitorCallback(
+    SharedThrottleJobPtr<std::unique_ptr<TcpPipe>> job, int soc,
+    ReadyFor ready_for) {
   VLOG(2) << __PRETTY_FUNCTION__ << " " << job->Describe() << " "
           << job->job_data->Describe() << " for " << job->job_data->Which(soc);
 
@@ -373,7 +384,8 @@ void ProxyScheduler::MonitorCallback(SharedJobPtr<std::unique_ptr<TcpPipe>> job,
 }
 
 void ProxyScheduler::CliClosedCallbackWrapper(
-    SharedJobPtr<std::unique_ptr<TcpPipe>> job, int soc, ReadyFor ready_for) {
+    SharedThrottleJobPtr<std::unique_ptr<TcpPipe>> job, int soc,
+    ReadyFor ready_for) {
   VLOG(2) << __PRETTY_FUNCTION__ << " " << job->Describe() << " "
           << job->job_data->Describe() << " for " << job->job_data->Which(soc);
 
@@ -387,7 +399,8 @@ void ProxyScheduler::CliClosedCallbackWrapper(
 }
 
 void ProxyScheduler::CliClosedCallback(
-    SharedJobPtr<std::unique_ptr<TcpPipe>> job, int soc, ReadyFor ready_for) {
+    SharedThrottleJobPtr<std::unique_ptr<TcpPipe>> job, int soc,
+    ReadyFor ready_for) {
   VLOG(2) << __PRETTY_FUNCTION__ << " " << job->Describe() << " "
           << job->job_data->Describe() << " for " << job->job_data->Which(soc);
 

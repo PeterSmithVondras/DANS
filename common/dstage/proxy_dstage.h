@@ -65,26 +65,31 @@ class ProxyScheduler : public Scheduler<std::unique_ptr<TcpPipe>> {
                  CommunicationHandlerInterface* comm_interface);
   ~ProxyScheduler();
 
+  void LinkMultiQ(BaseMultiQueue<std::unique_ptr<TcpPipe>>* multi_q_p) override;
+
  protected:
   void StartScheduling(Priority prio) override;
 
  private:
-  void ConnectCallback(SharedJobPtr<std::unique_ptr<TcpPipe>> job, int soc,
+  void ConnectCallback(SharedThrottleJobPtr<std::unique_ptr<TcpPipe>> job,
+                       int soc,
                        CommunicationHandlerInterface::ReadyFor ready_for);
   void ConnectCallbackWrapper(
-      SharedJobPtr<std::unique_ptr<TcpPipe>> job, int soc,
+      SharedThrottleJobPtr<std::unique_ptr<TcpPipe>> job, int soc,
       CommunicationHandlerInterface::ReadyFor ready_for);
 
-  void MonitorCallback(SharedJobPtr<std::unique_ptr<TcpPipe>> job, int soc,
+  void MonitorCallback(SharedThrottleJobPtr<std::unique_ptr<TcpPipe>> job,
+                       int soc,
                        CommunicationHandlerInterface::ReadyFor ready_for);
   void MonitorCallbackWrapper(
-      SharedJobPtr<std::unique_ptr<TcpPipe>> job, int soc,
+      SharedThrottleJobPtr<std::unique_ptr<TcpPipe>> job, int soc,
       CommunicationHandlerInterface::ReadyFor ready_for);
 
-  void CliClosedCallback(SharedJobPtr<std::unique_ptr<TcpPipe>> job, int soc,
+  void CliClosedCallback(SharedThrottleJobPtr<std::unique_ptr<TcpPipe>> job,
+                         int soc,
                          CommunicationHandlerInterface::ReadyFor ready_for);
   void CliClosedCallbackWrapper(
-      SharedJobPtr<std::unique_ptr<TcpPipe>> job, int soc,
+      SharedThrottleJobPtr<std::unique_ptr<TcpPipe>> job, int soc,
       CommunicationHandlerInterface::ReadyFor ready_for);
 
   CommunicationHandlerInterface* _comm_interface;
@@ -95,6 +100,7 @@ class ProxyScheduler : public Scheduler<std::unique_ptr<TcpPipe>> {
   const std::string _primary_prio_port_out;
   const std::string _secondary_prio_port_out;
   const std::string _server_ip;
+  std::unique_ptr<Throttler<std::unique_ptr<TcpPipe>>> _throttler;
 };
 
 class DStageProxy

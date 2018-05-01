@@ -3,11 +3,30 @@
 #include <mutex>
 #include <thread>
 
+#include "common/dstage/multiqueue.h"
+#include "common/dstage/throttler.h"
 #include "common/util/callback.h"
 #include "gflags/gflags.h"
 #include "glog/logging.h"
 
-using util::Callback;
+using namespace dans;
+
+template <typename T>
+class Outer {
+ public:
+  class Inner {
+   public:
+    Inner() {}
+  };
+
+  Outer() {}
+};
+
+template <typename T>
+using UniqOuterPtr = std::unique_ptr<Outer<T>>;
+
+template <typename T>
+using UniqInnerPtr = std::unique_ptr<typename Outer<T>::Inner>;
 
 DEFINE_int64(run_time, 0,
              "Length of time to run this process. Use -1 for infinite.");
@@ -21,23 +40,11 @@ int main(int argc, char** argv) {
   // Provides a failure signal handler.
   google::InstallFailureSignalHandler();
 
-  auto foo = new Callback<std::unique_ptr<int>>(
-      [](std::unique_ptr<int> number) { VLOG(0) << "BAM " << *number; },
-      Callback<std::unique_ptr<int>>::DeleteOption::DELETE_AFTER_CALLING);
+  MultiQueue<int> q(1);
+  Throttler<int> t(&q);
+  auto foo = t.Dequeue(0);
 
-  foo->Run(std::make_unique<int>(0));
-  // (*foo)(std::make_unique<int>(0));
-
-  int x = 1;
-  auto bar =
-      new Callback<int>([](int number) { VLOG(0) << "BAM " << number; },
-                        Callback<int>::DeleteOption::DELETE_AFTER_CALLING);
-  (*bar)(x);
-
-  Callback<> bingo(baz);
-
-  std::function<void()> bang(std::move(bingo));
-  bang();
+  // auto foo = std::make_unique<Outer<int>::Inner>();
 
   std::mutex wait_forever;
   wait_forever.lock();

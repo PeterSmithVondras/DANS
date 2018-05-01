@@ -53,12 +53,8 @@ void ReceivedConnection(unsigned priority,
       });
 
   // Create job and dispatch it.
-  // auto client_request = std::make_unique<dans::TcpPipe>(soc, del);
-  // auto job = std::make_unique<dans::Job<std::unique_ptr<dans::TcpPipe>>>(
-  //     std::move(client_request), jid, priority, /*duplication*/ 0);
   VLOG(2) << "Application received connection and created " << job->Describe()
           << " " << job->job_data->Describe();
-  // job->job_data->first_cb = del;
 
   proxy_p->Dispatch(std::move(job), /*requested_duplication=*/0);
 }

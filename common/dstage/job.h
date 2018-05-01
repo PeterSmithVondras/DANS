@@ -29,7 +29,8 @@ class JobIdFactory {
 };
 
 template <typename T>
-struct Job {
+class Job {
+ public:
   Job(T job_data, JobId job_id, Priority priority, unsigned duplication)
       : job_id(job_id),
         priority(priority),

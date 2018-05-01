@@ -162,7 +162,7 @@ UniqJobPtr<T> MultiQueue<T>::Dequeue(Priority prio) {
   {
     // Locking this priority queue
     std::lock_guard<std::mutex> lock_pq(_pq_mutexes[prio]);
-    VLOG(3) << "DEQUEUE_prio=" << prio << ": " << DescribeQ(prio);
+    VLOG(4) << "DEQUEUE_prio=" << prio << ": " << DescribeQ(prio);
     job_id = *_priority_qs[prio].begin();
     _priority_qs[prio].pop_front();
 
@@ -172,7 +172,7 @@ UniqJobPtr<T> MultiQueue<T>::Dequeue(Priority prio) {
     lock_vm.lock();
   }
 
-  VLOG(3) << "DEQUEUE_prio=" << prio << ": " << DescribeMapper();
+  VLOG(4) << "DEQUEUE_prio=" << prio << ": " << DescribeMapper();
   auto search = _value_mapper.find(job_id);
   CHECK(search != _value_mapper.end()) << DescribeMapper();
   auto duplicate_list_iter = search->second.begin();

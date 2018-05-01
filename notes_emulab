@@ -37,4 +37,4 @@ Run on client:
 sudo su root
 apt-get install libncurses5-dev libncursesw5-dev
 apt-get install python-pip
-pip install --upgrade pip; pip install numpy
+pip install numpy
