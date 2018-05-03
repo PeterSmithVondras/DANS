@@ -31,7 +31,7 @@ TEST(CallbackTest, lvalue) {
 TEST(CallbackTest, SeveralArgs) {
   int x = kInitValue;
   Callback<int*, char, int> cb(AddOneToFirstIntPointer);
-  std::function<void(int* number, char a, int b)> bang(std::move(cb));
+  std::function<void(int*, char, int)> bang(std::move(cb));
 
   for (int i = 0; i < kEndValue - kInitValue; i++) {
     bang(&x, 'a', 0);

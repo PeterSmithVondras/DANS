@@ -36,7 +36,6 @@ class Callback : CallbackBase<Ts...> {
  private:
   std::function<void(Ts...)> _cb;
   const bool _delete_after_run;
-  std::mutex lock;
 };
 
 }  // namespace callback
