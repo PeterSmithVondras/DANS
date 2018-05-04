@@ -1,6 +1,11 @@
 #include <chrono>
 #include <csignal>
 #include <functional>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
+#include <sys/types.h>
 
 #include "common/dstage/executor.h"
 #include "common/dstage/linux_communication_handler.h"
@@ -13,9 +18,21 @@ DEFINE_uint64(primary_prio_port_in, 5010,
               "Port to listen for primary priority work.");
 DEFINE_uint64(secondary_prio_port_in, 5011,
               "Port to listen for secondary priority work.");
+
+
+DEFINE_uint64(tos_high_prio, 4,
+              "TOS value for high priority traffic");
+
+DEFINE_uint64(tos_low_prio, 8,
+              "TOS value for low priority traffic");
+
 DEFINE_bool(set_thread_priority, false,
             "Set thread priority with Linux OS, "
             "which requires running with `sudo`.");
+
+DEFINE_bool(set_network_priority, false,
+            "Set network priorioritzation");
+
 DEFINE_int64(run_time, 10,
              "Length of time to run this process. Use -1 for infinite.");
 
@@ -35,7 +52,26 @@ void ReceivedConnection(unsigned priority,
                         dans::Executor* exec_p, int soc) {
   // Create a unique JobId.
   dans::JobId jid = jid_factory_p->CreateJobId();
+  
 
+  VLOG(3) << "XXX:I am here - val of network prio = " << FLAGS_set_network_priority << "  " << FLAGS_tos_high_prio << "  " << FLAGS_tos_low_prio;
+  if (FLAGS_set_network_priority) {
+    
+     unsigned int net_prio = 0;
+     if (priority == 0)
+	net_prio = FLAGS_tos_high_prio;
+     else
+	net_prio = FLAGS_tos_low_prio;
+
+     if (setsockopt(soc, IPPROTO_IP, IP_TOS, &net_prio, sizeof(net_prio)) < 0)
+        VLOG(0) << "XXX: Error in setting  IP_TOS option:" << net_prio; 
+     else
+	VLOG(3) << "Setting TOS bit = " << net_prio << "for job id = " << jid;	 
+    
+     } 
+
+
+ 
   auto client_request = std::make_unique<dans::TcpPipe>(soc);
   auto job = std::make_unique<dans::Job<std::unique_ptr<dans::TcpPipe>>>(
       std::move(client_request), jid, priority, /*duplication*/ 0);
