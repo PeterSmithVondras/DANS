@@ -16,7 +16,7 @@ DEFINE_uint64(secondary_prio_port_in, 5011,
 DEFINE_bool(set_thread_priority, false,
             "Set thread priority with Linux OS, "
             "which requires running with `sudo`.");
-DEFINE_int64(run_time, 10,
+DEFINE_int64(run_time, -1,
              "Length of time to run this process. Use -1 for infinite.");
 
 namespace {
