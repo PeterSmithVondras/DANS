@@ -22,7 +22,8 @@ MultiQueue<T>::MultiQueue(unsigned max_priority)
       _released(false),
       _not_empty_mutexes(_max_prio + 1),
       _pq_mutexes(_max_prio + 1),
-      _priority_qs(_max_prio + 1) {
+      _priority_qs(_max_prio + 1),
+      _release_one(_max_prio + 1, false) {
   VLOG(4) << __PRETTY_FUNCTION__ << " max_priority=" << max_priority;
   for (unsigned i = 0; i < _max_prio; i++) {
     // Queues start empty and therefore "not empty" is locked.
@@ -137,6 +138,10 @@ UniqJobPtr<T> MultiQueue<T>::Dequeue(Priority prio) {
   while (true) {
     // Ensuring that there is at least a single item in this queue.
     _not_empty_mutexes[prio].lock();
+    if (_release_one[prio] == true) {
+      _release_one[prio] = false;
+      return nullptr;
+    }
 
     // Ensuring that purging is not in effect.
     no_pruging.lock();
@@ -245,6 +250,18 @@ void MultiQueue<T>::ReleaseQueues() {
 
   for (Priority p = 0; p <= _max_prio; ++p) {
     if (_priority_qs[p].empty()) _not_empty_mutexes[p].unlock();
+  }
+}
+
+template <typename T>
+void MultiQueue<T>::ReleaseOne(Priority prio) {
+  // Ensure complete control of the multiqueue
+  std::unique_lock<std::shared_timed_mutex> no_pruging(_purge_shared_mutex);
+  // Locking this priority queue
+  std::lock_guard<std::mutex> lock_pq(_pq_mutexes[prio]);
+  if (_priority_qs[prio].empty()) {
+    _release_one[prio] = true;
+    _not_empty_mutexes[prio].unlock();
   }
 }
 

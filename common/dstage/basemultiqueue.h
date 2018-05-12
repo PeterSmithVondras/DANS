@@ -29,8 +29,12 @@ class BaseMultiQueue {
 
   virtual bool Empty(Priority prio) = 0;
 
-  // Returns a nullptr to the next in line for the Priority `prio` queue.
+  // All q's release all threads calling Dequeue by continuously returning
+  // nullptr's.
   virtual void ReleaseQueues() = 0;
+
+  // Returns a nullptr to the next in line for the Priority `prio` queue.
+  virtual void ReleaseOne(Priority prio) = 0;
 
   virtual unsigned MaxPriority() = 0;
 };

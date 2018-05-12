@@ -38,6 +38,8 @@ class MultiQueue : public BaseMultiQueue<T> {
   // Returns a nullptr to the next in line for the Priority `prio` queue.
   void ReleaseQueues();
 
+  void ReleaseOne(Priority prio);
+
   unsigned MaxPriority();
 
   std::string DescribeQ(Priority prio);
@@ -59,6 +61,8 @@ class MultiQueue : public BaseMultiQueue<T> {
   // lock a specific mutex
   std::vector<std::mutex> _pq_mutexes;
   std::vector<std::list<JobId>> _priority_qs;
+
+  std::vector<bool> _release_one;
 
   // locks the job map meta data
   std::mutex _value_map_mutex;
