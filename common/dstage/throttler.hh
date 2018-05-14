@@ -6,8 +6,6 @@
 
 namespace dans {
 namespace {
-int kPrimaryThrottle = 5;
-int kSecondaryThrottle = 1;
 int kThrottlerPriorities = 2;
 const Priority kHighPriority = 0;
 const Priority kLowPriority = 1;
@@ -31,21 +29,25 @@ Throttler<T>::ThrottleJob::~ThrottleJob() {
 }
 
 template <typename T>
-Throttler<T>::Throttler(BaseMultiQueue<T>* multi_q_p)
+Throttler<T>::Throttler(BaseMultiQueue<T>* multi_q_p,
+                        std::vector<int> throttle_targets)
     : _multi_q_p(multi_q_p),
       _scheduled_counts(_multi_q_p->MaxPriority() + 1, 0),
       _thread_waiting(_multi_q_p->MaxPriority() + 1, false),
+      _throttle_targets(throttle_targets),
       _throttle_blocks(_multi_q_p->MaxPriority() + 1) {
   VLOG(4) << __PRETTY_FUNCTION__;
   CHECK(multi_q_p != nullptr)
       << "Attempted to instantiate Throttler with nullptr.";
 
-  _target_counts.push_back(kPrimaryThrottle);
-  _target_counts.push_back(kSecondaryThrottle);
   CHECK_EQ(_multi_q_p->MaxPriority() + 1, kThrottlerPriorities)
       << "Throttler is currently only set up for two priority levels, but "
          "there are "
-      << _multi_q_p->MaxPriority() + 1 << ".";
+      << _multi_q_p->MaxPriority() + 1 << " priorities in the MultiQueue.";
+  CHECK_EQ(_throttle_targets.size(), kThrottlerPriorities)
+      << "Throttler is currently only set up for two priority levels, but "
+         "there are "
+      << _throttle_targets.size() << " target throttle levels.";
 }
 
 template <typename T>
@@ -86,16 +88,17 @@ std::unique_ptr<typename Throttler<T>::ThrottleJob> Throttler<T>::Dequeue(
 template <typename T>
 void Throttler<T>::DecideToSchedule() {
   // adjust high priority
-  if (_scheduled_counts[kHighPriority] < _target_counts[kHighPriority] &&
+  if (_scheduled_counts[kHighPriority] < _throttle_targets[kHighPriority] &&
       !_thread_waiting[kHighPriority]) {
     _throttle_blocks[kHighPriority].unlock();
   }
   // adjust low priority
   int high_prio_jobs =
       _scheduled_counts[kHighPriority] + _multi_q_p->Size(kHighPriority);
-  if (high_prio_jobs >= _target_counts[kHighPriority]) {
+  if (high_prio_jobs >= _throttle_targets[kHighPriority]) {
     if (_thread_waiting[kLowPriority]) _multi_q_p->ReleaseOne(kLowPriority);
-  } else if (_scheduled_counts[kLowPriority] < _target_counts[kLowPriority] &&
+  } else if (_scheduled_counts[kLowPriority] <
+                 _throttle_targets[kLowPriority] &&
              !_thread_waiting[kLowPriority]) {
     _throttle_blocks[kLowPriority].unlock();
   }

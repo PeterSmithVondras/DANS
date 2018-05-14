@@ -13,6 +13,10 @@ DEFINE_string(secondary_prio_port_out, "5013",
               "Port to send secondary priority work to.");
 DEFINE_uint64(worker_threads, 2, "Number of threads to process pipes.");
 DEFINE_uint64(sleep_time, 0, "Number of threads to process pipes.");
+DEFINE_uint64(high_priority_throttle, 5,
+              "Number of concurrent high priority jobs to schedule.");
+DEFINE_uint64(low_priority_throttle, 1,
+              "Number of concurrent low priority jobs to schedule.");
 
 namespace {
 using CallBack2 = dans::CommunicationHandlerInterface::CallBack2;
@@ -203,7 +207,11 @@ void ProxyScheduler::LinkMultiQ(
     BaseMultiQueue<std::unique_ptr<TcpPipe>>* multi_q_p) {
   VLOG(4) << __PRETTY_FUNCTION__;
   CHECK_NOTNULL(multi_q_p);
-  _throttler = std::make_unique<Throttler<std::unique_ptr<TcpPipe>>>(multi_q_p);
+  std::vector<int> throttle_targets;
+  throttle_targets.push_back(FLAGS_high_priority_throttle);
+  throttle_targets.push_back(FLAGS_low_priority_throttle);
+  _throttler = std::make_unique<Throttler<std::unique_ptr<TcpPipe>>>(
+      multi_q_p, throttle_targets);
   Scheduler<std::unique_ptr<TcpPipe>>::LinkMultiQ(multi_q_p);
 }
 
@@ -357,14 +365,14 @@ void ProxyScheduler::MonitorCallback(
   int bytes_piped = job->job_data->Pipe(soc);
   if (bytes_piped < 0 && bytes_piped != -TcpPipe::TRY_LATER) {
     if (bytes_piped == -soc) {
-      PLOG(WARNING) << job->Describe() << " Error reading from "
-                    << job->job_data->Which(soc) << " while "
-                    << job->job_data->Describe();
+      PLOG(INFO) << job->Describe() << " Error reading from "
+                 << job->job_data->Which(soc) << " while "
+                 << job->job_data->Describe();
       job->job_data->ShutdownOther(soc);
     } else {
-      PLOG(WARNING) << job->Describe() << " Error sending to "
-                    << job->job_data->Which(job->job_data->OtherSocket(soc))
-                    << " while " << job->job_data->Describe();
+      PLOG(INFO) << job->Describe() << " Error sending to "
+                 << job->job_data->Which(job->job_data->OtherSocket(soc))
+                 << " while " << job->job_data->Describe();
     }
   } else if (bytes_piped == 0) {
     VLOG(2) << job->Describe() << " " << job->job_data->Which(soc)

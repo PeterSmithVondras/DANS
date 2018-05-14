@@ -47,7 +47,7 @@ void ReceivedConnection(unsigned priority,
       [proxy_p, exec_p, jid, priority, memory_ptr](
           int soc, dans::CommunicationHandlerInterface::ReadyFor ready_for) {
         *memory_ptr = nullptr;
-        VLOG(0) << "Application purging job_id=" << jid << " prio=" << priority;
+        VLOG(1) << "Application purging job_id=" << jid << " prio=" << priority;
         dans::LinuxCommunicationHandler::PrintEpollEvents(ready_for.events);
         exec_p->Submit({[proxy_p, jid]() { proxy_p->Purge(jid); }, jid});
       });

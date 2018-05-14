@@ -29,7 +29,7 @@ class Throttler {
     unsigned total_completed;
   };
 
-  Throttler(BaseMultiQueue<T>* multi_q_p);
+  Throttler(BaseMultiQueue<T>* multi_q_p, std::vector<int> throttle_targets);
 
   // Thread safe and blocking dequeue function will dequeue from the queue
   // associated to "prio."
@@ -43,8 +43,7 @@ class Throttler {
   std::mutex _state_lock;
   std::vector<int> _scheduled_counts;
   std::vector<bool> _thread_waiting;
-  std::vector<int> _target_counts;
-  int _total_slots;
+  std::vector<int> _throttle_targets;
   std::vector<std::mutex> _throttle_blocks;
 
   // Not a thread safe function.
