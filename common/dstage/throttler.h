@@ -37,13 +37,21 @@ class Throttler {
 
   std::string Describe();
 
-  void IncrementJobCount(Priority prio);
-  void DecrementJobCount(Priority prio);
-
  private:
   BaseMultiQueue<T>* _multi_q_p;
-  // Counters are in unique_ptr's as mutex's cannot be moved.
-  std::vector<std::unique_ptr<Counter>> _jobs_scheduled;
+
+  std::mutex _state_lock;
+  std::vector<int> _scheduled_counts;
+  std::vector<bool> _thread_waiting;
+  std::vector<int> _target_counts;
+  int _total_slots;
+  std::vector<std::mutex> _throttle_blocks;
+
+  // Not a thread safe function.
+  void IncrementJobCount(Priority prio);
+  // This IS a thread safe function.
+  void DecrementJobCount(Priority prio);
+  void DecideToSchedule();
 };
 
 template <typename T>

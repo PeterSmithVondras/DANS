@@ -219,9 +219,9 @@ void ProxyScheduler::StartScheduling(Priority prio) {
       std::this_thread::sleep_for(std::chrono::seconds(FLAGS_sleep_time));
     }
 
-    // Convert the UniqJobPtr to SharedJobPtr to allow capture in
-    // closure. Note that uniq_ptr's are are hard/impossible to capture using
-    // std::bind as they do not have a copy constructor.
+    // Convert the UniqJobPtr to SharedThrottleJobPtr to allow capture and
+    // throttling in closure. Note that uniq_ptr's are are hard/impossible to
+    // capture using std::bind as they do not have a copy constructor.
 
     SharedThrottleJobPtr<std::unique_ptr<TcpPipe>> job =
         _throttler->Dequeue(prio);
