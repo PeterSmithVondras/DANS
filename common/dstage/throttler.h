@@ -1,6 +1,8 @@
 #ifndef COMMON_DSTAGE_THROTTLER
 #define COMMON_DSTAGE_THROTTLER
 
+#include <array>
+#include <atomic>
 #include <memory>
 #include <mutex>
 #include <shared_mutex>
@@ -29,7 +31,7 @@ class Throttler {
     unsigned total_completed;
   };
 
-  Throttler(BaseMultiQueue<T>* multi_q_p, std::vector<int> throttle_targets);
+  Throttler(BaseMultiQueue<T>* multi_q_p, std::array<int, 2> throttle_targets);
 
   // Thread safe and blocking dequeue function will dequeue from the queue
   // associated to "prio."
@@ -40,17 +42,24 @@ class Throttler {
  private:
   BaseMultiQueue<T>* _multi_q_p;
 
+  std::array<int, 2> _throttle_targets;
+  std::array<std::mutex, 2> _throttle_blocks;
+
+  std::vector<std::unique_ptr<Counter>> _scheduled_counts;
+  // TODO: Figure out why it was so difficult to have these atomics in a
+  // std::array. Also, figure out if it would be cleaner and or more correct to
+  // use std::condition_variable instead.
+  std::atomic<bool> _primary_waiting = {false};
+  std::atomic<bool> _secondary_waiting = {false};
+
   std::mutex _state_lock;
-  std::vector<int> _scheduled_counts;
-  std::vector<bool> _thread_waiting;
-  std::vector<int> _throttle_targets;
-  std::vector<std::mutex> _throttle_blocks;
 
   // Not a thread safe function.
   void IncrementJobCount(Priority prio);
   // This IS a thread safe function.
   void DecrementJobCount(Priority prio);
-  void DecideToSchedule();
+  void DecideToScheduleAfterScheduling(Priority prio);
+  void DecideToScheduleCompleting(Priority prio);
 };
 
 template <typename T>

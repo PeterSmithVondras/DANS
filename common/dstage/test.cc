@@ -1,10 +1,13 @@
+#include <array>
+#include <atomic>
 #include <chrono>
+#include <cstdlib>
 #include <functional>
 #include <mutex>
 #include <thread>
 
 #include "common/dstage/multiqueue.h"
-#include "common/dstage/throttler.h"
+// #include "common/dstage/throttler.h"
 #include "common/util/callback.h"
 #include "gflags/gflags.h"
 #include "glog/logging.h"
@@ -40,11 +43,23 @@ int main(int argc, char** argv) {
   // Provides a failure signal handler.
   google::InstallFailureSignalHandler();
 
-  MultiQueue<int> q(1);
-  Throttler<int> t(&q);
-  auto foo = t.Dequeue(0);
+  // MultiQueue<int> q(1);
+  // Throttler<int> t(&q, {5, 1});
+  // auto foo = t.Dequeue(0);
 
   // auto foo = std::make_unique<Outer<int>::Inner>();
+
+  char character = 'f';
+  std::srand(std::time(nullptr));
+  int random_number = std::rand() % 2;
+  std::array<std::atomic<bool>, 1> condition = {false};
+  condition = true;
+  if (condition[0].load() && random_number == 1) {
+    character = 't';
+  }
+
+  LOG(INFO) << "Character was: " << character
+            << " random_number: " << random_number;
 
   std::mutex wait_forever;
   wait_forever.lock();

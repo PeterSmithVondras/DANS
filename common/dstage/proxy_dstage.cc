@@ -12,7 +12,6 @@ DEFINE_string(primary_prio_port_out, "5012",
 DEFINE_string(secondary_prio_port_out, "5013",
               "Port to send secondary priority work to.");
 DEFINE_uint64(worker_threads, 2, "Number of threads to process pipes.");
-DEFINE_uint64(sleep_time, 0, "Number of threads to process pipes.");
 DEFINE_uint64(high_priority_throttle, 5,
               "Number of concurrent high priority jobs to schedule.");
 DEFINE_uint64(low_priority_throttle, 1,
@@ -22,6 +21,9 @@ namespace {
 using CallBack2 = dans::CommunicationHandlerInterface::CallBack2;
 using ReadyFor = dans::CommunicationHandlerInterface::ReadyFor;
 const int kBufSize = 4096;
+const int kThrottlePriorities = 2;
+const int kHighPriority = 0;
+const int kLowPriority = 1;
 }  // namespace
 
 namespace dans {
@@ -207,9 +209,9 @@ void ProxyScheduler::LinkMultiQ(
     BaseMultiQueue<std::unique_ptr<TcpPipe>>* multi_q_p) {
   VLOG(4) << __PRETTY_FUNCTION__;
   CHECK_NOTNULL(multi_q_p);
-  std::vector<int> throttle_targets;
-  throttle_targets.push_back(FLAGS_high_priority_throttle);
-  throttle_targets.push_back(FLAGS_low_priority_throttle);
+  std::array<int, kThrottlePriorities> throttle_targets;
+  throttle_targets[kHighPriority] = FLAGS_high_priority_throttle;
+  throttle_targets[kLowPriority] = FLAGS_low_priority_throttle;
   _throttler = std::make_unique<Throttler<std::unique_ptr<TcpPipe>>>(
       multi_q_p, throttle_targets);
   Scheduler<std::unique_ptr<TcpPipe>>::LinkMultiQ(multi_q_p);
@@ -221,10 +223,6 @@ void ProxyScheduler::StartScheduling(Priority prio) {
     {
       std::shared_lock<std::shared_timed_mutex> lock(_destructing_lock);
       if (_destructing) return;
-    }
-
-    if (prio == 0) {
-      std::this_thread::sleep_for(std::chrono::seconds(FLAGS_sleep_time));
     }
 
     // Convert the UniqJobPtr to SharedThrottleJobPtr to allow capture and
