@@ -49,8 +49,8 @@ class Throttler {
   // TODO: Figure out why it was so difficult to have these atomics in a
   // std::array. Also, figure out if it would be cleaner and or more correct to
   // use std::condition_variable instead.
-  std::atomic<bool> _primary_waiting = {false};
-  std::atomic<bool> _secondary_waiting = {false};
+  bool _primary_waiting = false;
+  bool _secondary_waiting = false;
 
   std::mutex _state_lock;
 
@@ -59,6 +59,7 @@ class Throttler {
   // This IS a thread safe function.
   void DecrementJobCount(Priority prio);
   void DecideToScheduleAfterScheduling(Priority prio);
+  void DecideToScheduleAfterScheduling();
   void DecideToScheduleCompleting(Priority prio);
 };
 

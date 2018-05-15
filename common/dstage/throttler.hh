@@ -66,19 +66,7 @@ std::unique_ptr<typename Throttler<T>::ThrottleJob> Throttler<T>::Dequeue(
     Priority prio) {
   std::unique_ptr<Throttler<T>::ThrottleJob> ret_val = nullptr;
   _throttle_blocks[prio].lock();
-  if (prio == 0) {
-    _primary_waiting = true;
-  } else {
-    _secondary_waiting = true;
-  }
-
   auto job = _multi_q_p->Dequeue(prio);
-
-  if (prio == 0) {
-    _primary_waiting = false;
-  } else {
-    _secondary_waiting = false;
-  }
   if (job != nullptr) {
     ret_val = std::make_unique<Throttler<T>::ThrottleJob>(std::move(job), this);
   }
@@ -90,29 +78,39 @@ std::unique_ptr<typename Throttler<T>::ThrottleJob> Throttler<T>::Dequeue(
 template <typename T>
 void Throttler<T>::DecideToScheduleAfterScheduling(Priority prio) {
   std::lock_guard<std::mutex> lock(_state_lock);
+  if (prio == 0) {
+    _primary_waiting = false;
+  } else {
+    _secondary_waiting = false;
+  }
+
+  DecideToScheduleAfterScheduling();
+}
+
+// TODO: this really complicated function needs to be smoothed out.
+template <typename T>
+void Throttler<T>::DecideToScheduleAfterScheduling() {
   int high_prio_jobs = _scheduled_counts[kHighPriority]->Count() +
                        _multi_q_p->Size(kHighPriority);
-  if (prio == kHighPriority) {
-    // adjust high priority
-    if (_scheduled_counts[kHighPriority]->Count() <
-            _throttle_targets[kHighPriority] &&
-        !_primary_waiting.load()) {
-      _throttle_blocks[kHighPriority].unlock();
-    }
+  bool attempted_to_schedule_primary = false;
+  // adjust high priority
+  if (_scheduled_counts[kHighPriority]->Count() <
+          _throttle_targets[kHighPriority] &&
+      !_primary_waiting) {
+    _primary_waiting = true;
+    _throttle_blocks[kHighPriority].unlock();
+    attempted_to_schedule_primary = true;
+  }
 
-    // adjust low priority
-    if (high_prio_jobs >= _throttle_targets[kHighPriority] &&
-        _secondary_waiting.load()) {
-      _multi_q_p->ReleaseOne(kLowPriority);
-    }
-  } else {
-    // Called by low priority.
-    if (high_prio_jobs < _throttle_targets[kHighPriority] &&
-        _scheduled_counts[kLowPriority]->Count() <
-            _throttle_targets[kLowPriority] &&
-        !_secondary_waiting.load()) {
-      _throttle_blocks[kLowPriority].unlock();
-    }
+  // adjust low priority
+  if (high_prio_jobs >= _throttle_targets[kHighPriority]) {
+    if (_secondary_waiting) _multi_q_p->ReleaseOne(kLowPriority);
+  } else if (_scheduled_counts[kLowPriority]->Count() <
+                 _throttle_targets[kLowPriority] &&
+             !_secondary_waiting &&
+             !attempted_to_schedule_primary) {
+    _secondary_waiting = true;
+    _throttle_blocks[kLowPriority].unlock();
   }
 }
 
@@ -122,29 +120,24 @@ void Throttler<T>::DecideToScheduleCompleting(Priority prio) {
   std::lock_guard<std::mutex> lock(_state_lock);
   int high_prio_jobs = _scheduled_counts[kHighPriority]->Count() +
                        _multi_q_p->Size(kHighPriority);
-  if (prio == kHighPriority) {
-    // adjust high priority
-    if (_scheduled_counts[kHighPriority]->Count() <
-            _throttle_targets[kHighPriority] &&
-        !_primary_waiting.load()) {
-      _throttle_blocks[kHighPriority].unlock();
-    }
+  bool attempted_to_schedule_primary = false;
+  // adjust high priority
+  if (_scheduled_counts[kHighPriority]->Count() <
+          _throttle_targets[kHighPriority] &&
+      !_primary_waiting) {
+    _primary_waiting = true;
+    _throttle_blocks[kHighPriority].unlock();
+    attempted_to_schedule_primary = true;
+  }
 
-    // adjust low priority
-    if (high_prio_jobs >= _throttle_targets[kHighPriority] &&
-        _secondary_waiting.load()) {
-      _multi_q_p->ReleaseOne(kLowPriority);
-    } else if (!_secondary_waiting.load()) {
-      _throttle_blocks[kLowPriority].unlock();
-    }
-  } else {
-    // Called by low priority.
-    if (high_prio_jobs < _throttle_targets[kHighPriority] &&
-        _scheduled_counts[kLowPriority]->Count() <
-            _throttle_targets[kLowPriority] &&
-        !_secondary_waiting.load()) {
-      _throttle_blocks[kLowPriority].unlock();
-    }
+  // adjust low priority
+  if (high_prio_jobs < _throttle_targets[kHighPriority] &&
+      _scheduled_counts[kLowPriority]->Count() <
+                 _throttle_targets[kLowPriority] &&
+      !_secondary_waiting &&
+      !attempted_to_schedule_primary) {
+    _secondary_waiting = true;
+    _throttle_blocks[kLowPriority].unlock();
   }
 }
 
