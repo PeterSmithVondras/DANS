@@ -1,6 +1,7 @@
 #ifndef DANS02_DSTAGE_JOB_H
 #define DANS02_DSTAGE_JOB_H
 
+#include <chrono>
 #include <memory>
 #include <string>
 #include <vector>
@@ -35,6 +36,15 @@ class Job {
       : job_id(job_id),
         priority(priority),
         duplication(duplication),
+        start_time(std::chrono::high_resolution_clock::now()),
+        job_data(std::move(job_data)) {}
+
+  Job(T job_data, JobId job_id, Priority priority, unsigned duplication,
+      std::chrono::high_resolution_clock::time_point start_time)
+      : job_id(job_id),
+        priority(priority),
+        duplication(duplication),
+        start_time(start_time),
         job_data(std::move(job_data)) {}
 
   bool operator==(const Job& rhs) const { return job_id == rhs.job_id; }
@@ -50,6 +60,7 @@ class Job {
   JobId job_id;
   Priority priority;
   unsigned duplication;
+  std::chrono::high_resolution_clock::time_point start_time;
   T job_data;
 };
 

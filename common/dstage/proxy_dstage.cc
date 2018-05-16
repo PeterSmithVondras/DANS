@@ -12,9 +12,9 @@ DEFINE_string(primary_prio_port_out, "5012",
 DEFINE_string(secondary_prio_port_out, "5013",
               "Port to send secondary priority work to.");
 DEFINE_uint64(worker_threads, 2, "Number of threads to process pipes.");
-DEFINE_uint64(high_priority_throttle, 5,
+DEFINE_uint64(high_priority_throttle, 1000,
               "Number of concurrent high priority jobs to schedule.");
-DEFINE_uint64(low_priority_throttle, 1,
+DEFINE_uint64(low_priority_throttle, 1000,
               "Number of concurrent low priority jobs to schedule.");
 
 namespace {
@@ -377,6 +377,7 @@ void ProxyScheduler::MonitorCallback(
             << " closed connection on " << job->job_data->Describe();
     job->job_data->ShutdownOther(soc);
   } else {
+    job->ReportThroughput(bytes_piped);
     bytes_piped = bytes_piped == -TcpPipe::TRY_LATER ? 0 : bytes_piped;
     VLOG(3) << job->Describe() << " piped " << bytes_piped << " bytes from "
             << job->job_data->Which(soc) << " on " << job->job_data->Describe();
