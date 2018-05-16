@@ -1,6 +1,11 @@
 #include <chrono>
 #include <csignal>
 #include <functional>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
+#include <sys/types.h>
 
 #include "common/dstage/executor.h"
 #include "common/dstage/linux_communication_handler.h"
@@ -18,6 +23,15 @@ DEFINE_bool(set_thread_priority, false,
             "which requires running with `sudo`.");
 DEFINE_int64(run_time, -1,
              "Length of time to run this process. Use -1 for infinite.");
+
+DEFINE_uint64(tos_high_prio, 4,
+              "TOS value for high priority traffic");
+
+DEFINE_uint64(tos_low_prio, 8,
+              "TOS value for low priority traffic");
+DEFINE_bool(set_network_priority, false,
+            "Set network priorioritzation");
+
 
 namespace {
 const unsigned kMaxPrio = 1;
@@ -46,6 +60,24 @@ void ReceivedConnection(unsigned priority,
       std::move(client_request), jid, priority, /*duplication*/ 0, start_time);
 
   auto memory_ptr = &(job->job_data->first_cb);
+
+  VLOG(3) << "XXX:I am here - val of network prio = " << FLAGS_set_network_priority << "  " << FLAGS_tos_high_prio << "  " << FLAGS_tos_low_prio;
+  if (FLAGS_set_network_priority) {
+    
+     unsigned int net_prio = 0;
+     if (priority == 0)
+	net_prio = FLAGS_tos_high_prio;
+     else
+	net_prio = FLAGS_tos_low_prio;
+
+     if (setsockopt(soc, IPPROTO_IP, IP_TOS, &net_prio, sizeof(net_prio)) < 0)
+        VLOG(0) << "XXX: Error in setting  IP_TOS option:" << net_prio; 
+     else
+	VLOG(3) << "Setting TOS bit = " << net_prio << "for job id = " << jid;	 
+    
+     } 
+
+
   // Monitor socket for failures and Purge if it is triggered.
   job->job_data->first_cb = comm_handler_p->MonitorNew(
       soc, {false, false},
