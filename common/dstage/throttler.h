@@ -8,6 +8,7 @@
 #include <memory>
 #include <mutex>
 #include <shared_mutex>
+#include <thread>
 
 #include "common/dstage/job.h"
 #include "common/dstage/multiqueue.h"
@@ -18,9 +19,9 @@ namespace dans {
 template <typename T>
 class Throttler {
   struct Stats {
-    std::vector<std::chrono::microseconds> primary_latencies;
+    std::vector<std::chrono::milliseconds> primary_latencies;
     std::vector<int> primary_sizes;
-    std::vector<std::chrono::microseconds> secondary_latencies;
+    std::vector<std::chrono::milliseconds> secondary_latencies;
     std::vector<int> secondary_sizes;
   };
 
@@ -65,8 +66,8 @@ class Throttler {
   // TODO: Move back to array of bools.
   bool _primary_waiting = false;
   bool _secondary_waiting = false;
-  std::vector<std::chrono::microseconds> _primary_latencies;
-  std::vector<std::chrono::microseconds> _secondary_latencies;
+  std::vector<std::chrono::milliseconds> _primary_latencies;
+  std::vector<std::chrono::milliseconds> _secondary_latencies;
   std::vector<int> _primary_sizes;
   std::vector<int> _secondary_sizes;
 

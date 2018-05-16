@@ -33,12 +33,17 @@ void ReceivedConnection(unsigned priority,
                         dans::DStageProxy* proxy_p,
                         dans::JobIdFactory* jid_factory_p,
                         dans::Executor* exec_p, int soc) {
+  // Taking this time now instead of using the constructor of the Job as
+  // creating a JobId could block.
+  std::chrono::high_resolution_clock::time_point start_time =
+      std::chrono::high_resolution_clock::now();
+
   // Create a unique JobId.
   dans::JobId jid = jid_factory_p->CreateJobId();
 
   auto client_request = std::make_unique<dans::TcpPipe>(soc);
   auto job = std::make_unique<dans::Job<std::unique_ptr<dans::TcpPipe>>>(
-      std::move(client_request), jid, priority, /*duplication*/ 0);
+      std::move(client_request), jid, priority, /*duplication*/ 0, start_time);
 
   auto memory_ptr = &(job->job_data->first_cb);
   // Monitor socket for failures and Purge if it is triggered.

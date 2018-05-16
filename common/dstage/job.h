@@ -2,6 +2,7 @@
 #define DANS02_DSTAGE_JOB_H
 
 #include <chrono>
+#include <ctime>
 #include <memory>
 #include <string>
 #include <vector>
@@ -52,8 +53,14 @@ class Job {
 
   std::string Describe() {
     std::string description;
-    description = "job_id=" + std::to_string(job_id) +
-                  " prio=" + std::to_string(priority);
+    description =
+        "job_id=" + std::to_string(job_id) +
+        " prio=" + std::to_string(priority) + " duration=" +
+        std::to_string(
+            std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::high_resolution_clock::now() - start_time)
+                .count()) +
+        "ms";
     return description;
   }
 

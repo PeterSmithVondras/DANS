@@ -26,10 +26,10 @@ template <typename T>
 Throttler<T>::ThrottleJob::~ThrottleJob() {
   VLOG(4) << __PRETTY_FUNCTION__;
   _throttler->DecrementJobCount(Job<T>::priority);
-  _throttler->AddStat(
-      Job<T>::priority, total_completed,
-      std::chrono::duration_cast<std::chrono::milliseconds>(
-          std::chrono::high_resolution_clock::now() - Job<T>::start_time));
+  auto finish_time = std::chrono::high_resolution_clock::now();
+  _throttler->AddStat(Job<T>::priority, total_completed,
+                      std::chrono::duration_cast<std::chrono::milliseconds>(
+                          finish_time - Job<T>::start_time));
 }
 
 template <typename T>
@@ -70,17 +70,33 @@ Throttler<T>::Throttler(BaseMultiQueue<T>* multi_q_p,
       << "Throttler is currently only set up for two priority levels, but "
          "there are "
       << _throttle_targets.size() << " target throttle levels.";
+  CHECK(!(_throttle_targets[kHighPriority] == 0 &&
+          _throttle_targets[kLowPriority] == 0))
+      << "Setting throttling threshold of Primary and Secondary to 0 at the "
+         "same time will result in a blocked state.";
 
   for (int i = 0; i < kThrottlerPriorities; i++) {
     _scheduled_counts.push_back(std::make_unique<Counter>(0));
   }
 
+  for (int p = 0; p < kThrottlerPriorities; ++p) {
+    if (_throttle_targets[p] == 0) {
+      _throttle_blocks[p].lock();
+    } else {
+      if (p == 0)
+        _primary_waiting = true;
+      else
+        _secondary_waiting = true;
+    }
+  }
+
   RunEveryT(std::chrono::milliseconds(500), [](Throttler<T>* th, Stats&& state,
                                                std::chrono::milliseconds time) {
     if (state.primary_latencies.size() > 0)
-      LOG(WARNING) << "RUNEVERYT -- prim lat: "
-                   << state.primary_latencies[0].count() << ", "
-                   << state.primary_latencies.size();
+      LOG(WARNING) << "RUNEVERYT -- "
+                   << "Primary count: " << state.primary_latencies.size()
+                   << ", lat:" << state.primary_latencies[0].count()
+                   << ", size: " << state.primary_sizes[0];
   });
 }
 
@@ -182,6 +198,10 @@ template <typename T>
 void Throttler<T>::SetThrottle(Priority prio, int threshold) {
   std::lock_guard<std::mutex> lock(_state_lock);
   _throttle_targets[prio] = threshold;
+  CHECK(!(_throttle_targets[kHighPriority] == 0 &&
+          _throttle_targets[kLowPriority] == 0))
+      << "Setting throttling threshold of Primary and Secondary to 0 at the "
+         "same time will result in a blocked state.";
 }
 
 template <typename T>

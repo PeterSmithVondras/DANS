@@ -14,23 +14,6 @@
 
 using namespace dans;
 
-template <typename T>
-class Outer {
- public:
-  class Inner {
-   public:
-    Inner() {}
-  };
-
-  Outer() {}
-};
-
-template <typename T>
-using UniqOuterPtr = std::unique_ptr<Outer<T>>;
-
-template <typename T>
-using UniqInnerPtr = std::unique_ptr<typename Outer<T>::Inner>;
-
 DEFINE_int64(run_time, 0,
              "Length of time to run this process. Use -1 for infinite.");
 
@@ -43,23 +26,16 @@ int main(int argc, char** argv) {
   // Provides a failure signal handler.
   google::InstallFailureSignalHandler();
 
-  // MultiQueue<int> q(1);
-  // Throttler<int> t(&q, {5, 1});
-  // auto foo = t.Dequeue(0);
+  std::chrono::high_resolution_clock::time_point start =
+      std::chrono::high_resolution_clock::now();
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+  std::chrono::high_resolution_clock::time_point end =
+      std::chrono::high_resolution_clock::now();
 
-  // auto foo = std::make_unique<Outer<int>::Inner>();
-
-  char character = 'f';
-  std::srand(std::time(nullptr));
-  int random_number = std::rand() % 2;
-  std::array<std::atomic<bool>, 1> condition = {false};
-  condition = true;
-  if (condition[0].load() && random_number == 1) {
-    character = 't';
-  }
-
-  LOG(INFO) << "Character was: " << character
-            << " random_number: " << random_number;
+  LOG(INFO) << "Time: "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(end -
+                                                                     start)
+                   .count();
 
   std::mutex wait_forever;
   wait_forever.lock();
