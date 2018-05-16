@@ -153,6 +153,25 @@ cc_binary(
 )
 
 cc_library(
+  name = "dans_throttling_proxy",
+  hdrs = [
+    "dans_throttling_proxy.h",
+  ],
+  srcs = [
+    "dans_throttling_proxy.cc",
+  ],
+  deps = [
+    ":proxy_dstage",
+    ":linux_communication_handler",
+    ":executor",
+    "//common/util:callback",
+    "@glog//:main",
+    "@gflags//:main",
+  ],
+  visibility = ["//visibility:public"],
+)
+
+cc_library(
   name = "proxy_dstage",
   hdrs = [
     "proxy_dstage.h",

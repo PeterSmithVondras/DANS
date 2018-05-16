@@ -3,6 +3,7 @@
 #include <functional>
 
 #include "common/dstage/throttler.h"
+#include "common/dstage/dans_throttling_proxy.h"
 #include "gflags/gflags.h"
 #include "glog/logging.h"
 
@@ -10,12 +11,7 @@ DEFINE_int64(run_time, -1,
              "Length of time to run this process. Use -1 for infinite.");
 
 namespace {
-const unsigned kMaxPrio = 1;
-const unsigned kThreadsPerPrio = 1;
-const unsigned kGetRequestsTotal = 2;
-const unsigned kPurgeThreadPoolThreads = 2;
-const unsigned kHighPriority = 0;
-const unsigned kLowPriority = 1;
+using dans_throttling_proxy::DansThrottlingProxy;
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -26,6 +22,7 @@ int main(int argc, char** argv) {
   google::InstallFailureSignalHandler();
 
   LOG(INFO) << "Hello World";
+  auto dans_throttling_proxy = std::make_unique<DansThrottlingProxy>();
 
   std::mutex wait_forever;
   wait_forever.lock();

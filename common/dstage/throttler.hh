@@ -7,8 +7,8 @@
 namespace dans {
 namespace {
 const int kThrottlerPriorities = 2;
-const Priority kHighPriority = 0;
-const Priority kLowPriority = 1;
+const Priority kPrimaryPriority = 0;
+const Priority kSecondaryPriority = 1;
 }  // namespace
 
 template <typename T>
@@ -70,8 +70,8 @@ Throttler<T>::Throttler(BaseMultiQueue<T>* multi_q_p,
       << "Throttler is currently only set up for two priority levels, but "
          "there are "
       << _throttle_targets.size() << " target throttle levels.";
-  CHECK(!(_throttle_targets[kHighPriority] == 0 &&
-          _throttle_targets[kLowPriority] == 0))
+  CHECK(!(_throttle_targets[kPrimaryPriority] == 0 &&
+          _throttle_targets[kSecondaryPriority] == 0))
       << "Setting throttling threshold of Primary and Secondary to 0 at the "
          "same time will result in a blocked state.";
 
@@ -145,26 +145,26 @@ void Throttler<T>::DecideToScheduleAfterScheduling(Priority prio) {
 // TODO: this really complicated function needs to be smoothed out.
 template <typename T>
 void Throttler<T>::DecideToScheduleAfterScheduling() {
-  int high_prio_jobs = _scheduled_counts[kHighPriority]->Count() +
-                       _multi_q_p->Size(kHighPriority);
+  int high_prio_jobs = _scheduled_counts[kPrimaryPriority]->Count() +
+                       _multi_q_p->Size(kPrimaryPriority);
   bool attempted_to_schedule_primary = false;
   // adjust high priority
-  if (_scheduled_counts[kHighPriority]->Count() <
-          _throttle_targets[kHighPriority] &&
+  if (_scheduled_counts[kPrimaryPriority]->Count() <
+          _throttle_targets[kPrimaryPriority] &&
       !_primary_waiting) {
     _primary_waiting = true;
-    _throttle_blocks[kHighPriority].unlock();
+    _throttle_blocks[kPrimaryPriority].unlock();
     attempted_to_schedule_primary = true;
   }
 
   // adjust low priority
-  if (high_prio_jobs >= _throttle_targets[kHighPriority]) {
-    if (_secondary_waiting) _multi_q_p->ReleaseOne(kLowPriority);
-  } else if (_scheduled_counts[kLowPriority]->Count() <
-                 _throttle_targets[kLowPriority] &&
+  if (high_prio_jobs >= _throttle_targets[kPrimaryPriority]) {
+    if (_secondary_waiting) _multi_q_p->ReleaseOne(kSecondaryPriority);
+  } else if (_scheduled_counts[kSecondaryPriority]->Count() <
+                 _throttle_targets[kSecondaryPriority] &&
              !_secondary_waiting && !attempted_to_schedule_primary) {
     _secondary_waiting = true;
-    _throttle_blocks[kLowPriority].unlock();
+    _throttle_blocks[kSecondaryPriority].unlock();
   }
 }
 
@@ -172,25 +172,25 @@ void Throttler<T>::DecideToScheduleAfterScheduling() {
 template <typename T>
 void Throttler<T>::DecideToScheduleCompleting(Priority prio) {
   std::lock_guard<std::mutex> lock(_state_lock);
-  int high_prio_jobs = _scheduled_counts[kHighPriority]->Count() +
-                       _multi_q_p->Size(kHighPriority);
+  int high_prio_jobs = _scheduled_counts[kPrimaryPriority]->Count() +
+                       _multi_q_p->Size(kPrimaryPriority);
   bool attempted_to_schedule_primary = false;
   // adjust high priority
-  if (_scheduled_counts[kHighPriority]->Count() <
-          _throttle_targets[kHighPriority] &&
+  if (_scheduled_counts[kPrimaryPriority]->Count() <
+          _throttle_targets[kPrimaryPriority] &&
       !_primary_waiting) {
     _primary_waiting = true;
-    _throttle_blocks[kHighPriority].unlock();
+    _throttle_blocks[kPrimaryPriority].unlock();
     attempted_to_schedule_primary = true;
   }
 
   // adjust low priority
-  if (high_prio_jobs < _throttle_targets[kHighPriority] &&
-      _scheduled_counts[kLowPriority]->Count() <
-          _throttle_targets[kLowPriority] &&
+  if (high_prio_jobs < _throttle_targets[kPrimaryPriority] &&
+      _scheduled_counts[kSecondaryPriority]->Count() <
+          _throttle_targets[kSecondaryPriority] &&
       !_secondary_waiting && !attempted_to_schedule_primary) {
     _secondary_waiting = true;
-    _throttle_blocks[kLowPriority].unlock();
+    _throttle_blocks[kSecondaryPriority].unlock();
   }
 }
 
@@ -198,8 +198,8 @@ template <typename T>
 void Throttler<T>::SetThrottle(Priority prio, int threshold) {
   std::lock_guard<std::mutex> lock(_state_lock);
   _throttle_targets[prio] = threshold;
-  CHECK(!(_throttle_targets[kHighPriority] == 0 &&
-          _throttle_targets[kLowPriority] == 0))
+  CHECK(!(_throttle_targets[kPrimaryPriority] == 0 &&
+          _throttle_targets[kSecondaryPriority] == 0))
       << "Setting throttling threshold of Primary and Secondary to 0 at the "
          "same time will result in a blocked state.";
 }

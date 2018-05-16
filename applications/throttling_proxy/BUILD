@@ -3,6 +3,7 @@ cc_binary(
   srcs = ["throttling_proxy_example.cc"],
   deps = [
     "//common/dstage:throttler",
+    "//common/dstage:dans_throttling_proxy",
     "@glog//:main",
     "@gflags//:main",
   ],

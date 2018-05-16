@@ -7,14 +7,14 @@
 #include "glog/logging.h"
 
 DEFINE_string(server_ip, "192.168.137.127", "ip address of the file server.");
-DEFINE_string(primary_prio_port_out, "5012",
+DEFINE_uint64(primary_prio_port_out, 5012,
               "Port to send primary priority work to.");
-DEFINE_string(secondary_prio_port_out, "5013",
+DEFINE_uint64(secondary_prio_port_out, 5013,
               "Port to send secondary priority work to.");
 DEFINE_uint64(worker_threads, 2, "Number of threads to process pipes.");
-DEFINE_uint64(high_priority_throttle, 1000,
+DEFINE_uint64(pimary_priority_throttle, 1000,
               "Number of concurrent high priority jobs to schedule.");
-DEFINE_uint64(low_priority_throttle, 1000,
+DEFINE_uint64(secondary_priority_throttle, 1000,
               "Number of concurrent low priority jobs to schedule.");
 
 namespace {
@@ -25,7 +25,6 @@ const int kThrottlePriorities = 2;
 const int kHighPriority = 0;
 const int kLowPriority = 1;
 }  // namespace
-
 namespace dans {
 
 std::string TcpPipe::Describe() {
@@ -186,8 +185,8 @@ ProxyScheduler::ProxyScheduler(std::vector<unsigned> threads_per_prio,
       _comm_interface(comm_interface),
       _destructing(false),
       _worker_exec(FLAGS_worker_threads),
-      _primary_prio_port_out(FLAGS_primary_prio_port_out),
-      _secondary_prio_port_out(FLAGS_secondary_prio_port_out),
+      _primary_prio_port_out(std::to_string(FLAGS_primary_prio_port_out)),
+      _secondary_prio_port_out(std::to_string(FLAGS_secondary_prio_port_out)),
       _server_ip(FLAGS_server_ip) {
   VLOG(4) << __PRETTY_FUNCTION__;
 }
@@ -210,8 +209,8 @@ void ProxyScheduler::LinkMultiQ(
   VLOG(4) << __PRETTY_FUNCTION__;
   CHECK_NOTNULL(multi_q_p);
   std::array<int, kThrottlePriorities> throttle_targets;
-  throttle_targets[kHighPriority] = FLAGS_high_priority_throttle;
-  throttle_targets[kLowPriority] = FLAGS_low_priority_throttle;
+  throttle_targets[kHighPriority] = FLAGS_pimary_priority_throttle;
+  throttle_targets[kLowPriority] = FLAGS_secondary_priority_throttle;
   _throttler = std::make_unique<Throttler<std::unique_ptr<TcpPipe>>>(
       multi_q_p, throttle_targets);
   Scheduler<std::unique_ptr<TcpPipe>>::LinkMultiQ(multi_q_p);
