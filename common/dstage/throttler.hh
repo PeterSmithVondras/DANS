@@ -89,17 +89,6 @@ Throttler<T>::Throttler(BaseMultiQueue<T>* multi_q_p,
         _secondary_waiting = true;
     }
   }
-
-  // RunEveryT(std::chrono::milliseconds(500), [](Throttler<T>* th, Stats&&
-  // state,
-  //                                              std::chrono::milliseconds
-  //                                              time) {
-  //   if (state.primary_latencies.size() > 0)
-  //     LOG(WARNING) << "RUNEVERYT -- "
-  //                  << "Primary count: " << state.primary_latencies.size()
-  //                  << ", lat:" << state.primary_latencies[0].count()
-  //                  << ", size: " << state.primary_sizes[0];
-  // });
 }
 
 template <typename T>
