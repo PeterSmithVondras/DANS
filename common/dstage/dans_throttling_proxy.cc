@@ -20,8 +20,8 @@ const unsigned kMaxPrio = 1;
 const unsigned kThreadsPerPrio = 1;
 const unsigned kGetRequestsTotal = 2;
 const unsigned kPurgeThreadPoolThreads = 2;
-const unsigned kPrimaryPriority = 0;
-const unsigned kSecondaryPriority = 1;
+const dans::Priority kPrimaryPriority = 0;
+const dans::Priority kSecondaryPriority = 1;
 }  // namespace
 
 namespace dans_throttling_proxy {
@@ -43,6 +43,20 @@ DansThrottlingProxy::DansThrottlingProxy()
                           &DansThrottlingProxy::ReceivedConnection, this,
                           kSecondaryPriority, &_comm_handler, &_proxy,
                           &_jid_factory, &_exec, std::placeholders::_1)));
+}
+
+DansThrottlingProxy::DansThrottlingProxy(int primary_throttle,
+                                         int secondary_throttle,
+                                         std::chrono::milliseconds time_period,
+                                         ThrottlerCallback th_cb)
+    : DansThrottlingProxy() {
+  _proxy.GetThrottler()->SetThrottle(kPrimaryPriority, primary_throttle);
+  _proxy.GetThrottler()->SetThrottle(kSecondaryPriority, secondary_throttle);
+  _proxy.GetThrottler()->RunEveryT(time_period, th_cb);
+}
+
+ThrottleInterface* DansThrottlingProxy::GetThrottleInterface() {
+  return _proxy.GetThrottler();
 }
 
 void DansThrottlingProxy::ReceivedConnection(

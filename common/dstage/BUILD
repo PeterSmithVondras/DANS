@@ -56,7 +56,8 @@ cc_library(
   ],
   deps = [
     ":synchronization",
-  ]
+  ],
+  visibility = ["//visibility:public"],
 )
 
 cc_test(

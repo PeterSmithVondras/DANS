@@ -67,6 +67,10 @@ class ProxyScheduler : public Scheduler<std::unique_ptr<TcpPipe>> {
 
   void LinkMultiQ(BaseMultiQueue<std::unique_ptr<TcpPipe>>* multi_q_p) override;
 
+  Throttler<std::unique_ptr<dans::TcpPipe>>* GetThrottler() {
+    return _throttler.get();
+  }
+
  protected:
   void StartScheduling(Priority prio) override;
 
@@ -118,6 +122,10 @@ class DStageProxy
                 threads_per_prio, set_thread_priority, comm_interface)) {
     // Ignore SIGPIPE as this will happen often and is expected.
     std::signal(SIGPIPE, SIG_IGN);
+  }
+
+  Throttler<std::unique_ptr<dans::TcpPipe>>* GetThrottler() {
+    return dynamic_cast<ProxyScheduler*>(_scheduler.get())->GetThrottler();
   }
 };
 

@@ -12,7 +12,7 @@ DEFINE_uint64(primary_prio_port_out, 5012,
 DEFINE_uint64(secondary_prio_port_out, 5013,
               "Port to send secondary priority work to.");
 DEFINE_uint64(worker_threads, 2, "Number of threads to process pipes.");
-DEFINE_uint64(pimary_priority_throttle, 1000,
+DEFINE_uint64(primary_priority_throttle, 1000,
               "Number of concurrent high priority jobs to schedule.");
 DEFINE_uint64(secondary_priority_throttle, 1000,
               "Number of concurrent low priority jobs to schedule.");
@@ -209,7 +209,7 @@ void ProxyScheduler::LinkMultiQ(
   VLOG(4) << __PRETTY_FUNCTION__;
   CHECK_NOTNULL(multi_q_p);
   std::array<int, kThrottlePriorities> throttle_targets;
-  throttle_targets[kHighPriority] = FLAGS_pimary_priority_throttle;
+  throttle_targets[kHighPriority] = FLAGS_primary_priority_throttle;
   throttle_targets[kLowPriority] = FLAGS_secondary_priority_throttle;
   _throttler = std::make_unique<Throttler<std::unique_ptr<TcpPipe>>>(
       multi_q_p, throttle_targets);
@@ -362,14 +362,16 @@ void ProxyScheduler::MonitorCallback(
   int bytes_piped = job->job_data->Pipe(soc);
   if (bytes_piped < 0 && bytes_piped != -TcpPipe::TRY_LATER) {
     if (bytes_piped == -soc) {
-      PLOG(INFO) << job->Describe() << " Error reading from "
-                 << job->job_data->Which(soc) << " while "
-                 << job->job_data->Describe();
+      // TODO: Could use PLOG but it is annoying right now.
+      VLOG(1) << job->Describe() << " Error reading from "
+              << job->job_data->Which(soc) << " while "
+              << job->job_data->Describe();
       job->job_data->ShutdownOther(soc);
     } else {
-      PLOG(INFO) << job->Describe() << " Error sending to "
-                 << job->job_data->Which(job->job_data->OtherSocket(soc))
-                 << " while " << job->job_data->Describe();
+      // TODO: Could use PLOG but it is annoying right now.
+      VLOG(1) << job->Describe() << " Error sending to "
+              << job->job_data->Which(job->job_data->OtherSocket(soc))
+              << " while " << job->job_data->Describe();
     }
   } else if (bytes_piped == 0) {
     VLOG(2) << job->Describe() << " " << job->job_data->Which(soc)

@@ -18,14 +18,16 @@ namespace dans {
 
 template <typename T>
 class Throttler {
+ public:
   struct Stats {
+    Priority primary_throttle;
     std::vector<std::chrono::milliseconds> primary_latencies;
     std::vector<int> primary_sizes;
+    Priority secondary_priority;
     std::vector<std::chrono::milliseconds> secondary_latencies;
     std::vector<int> secondary_sizes;
   };
 
- public:
   class ThrottleJob : public Job<T> {
    public:
     ThrottleJob() = delete;

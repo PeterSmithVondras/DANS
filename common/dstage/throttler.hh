@@ -90,8 +90,10 @@ Throttler<T>::Throttler(BaseMultiQueue<T>* multi_q_p,
     }
   }
 
-  // RunEveryT(std::chrono::milliseconds(500), [](Throttler<T>* th, Stats&& state,
-  //                                              std::chrono::milliseconds time) {
+  // RunEveryT(std::chrono::milliseconds(500), [](Throttler<T>* th, Stats&&
+  // state,
+  //                                              std::chrono::milliseconds
+  //                                              time) {
   //   if (state.primary_latencies.size() > 0)
   //     LOG(WARNING) << "RUNEVERYT -- "
   //                  << "Primary count: " << state.primary_latencies.size()
@@ -254,7 +256,11 @@ void Throttler<T>::Runner(
     {
       std::unique_lock<std::shared_timed_mutex> lock(_updater_lock);
       end = std::chrono::high_resolution_clock::now();
-      stats = {_primary_latencies, _primary_sizes, _secondary_latencies,
+      stats = {_throttle_targets[kPrimaryPriority],
+               _primary_latencies,
+               _primary_sizes,
+               _throttle_targets[kSecondaryPriority],
+               _secondary_latencies,
                _secondary_sizes};
       _primary_latencies.clear();
       _secondary_latencies.clear();
