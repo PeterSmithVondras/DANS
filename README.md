@@ -38,7 +38,7 @@ $ bazel build ...
 
 ### Going Further
 
-Beyond installing DANS and running a simple client, see [documentation](doc) for [Architecture](./doc/architecture.md) and also [Simple Client](./doc/simple_client.md) for a description about how a simple DANS client works.
+Beyond installing DANS and running a simple client, see [documentation](doc) for [Architecture](./doc/architecture.md) and also [Simple Client](./doc/simple_client.md) for a description about how a simple DANS client works. Finally, see an [extensible proxy server](./applications/throttling_proxy/throttling_proxy_example.cc) which provides DANS capabilities to software that cannot be modified.
 
 ## Running the tests
 Every folder is a *package.* Every *package* has a *BUILD* file which lists all targets. Any target of type *cc_test* is a test and may be run either in batch or alone. Below is a test target example:
