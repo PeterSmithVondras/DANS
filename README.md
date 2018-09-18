@@ -1,6 +1,10 @@
 # Duplicate Aware Networked Stack (DANS)
 
-A c++ library which enables the integration of _Duplicate Awareness_ into any resource that might become a bottleneck. A simple file client has been implemented which can be used to benchmark the capabilities of DANS. This Client duplicates application requests and enforces Priority and Purging through the completion cycle.
+Distributed computing problems often suffer from tail latency, especially at the 99th and 99.9th percentile. Due to the commonality of chaining services upon each other for single requests, this is become a major hurdle for modern distributed systems. DANS, A c++ library which enables the integration of _Duplicate Awareness_ into any resource that might become a resource bottleneck. DANS uses a combination of proactive duplication, prioritization and purging to maximize resource utilization while simultaneously minimizing duplicated effort and slow down of un-duplicated jobs. DANS offers a flexible generic abstraction (see all headers prefixed with the word "base") abstract interface which can handle a wide range of use cases.
+
+Provided as an example and a benchmarking tool is the [DANS simple file client](./common/dstage/file_client_dstage_chain_test.cc). This Client duplicates application requests and enforces Priority and Purging through the completion cycle.
+
+Going further is the extensible [throttling proxy server](./common/dstage/dans_throttling_proxy.h) which provides DANS capabilities to software that cannot be modified. See the [example proxy](./applications/throttling_proxy/throttling_proxy_example.cc) for a simple proxy server written using the generic proxy. The throttling proxy goes further by allowing active control of [primary and secondary job throttling](./common/dstage/throttler.h), which can be used to allow for purging of jobs by withholding them form the underlying system. Further work includes automating the throttling threshold adjustments to maintain near maximum throughput, but is now a manual adjustment.
 
 ## Getting Started
 
@@ -16,7 +20,7 @@ These instructions will get you a copy of the project up and running on your loc
   * For ubuntu install: `sudo apt-get install libgoogle-glog-dev`
   * [Intro to glog](http://rpg.ifi.uzh.ch/docs/glog.html)
 * [gtest](https://github.com/google/googletest/blob/master/googletest/docs/Primer.md) used for all testing and even to run simple client. For Ubuntu use `sudo apt-get install googletest`.
-* [RANS server](https://github.cs.tufts.edu/hmmohsin/RANS.git) with **DANS-Purge** branch installed and at least two files created for retrieval. See the RANS server repo for setup and function. Ensure that the server is installed by running `make` in the server directory.
+* The simple file client requires the [RANS server](https://github.cs.tufts.edu/hmmohsin/RANS.git) with **DANS-Purge** branch installed and at least two files created for retrieval. See the RANS server repo for setup and function. Ensure that the server is installed by running `make` in the server directory.
 
 ### Installing
 
